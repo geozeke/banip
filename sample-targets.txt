@@ -1,0 +1,8 @@
+# Use two-letter country codes, one per line. Either uppercase or
+# lowercase is fine. Blank lines, spaces, and lines starting with '#'
+# are ignored.
+
+# Norway
+no
+# Germany
+de

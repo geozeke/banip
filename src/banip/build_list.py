@@ -37,7 +37,7 @@ def banned_ips(args: Namespace) -> None:
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("exiting.")
+            print("Visit https://github.com/geozeke/banip for more info.")
             sys.exit(1)
 
     # Import target countries

@@ -17,13 +17,23 @@ countries that you select.
 
 You could, but where's the fun in that?
 
-Using the second list above, I've configured my HAProxy server to drop
-IP connections from all countries except a few that I've whitelisted.
-What was missing was the ability to create a customized blacklist of bad
-actors, even if they're coming from countries that I whitelisted. This
+You may want to create a list of bad actors for specific countries. The
+global list contains several hundred thousand entries, and you may need
+more targeted list for testing or deployment in production.
+
+For example, using the IP subnets list (#2 above) I've configured my
+HAProxy server to drop IP connections from all countries except a few
+that I've whitelisted. I also wanted the ability to create a customized
+IP list to block any bad actors from those whitelisted countries. This
 tool accomplishes that.
 
 ## Requirements
+
+### Operating System
+
+banip runs in Linuxes (including macOS). Either a Linux PC, Linux
+Virtual Machine, or [Windows Subsystem for Linux (WSL)][def7] is
+required.
 
 ### poetry
 
@@ -41,7 +51,7 @@ If you want to fork and develop this repo, I've included a file called
 my home directory and configured globally for all my development
 projects. The `global-gitignore.txt` file reflects my development setup
 (for example using tools like vscode), but yours may be different. Just
-cherry-pick any necessary elements from `global-gitignore.txt` for your
+cherrypick any necessary elements from `global-gitignore.txt` for your
 own use.
 
 *Details on gitignore files are available on [GitHub][def3].*
@@ -62,10 +72,10 @@ already is*).
 
 ## Setup
 
-Clone this repository. Let's assume your also clone it your home
-directory (`~`)
+Clone this repository. Let's assume you clone it your home directory
+(`~`)
 
-Change to the repository (`cd ~/banip`) and run the command below:
+Change to `~/banip` and run this command:
 
 ```shell
 make setup
@@ -76,7 +86,7 @@ Copy the following files as indicated below.
 ### Country subnets
 
 ```shell
-cp .../haproxy_geo_ip.txt ./data/haproxy_geo_ip.txt
+cp <wherever you put it>/haproxy_geo_ip.txt ./data/haproxy_geo_ip.txt
 ```
 
 ### Blacklisted IPs
@@ -121,8 +131,8 @@ poetry run banip -h
 ## Updating
 
 The source lists of blacklisted IPs and country subnets are updated by
-their authors daily (sometimes twice daily). When you're ready to update
-your custom blacklist, start with this:
+their authors daily (sometimes twice daily). When you're ready to create
+a new blacklist, start with this:
 
 ```shell
 cp ~/ipsum
@@ -140,3 +150,4 @@ run `banip` again.
 [def4]: https://wetmore.ca/ip/
 [def5]: https://github.com/stamparm/ipsum
 [def6]: https://man7.org/linux/man-pages/man1/make.1p.html
+[def7]: https://docs.microsoft.com/en-us/windows/wsl/install

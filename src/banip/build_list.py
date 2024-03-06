@@ -5,6 +5,7 @@
 import ipaddress as ipa
 import sys
 from argparse import Namespace
+from datetime import datetime as dt
 from pathlib import Path
 from typing import Any
 
@@ -23,7 +24,13 @@ PAD = 6
 
 
 def banned_ips(args: Namespace) -> None:
-    """Do this."""
+    """Generate a custom list of banned IP addresses.
+
+    Parameters
+    ----------
+    args : Namespace
+        Command line arguments.
+    """
     clear()
 
     # Make sure all the required files are in place
@@ -112,7 +119,10 @@ def banned_ips(args: Namespace) -> None:
 
     for ip in banned_L:
         args.outfile.write(f"{format(ip)}\n")
-    args.outfile.write("# custom entries -------------\n")
+    now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+    args.outfile.write("\n# ------------custom entries -------------\n")
+    args.outfile.write(f"# Added on: {now}\n")
+    args.outfile.write("# ----------------------------------------\n\n")
     for ip in custom_ip_L:
         args.outfile.write(f"{format(ip)}\n")
     for network in custom_net_L:

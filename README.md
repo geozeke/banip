@@ -1,5 +1,9 @@
 # banip
 
+<img
+src="https://drive.google.com/uc?export=view&id=1H04KVAA3ohH_dLXIrC0bXuJXDn3VutKc"
+alt = "Dinobox logo" width="120"/>
+
 This tool will create a customized list of IP addresses that are
 cross-referenced between two sources:
 
@@ -111,7 +115,7 @@ After copying/tweaking all the required files, start with this command
 to learn how to build your custom blacklist:
 
 ```shell
-banip -h
+poetry run banip -h
 ```
 
 ## Updating

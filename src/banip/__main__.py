@@ -10,7 +10,7 @@ from banip.build_list import banned_ips
 def main() -> None:
     """Do this."""
     msg = """This program will create a list of banned (blacklisted)
-    ipaddresses to be used with a proxy server (like HAProxy) to block
+    ip addresses to be used with a proxy server (like HAProxy) to block
     network access. Please review the README file at
     https://github.com/geozeke/ubuntu for detailed instructions."""
 

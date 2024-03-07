@@ -10,7 +10,7 @@ cross-referenced between two sources:
 1. A global (worldwide) list of identified blacklisted IPs.
 2. A list of the IP subnets associated with each country.
 
-The result is a customized list of IP blacklisted addresses based on
+The result is a customized blacklist of IP addresses based on
 countries that you select.
 
 ## Why not just use the source list of all blacklisted IPs?
@@ -41,7 +41,7 @@ banip requires [poetry][def2] for dependency management. Poetry is well
 behaved and if you're a Python developer you should check it out. It
 installs itself in a virtual environment, uninstalls cleanly and easily,
 and doesn't require `sudo` for installation. Visit the [poetry
-site][def2] and install it using your preferred methods, with the
+site][def2] and install it using your preferred method, with the
 instructions for your operating system.
 
 ### gitignore (optional)
@@ -62,12 +62,15 @@ Download the list from [this site][def4].
 
 ### List of blacklisted IPs
 
-Clone the [ipsum repository][def5] to a location of your choosing (let's
-say your home directory `~`). You'll need to copy a file from it later.
+Download the list as follows:
+
+```shell
+curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt >> ipsum.txt
+```
 
 ### make
 
-You'll need the linux [make][def6] utility installed (*it probably
+You'll need the [make][def6] utility installed (*it probably
 already is*).
 
 ## Setup
@@ -92,7 +95,7 @@ cp <wherever you put it>/haproxy_geo_ip.txt ./data/haproxy_geo_ip.txt
 ### Blacklisted IPs
 
 ```shell
-cp ~/ipsum/ipsum.txt ./data/ipsum.txt
+cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 ```
 
 ### Target countries
@@ -131,23 +134,13 @@ poetry run banip -h
 ## Updating
 
 The source lists of blacklisted IPs and country subnets are updated by
-their authors daily (sometimes twice daily). When you're ready to create
-a new blacklist, start with this:
-
-```shell
-cp ~/ipsum
-git pull --rebase
-```
-
-Next, download a new copy of `haproxy_geo_ip.txt` as discussed above.
-Put new copies of `ipsum.txt` and `haproxy_geo_ip.txt` in `./data`.
-Tweak `./data/targets.txt` and `./data/custom_bans.txt` to your liking, and
-run `banip` again.
+their authors daily (sometimes twice daily). Pull updated copies and put
+them in the `banip/data` directory. Run `banip` again to generate an
+updated blacklist.
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/
 [def3]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 [def4]: https://wetmore.ca/ip/
-[def5]: https://github.com/stamparm/ipsum
 [def6]: https://man7.org/linux/man-pages/man1/make.1p.html
 [def7]: https://docs.microsoft.com/en-us/windows/wsl/install

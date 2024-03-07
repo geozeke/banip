@@ -65,7 +65,7 @@ Download the list from [this site][def4].
 Download the list as follows:
 
 ```shell
-curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt >> ipsum.txt
+curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ipsum.txt
 ```
 
 ### make
@@ -129,6 +129,12 @@ to learn how to build your custom blacklist:
 
 ```shell
 poetry run banip -h
+```
+
+When you're ready, run banip again using poetry:
+
+```shell
+poetry run banip <output_file> [OPTIONS]
 ```
 
 ## Updating

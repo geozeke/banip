@@ -12,8 +12,7 @@ from typing import Any
 from tqdm import tqdm  # type: ignore
 
 from banip.utilities import clear
-from banip.utilities import filter_addresses
-from banip.utilities import filter_networks
+from banip.utilities import filter
 from banip.utilities import split46
 
 HOME = Path(__file__).parents[2]
@@ -60,9 +59,9 @@ def banned_ips(args: Namespace) -> None:
     # Create a dictionary to hold all the generated lists. These are the
     # keys that will be used:
 
-    # CN:  Country subnets
+    # CN:  Country subnets.
     # II:  Blacklisted IPs from the ipsum curated list that meet the
-    #      minimum confidence factor
+    #      minimum confidence factor.
     # BI4: Blacklisted IPv4 addresses from the ipsum curated list that
     #      meet the minimum confidence factor and are also from a target
     #      country.
@@ -84,7 +83,7 @@ def banned_ips(args: Namespace) -> None:
     # Create a list of all networks for target countries.
 
     print(f"Pulling networks for country codes: {countries}")
-    D["CN"] = filter_networks(COUNTRY_CODES, countries)
+    D["CN"] = filter(COUNTRY_CODES, countries)
     print(f"Networks pulled: {len(D['CN']):,d}")
 
     # Now process the ipsum file of blacklisted IPs, filtering out those
@@ -93,7 +92,7 @@ def banned_ips(args: Namespace) -> None:
 
     print()
     print(f"Pulling blacklisted IPs with >= {args.threshold} hits.")
-    D["II"] = filter_addresses(BANNED_IPS, args.threshold)
+    D["II"] = filter(BANNED_IPS, args.threshold)
     print(f"IPs pulled: {len(D['II']):,d}")
 
     # This part takes the longest. Store those blacklisted IPs, with the
@@ -130,6 +129,7 @@ def banned_ips(args: Namespace) -> None:
 
     bag_of_nets = []
     bag_of_ips = []
+
     with open(CUSTOM_BANS, "r") as f:
         for line in f:
             if token := line.strip():

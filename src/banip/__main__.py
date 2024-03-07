@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Docstring."""
+"""Entry point for banip."""
 
 import argparse
 

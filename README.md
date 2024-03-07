@@ -136,7 +136,7 @@ a new blacklist, start with this:
 
 ```shell
 cp ~/ipsum
-git pull
+git pull --rebase
 ```
 
 Next, download a new copy of `haproxy_geo_ip.txt` as discussed above.

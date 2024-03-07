@@ -151,7 +151,7 @@ def banned_ips(args: Namespace) -> None:
         D[key].sort()
 
     # Overwrite my custom bans list with the duplicates removed. This
-    # will also reorder the file as: IPv4, IPv4, Subnets(v4),
+    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
     # Subnets(v6)
 
     with open(CUSTOM_BANS, "w") as f:

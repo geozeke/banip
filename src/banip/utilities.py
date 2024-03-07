@@ -1,12 +1,11 @@
-"""Docstring."""
+"""Utilities to support file processing."""
 
 import ipaddress as ipa
 import os
 from ipaddress import IPv4Address
 from ipaddress import IPv4Network
-from ipaddress import IPv6Address
-from ipaddress import IPv6Network
 from pathlib import Path
+from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
@@ -22,23 +21,23 @@ def clear() -> None:
 def filter_networks(
     fname: str | Path,
     countries: list[str],
-) -> list[IPv4Network | IPv6Network]:
+) -> list[Any]:
     """Pull networks for target countries.
 
     Parameters
     ----------
     fname : str | Path
-        The name of the data file containing subnets for each country
-        (e.g. haproxy_geo_ip.txt)
+        The data file containing subnets for each country (e.g.
+        haproxy_geo_ip.txt).
     countries : list[str]
-        A list of target countries (expressed as two-letter codes)
+        A list of target countries (expressed as two-letter codes).
 
     Returns
     -------
     list[IPv4Network | IPv6Network]
         All subnets for the target countries.
     """
-    networks_L: list[IPv4Network | IPv6Network] = []
+    bag: list[Any] = []
     with open(fname, "r") as f:
         lines = len(f.readlines())
         f.seek(0)
@@ -52,14 +51,14 @@ def filter_networks(
             if (clean := line.strip()) and clean[0] != "#":
                 parts = clean.split()
                 if parts[1] in countries:
-                    networks_L.append(ipa.ip_network(parts[0], strict=False))
-    return networks_L
+                    bag.append(ipa.ip_network(parts[0], strict=False))
+    return bag
 
 
 def filter_addresses(
     fname: str | Path,
     min_hits: int,
-) -> list[IPv4Address | IPv6Address]:
+) -> list[Any]:
     """Filter banned IP addresses based on hit counts.
 
     Each banned ip address in the source database has a factor
@@ -82,7 +81,7 @@ def filter_addresses(
     list[IPv4Address | IPv6Address]
         A list of IP address with hit counts >= min_hits.
     """
-    ip_L: list[IPv4Address | IPv6Address] = []
+    bag: list[Any] = []
     with open(fname, "r") as f:
         lines = len(f.readlines())
         f.seek(0)
@@ -96,5 +95,33 @@ def filter_addresses(
             if (clean := line.strip()) and clean[0] != "#":
                 parts = clean.split()
                 if int(parts[1]) >= min_hits:
-                    ip_L.append(ipa.ip_address(parts[0]))
-    return ip_L
+                    bag.append(ipa.ip_address(parts[0]))
+    return bag
+
+
+def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
+    """Split a list of tokens into two lists, based on protocol.
+
+    Tokens will either be IPv4/6 Addresses, or IPv4/6 subnets.
+
+    Parameters
+    ----------
+    bag_of_stuff : list[Any]
+        This will contain either a mix of IP addresses (v4/v6) or a mix
+        of subnets (v4/v6). A single input will contain either all IP
+        addresses or all subnets, but not a mix of both.
+
+    Returns
+    -------
+    tuple[list[Any], list[Any]]
+        The input split into two separate lists, with v4 protocol first
+        and v6 protocol second.
+    """
+    bag4: list[Any] = []
+    bag6: list[Any] = []
+    for item in bag_of_stuff:
+        if type(item) is IPv4Address or type(item) is IPv4Network:
+            bag4.append(item)
+        else:
+            bag6.append(item)
+    return bag4, bag6

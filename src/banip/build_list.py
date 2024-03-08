@@ -12,8 +12,8 @@ from typing import Any
 from tqdm import tqdm  # type: ignore
 
 from banip.utilities import clear
-from banip.utilities import filter_addresses
-from banip.utilities import filter_networks
+from banip.utilities import filter
+from banip.utilities import split46
 
 HOME = Path(__file__).parents[2]
 COUNTRY_CODES = HOME / "data/haproxy_geo_ip.txt"
@@ -56,81 +56,128 @@ def banned_ips(args: Namespace) -> None:
             if (country := line.strip()) and country[0] != "#"
         ]  # fmt: skip
 
+    # Create a dictionary to hold all the generated lists. These are the
+    # keys that will be used:
+
+    # CN:  Country subnets.
+    # II:  Blacklisted IPs from the ipsum curated list that meet the
+    #      minimum confidence factor.
+    # BI4: Blacklisted IPv4 addresses from the ipsum curated list that
+    #      meet the minimum confidence factor and are also from a target
+    #      country.
+    # BI6: Blacklisted IPv6 addresses from the ipsum curated list that
+    #      meet the minimum confidence factor and are also from a target
+    #      country.
+    # MI4: My custom blacklisted IPv4 addresses.
+    # MI6: My custom blacklisted IPv6 addresses.
+    # MN4: My custom blacklisted IPv4 subnets.
+    # MN6: My custom blacklisted IPv6 subnets.
+
+    D: dict[str, list[Any]] = {}
+
+    # Placeholders for IP addresses and networks
+
+    bag_of_ips: list[Any]
+    bag_of_nets: list[Any]
+
     # Create a list of all networks for target countries.
 
     print(f"Pulling networks for country codes: {countries}")
-    networks_L = filter_networks(COUNTRY_CODES, countries)
-    print(f"Networks pulled: {len(networks_L):,d}")
+    D["CN"] = filter(COUNTRY_CODES, countries)
+    print(f"Networks pulled: {len(D['CN']):,d}")
 
-    # Now process the file of blacklisted IPs, filtering out those that have
-    # less than the desired number of blacklist occurrences (hits)
+    # Now process the ipsum file of blacklisted IPs, filtering out those
+    # that have less than the desired number of blacklist occurrences
+    # (hits)
 
     print()
     print(f"Pulling blacklisted IPs with >= {args.threshold} hits.")
-    ip_L = filter_addresses(BANNED_IPS, args.threshold)
-    print(f"IPs pulled: {len(ip_L):,d}")
+    D["II"] = filter(BANNED_IPS, args.threshold)
+    print(f"IPs pulled: {len(D['II']):,d}")
 
-    # This part takes the longest. Store those blacklisted IPs that are
-    # hosted on the networks of target countries.
+    # This part takes the longest. Store those blacklisted IPs, with the
+    # minimum number of his that are also hosted on the networks of
+    # target countries.
 
     print()
-    banned_L: list[ipa.IPv4Address | ipa.IPv6Address] = []
+    bag_of_ips = []
     print(f"Building banned IP list for country codes: {countries}")
     for ip in tqdm(
-        ip_L,
+        D["II"],
         desc="IPs",
-        total=len(ip_L),
+        total=len(D["II"]),
         colour="#bf80f2",
         unit="IPs",
     ):
-        for network in networks_L:
+        for network in D["CN"]:
             if ip in network:
-                banned_L.append(ip)
+                bag_of_ips.append(ip)
                 break
-    print(f"IPs pulled: {len(banned_L):,d}")
+
+    # Separate and sort the banned IPs
+
+    D["BI4"], D["BI6"] = split46(bag_of_ips)
+    b_keys = ["BI4", "BI6"]
+    for key in b_keys:
+        D[key].sort()
+
+    print(f"IPs pulled: {len(bag_of_ips):,d}")
 
     # Open the custom bans list and prune any IPs or networks that were
-    # already discovered while building the list of banned IPs
-    token: Any
-    temp_ip_L: list[ipa.IPv4Address | ipa.IPv6Address] = []
-    custom_net_L: list[ipa.IPv4Network | ipa.IPv6Network] = []
+    # already discovered while building the list of banned IPs. Finally,
+    # create individual lists of IPs/Nets and sort them.
+
+    bag_of_nets = []
+    bag_of_ips = []
+
     with open(CUSTOM_BANS, "r") as f:
         for line in f:
             if token := line.strip():
                 if "/" in token:
-                    custom_net_L.append(ipa.ip_network(token))
+                    bag_of_nets.append(ipa.ip_network(token))
                 else:
-                    temp_ip_L.append(ipa.ip_address(token))
-    temp_ip_L.sort()
-    custom_net_L.sort()
-    banned_L.sort()
-    custom_ip_L = [ip for ip in temp_ip_L if ip not in banned_L]
+                    bag_of_ips.append(ipa.ip_address(token))
 
-    # Rewrite the custom bans list with the duplicates removed.
+    custom_bans = len(bag_of_ips) + len(bag_of_nets)
+    duplicates = custom_bans
+    bag_of_ips = [ip for
+                  ip in bag_of_ips
+                  if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
+    duplicates -= len(bag_of_ips) + len(bag_of_nets)
+    D["MI4"], D["MI6"] = split46(bag_of_ips)
+    D["MN4"], D["MN6"] = split46(bag_of_nets)
+    m_keys = ["MI4", "MI6", "MN4", "MN6"]
+    for key in m_keys:
+        D[key].sort()
+
+    # Overwrite my custom bans list with the duplicates removed. This
+    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
+    # Subnets(v6)
 
     with open(CUSTOM_BANS, "w") as f:
-        for ip in custom_ip_L:
-            f.write(f"{format(ip)}\n")
-        for network in custom_net_L:
-            f.write(f"{format(network)}\n")
+        for key in m_keys:
+            for chunk in D[key]:
+                f.write(f"{format(chunk)}\n")
 
-    # Write banned IPs and custom entries to the file and display
-    # results.
+    # Write banned IPs and custom entries to the file selected on the
+    # command line.
 
-    for ip in banned_L:
-        args.outfile.write(f"{format(ip)}\n")
+    for key in b_keys:
+        for ip in D[key]:
+            args.outfile.write(f"{format(ip)}\n")
+
     now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
     args.outfile.write("\n# ------------custom entries -------------\n")
     args.outfile.write(f"# Added on: {now}\n")
     args.outfile.write("# ----------------------------------------\n\n")
-    for ip in custom_ip_L:
-        args.outfile.write(f"{format(ip)}\n")
-    for network in custom_net_L:
-        args.outfile.write(f"{format(network)}\n")
 
-    ips_found = len(banned_L)
-    custom_bans = len(custom_ip_L) + len(custom_net_L)
-    duplicates = len(temp_ip_L) - len(custom_ip_L)
+    for key in m_keys:
+        for chunk in D[key]:
+            args.outfile.write(f"{format(chunk)}\n")
+
+    # Calculate final metrics and display results.
+
+    ips_found = sum(len(D[key]) for key in b_keys)
     total_bans = ips_found + custom_bans - duplicates
 
     print(f"\n      Banned IPs found: {ips_found:>{PAD},d}")

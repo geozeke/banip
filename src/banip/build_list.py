@@ -37,7 +37,6 @@ def banned_ips(args: Namespace) -> None:
     # Make sure all the required files are in place
 
     files = [
-        COUNTRY_CODES,
         BANNED_IPS,
         CUSTOM_BANS,
         TARGETS,

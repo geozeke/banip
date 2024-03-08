@@ -36,7 +36,7 @@ endif
 
 .PHONY: update
 update: ## update banip code and dependencies
-	@echo Updating pymids
+	@echo Updating banip
 	git pull
 	@echo Updating dependencies
 ifeq (,$(wildcard .init/dev))

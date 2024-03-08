@@ -21,17 +21,16 @@ You may want to create a list of bad actors for specific countries. The
 global list contains several hundred thousand entries, and you may need
 more targeted list for testing or deployment in production.
 
-For example, using the IP subnets list (#2 above) I've configured my
-HAProxy server to drop IP connections from all countries except a few
-that I've whitelisted. I also wanted the ability to create a customized
-IP list to block any bad actors from those whitelisted countries. This
-tool accomplishes that.
+For example, I've configured my HAProxy server to drop IP connections
+from all countries except those that I've whitelisted. I also want the
+ability to create a customized IP list to block any bad actors from
+those whitelisted countries. This tool accomplishes that.
 
 ## Requirements
 
 ### Operating System
 
-banip runs in Linuxes (including macOS). Either a Linux PC, Linux
+banip runs in Unit-like OSes (including macOS). Either a Linux PC, Linux
 Virtual Machine, or [Windows Subsystem for Linux (WSL)][def7] is
 required.
 
@@ -89,7 +88,7 @@ to a location you can easily get to.
 ### Clone the repository
 
 Clone this repository. We'll assume you clone it your home directory
-(`~`)
+(`~`):
 
 ```shell
 git clone https://github.com/geozeke/banip.git
@@ -138,6 +137,28 @@ file will be appended to the list generated when you run the program.
 
 *Note: If you're concerned about keeping your original list of custom
 bans, save a copy of it somewhere outside the repository.*
+
+When you're done, the `~/banip/data` directory should look like this:
+
+```text
+├── data
+│   ├── custom_bans.txt
+│   ├── geolite
+│   │   ├── COPYRIGHT.txt
+│   │   ├── GeoLite2-Country-Blocks-IPv4.csv
+│   │   ├── GeoLite2-Country-Blocks-IPv6.csv
+│   │   ├── GeoLite2-Country-Locations-de.csv
+│   │   ├── GeoLite2-Country-Locations-en.csv
+│   │   ├── GeoLite2-Country-Locations-es.csv
+│   │   ├── GeoLite2-Country-Locations-fr.csv
+│   │   ├── GeoLite2-Country-Locations-ja.csv
+│   │   ├── GeoLite2-Country-Locations-pt-BR.csv
+│   │   ├── GeoLite2-Country-Locations-ru.csv
+│   │   ├── GeoLite2-Country-Locations-zh-CN.csv
+│   │   └── LICENSE.txt
+│   ├── ipsum.txt
+│   └── targets.txt
+```
 
 ## Running
 

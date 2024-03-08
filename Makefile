@@ -8,7 +8,7 @@ ifeq (,$(wildcard .init/setup))
 	@(which poetry > /dev/null 2>&1) || \
 	(echo "banip requires poetry. See README for instructions."; exit 1)
 	@if [ ! -d "./data" ]; then \
-		mkdir data; \
+		mkdir -p data/geolite; \
 	fi
 	mkdir .init
 	touch .init/setup

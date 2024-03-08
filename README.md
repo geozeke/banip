@@ -35,6 +35,16 @@ banip runs in Linuxes (including macOS). Either a Linux PC, Linux
 Virtual Machine, or [Windows Subsystem for Linux (WSL)][def7] is
 required.
 
+### Maxmind Database
+
+You'll need a copy of the [Maxmind](https://www.maxmind.com/en/home)
+GeoLite2 database for country-level geotagging of IP addresses. If you
+have a premium or corporate Maxmind account, you're all set. If not, the
+free GeoLite2 account ([signup
+here](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data))
+will work just fine. The file you want to download is the
+`GeoLite2-Country-CSV_YYYYMMDD.zip` file.
+
 ### poetry
 
 banip requires [poetry][def2] for dependency management. Poetry is well
@@ -56,10 +66,6 @@ own use.
 
 *Details on gitignore files are available on [GitHub][def3].*
 
-### List of subnets for all countries
-
-Download the list from [this site][def4].
-
 ### List of blacklisted IPs
 
 Download the list as follows:
@@ -75,8 +81,19 @@ already is*).
 
 ## Setup
 
-Clone this repository. Let's assume you clone it your home directory
+### Unpack GeoLite2 data
+
+Unpack the `GeoLite2-Country-CSV_YYYYMMDD.zip` file and save the files
+to a location you can easily get to.
+
+### Clone the repository
+
+Clone this repository. We'll assume you clone it your home directory
 (`~`)
+
+```shell
+git clone https://github.com/geozeke/banip.git
+```
 
 Change to `~/banip` and run this command:
 
@@ -84,21 +101,21 @@ Change to `~/banip` and run this command:
 make setup
 ```
 
-Copy the following files as indicated below.
+### Copy files
 
-### Country subnets
+#### GeoLite2 Files
 
 ```shell
-cp <wherever you put it>/haproxy_geo_ip.txt ./data/haproxy_geo_ip.txt
+cp <wherever you put them>/* ./data/geolite/
 ```
 
-### Blacklisted IPs
+#### Blacklisted IPs
 
 ```shell
 cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 ```
 
-### Target countries
+#### Target countries
 
 ```shell
 cp sample-targets.txt ./data/targets.txt
@@ -107,15 +124,15 @@ cp sample-targets.txt ./data/targets.txt
 Modify `./data/targets.txt` to select your desired target countries. The
 comments in the file will guide you.
 
-### Custom bans
+#### Custom bans
 
 ```shell
 cp sample-custom_bans.txt ./data/custom_bans.txt
 ```
 
 These will be specific IP address or subnets (one per line, in
-[CIDR][def] format) that you want to block. Some of your IPs may be
-found when you run the tool, so this file (`custom_bans.txt`) will be
+[CIDR][def] format) that you want to block. Some of your custom IPs may
+be found when you run the tool, so this file (`custom_bans.txt`) will be
 overwritten to remove the duplicates. The contents of the de-duplicated
 file will be appended to the list generated when you run the program.
 
@@ -139,14 +156,14 @@ poetry run banip <output_file> [OPTIONS]
 
 ## Updating
 
-The source lists of blacklisted IPs and country subnets are updated by
-their authors daily (sometimes twice daily). Pull updated copies and put
-them in the `banip/data` directory. Run `banip` again to generate an
-updated blacklist.
+The Maxmind database is updated on Tuesdays and Fridays, and the list of
+blacklisted IPs is updated daily. Pull updated copies of both and put
+them in `banip/data/geolite` (for the GeoLite2 data) and `banip/data`
+(for the `ipsum.txt` file). Run `banip` again to generate an updated
+blacklist.
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/
 [def3]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-[def4]: https://wetmore.ca/ip/
 [def6]: https://man7.org/linux/man-pages/man1/make.1p.html
 [def7]: https://docs.microsoft.com/en-us/windows/wsl/install

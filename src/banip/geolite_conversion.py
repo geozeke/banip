@@ -91,9 +91,10 @@ def make_haproxy() -> None:
     keys_6 = list(ipv6_D.keys())
     keys_4.sort()
     keys_6.sort()
+    key: IPv4Network | IPv6Network
     with open(COUNTRY_CODES, "w") as f:
-        for key4 in keys_4:
-            f.write(f"{format(key4)} {ipv4_D[key4]}\n")
-        for key6 in keys_6:
-            f.write(f"{format(key6)} {ipv6_D[key6]}\n")
+        for key in keys_4:
+            f.write(f"{format(key)} {ipv4_D[key]}\n")
+        for key in keys_6:
+            f.write(f"{format(key)} {ipv6_D[key]}\n")
     print("Done\n")

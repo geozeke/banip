@@ -6,21 +6,22 @@ import ipaddress as ipa
 import sys
 from argparse import Namespace
 from datetime import datetime as dt
-from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
+from banip.contants import BANNED_IPS
+from banip.contants import COUNTRY_CODES
+from banip.contants import CUSTOM_BANS
+from banip.contants import GEOLITE_4
+from banip.contants import GEOLITE_6
+from banip.contants import GEOLITE_LOC
+from banip.contants import PAD
+from banip.contants import TARGETS
+from banip.geolite_conversion import make_haproxy
 from banip.utilities import clear
 from banip.utilities import filter
 from banip.utilities import split46
-
-HOME = Path(__file__).parents[2]
-COUNTRY_CODES = HOME / "data/haproxy_geo_ip.txt"
-BANNED_IPS = HOME / "data/ipsum.txt"
-CUSTOM_BANS = HOME / "data/custom_bans.txt"
-TARGETS = HOME / "data/targets.txt"
-PAD = 6
 
 
 def banned_ips(args: Namespace) -> None:
@@ -36,16 +37,22 @@ def banned_ips(args: Namespace) -> None:
     # Make sure all the required files are in place
 
     files = [
-        COUNTRY_CODES,
         BANNED_IPS,
         CUSTOM_BANS,
         TARGETS,
+        GEOLITE_4,
+        GEOLITE_6,
+        GEOLITE_LOC,
     ]
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
             print("Visit https://github.com/geozeke/banip for more info.")
             sys.exit(1)
+
+    # Create the haproxy_geo_ip file.
+
+    make_haproxy()
 
     # Import target countries
 
@@ -96,7 +103,7 @@ def banned_ips(args: Namespace) -> None:
     print(f"IPs pulled: {len(D['II']):,d}")
 
     # This part takes the longest. Store those blacklisted IPs, with the
-    # minimum number of his that are also hosted on the networks of
+    # minimum number of hits that are also hosted on the networks of
     # target countries.
 
     print()

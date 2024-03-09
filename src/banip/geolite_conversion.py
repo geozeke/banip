@@ -64,12 +64,13 @@ def make_haproxy() -> None:
             # Lines in the IPv4 country blocks file look like this:
             # 1.47.160.0/19,1605651,1605651,,0,0,
             # The variable "net" will hold each line of the file, and
-            # the code we're looking for is in index 1 (starting from
-            # 0). Index 0 contains the IP address.
+            # the code we're looking for is normally in index 1
+            # (starting from 0). If that entry is blank, use the code in
+            # index 2. Index 0 contains the IP address.
             try:
                 country_id = countries_D[int(net[1])]
             except ValueError:
-                continue
+                country_id = countries_D[int(net[2])]
             ipv4_D[ipa.IPv4Network(net[0])] = country_id
 
     print("\nGeotagging IPv6 Networks")
@@ -88,12 +89,13 @@ def make_haproxy() -> None:
             # Lines in the IPv6 country blocks file look like this:
             # 2001:67c:299c::/48,2921044,2921044,,0,0,
             # The variable "net" will hold each line of the file, and
-            # the code we're looking for is in index 1 (starting from
-            # 0). Index 0 contains the IP address.
+            # the code we're looking for is normally in index 1
+            # (starting from 0). If that entry is blank, use the code in
+            # index 2. Index 0 contains the IP address.
             try:
                 country_id = countries_D[int(net[1])]
             except ValueError:
-                continue
+                country_id = countries_D[int(net[2])]
             ipv6_D[ipa.IPv6Network(net[0])] = country_id
 
     print("\nGenerating files...", end="")

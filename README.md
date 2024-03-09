@@ -30,19 +30,27 @@ those whitelisted countries. This tool accomplishes that.
 
 ### Operating System
 
-banip runs in Unit-like OSes (including macOS). Either a Linux PC, Linux
-Virtual Machine, or [Windows Subsystem for Linux (WSL)][def7] is
-required.
+banip runs in Unix-like OSes. Either macOS, a Linux PC, Linux Virtual
+Machine, or [Windows Subsystem for Linux (WSL)][def7] is required.
 
-### Maxmind Database
+### MaxMind Database
 
-You'll need a copy of the [Maxmind](https://www.maxmind.com/en/home)
-GeoLite2 database for country-level geotagging of IP addresses. If you
-have a premium or corporate Maxmind account, you're all set. If not, the
-free GeoLite2 account ([signup
-here](https://dev.maxmind.com/geoip/geolite2-free-geolocation-data))
-will work just fine. The file you want to download is the
-`GeoLite2-Country-CSV_YYYYMMDD.zip` file.
+You'll need a copy of the [MaxMind][def8] GeoLite2 database for
+country-level geotagging of IP addresses. If you have a premium or
+corporate MaxMind account, you're all set. If not, the free GeoLite2
+account will work just fine ([signup here][def5]). Once you login, on
+the menu on the top right select:
+
+```text
+My Account > My Account
+```
+
+From there, click on `Download Files` on the bottom left. The file you
+want to download is:
+
+```text
+GeoLite2 Country: CSV format
+```
 
 ### poetry
 
@@ -82,12 +90,15 @@ already is*).
 
 ### Unpack GeoLite2 data
 
-Unpack the `GeoLite2-Country-CSV_YYYYMMDD.zip` file and save the files
-to a location you can easily get to.
+Unpack the GeoLite2-Country file and save the files to a location you
+can easily get to.
+
+*Note: if you're looking for a quick way to download the MaxMind data
+using `curl` and a direct download link, [SEE HERE][def4].*
 
 ### Clone the repository
 
-Clone this repository. We'll assume you clone it your home directory
+Clone this repository. We'll assume you clone it to your home directory
 (`~`):
 
 ```shell
@@ -177,14 +188,17 @@ poetry run banip <output_file> [OPTIONS]
 
 ## Updating
 
-The Maxmind database is updated on Tuesdays and Fridays, and the list of
-blacklisted IPs is updated daily. Pull updated copies of both and put
-them in `banip/data/geolite` (for the GeoLite2 data) and `banip/data`
-(for the `ipsum.txt` file). Run `banip` again to generate an updated
-blacklist.
+MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
+and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
+updated copies of both and put them in `banip/data/geolite` (for the
+GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run `banip`
+again to generate an updated blacklist.
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/
 [def3]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 [def6]: https://man7.org/linux/man-pages/man1/make.1p.html
 [def7]: https://docs.microsoft.com/en-us/windows/wsl/install
+[def4]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
+[def5]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+[def8]: https://www.maxmind.com/en/home

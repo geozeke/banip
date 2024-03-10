@@ -6,6 +6,7 @@ import shutil
 import sys
 from argparse import Namespace
 from datetime import datetime as dt
+from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm  # type: ignore
@@ -223,7 +224,8 @@ def banned_ips(args: Namespace) -> None:
     # ./data/ip_blacklist.txt. This will be used when running banip to
     # check an individual IP address.
 
-    shutil.copyfile(args.outfile.name, RENDERED_BLACKLIST)
+    if Path(args.outfile.name) != RENDERED_BLACKLIST:
+        shutil.copyfile(args.outfile.name, RENDERED_BLACKLIST)
 
     # Calculate final metrics and display results.
 

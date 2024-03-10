@@ -12,7 +12,7 @@ from tqdm import tqdm  # type: ignore
 
 from banip.contants import BANNED_IPS
 from banip.contants import COUNTRY_CODES
-from banip.contants import CUSTOM_BANS
+from banip.contants import CUSTOM_BLACKLIST
 from banip.contants import GEOLITE_4
 from banip.contants import GEOLITE_6
 from banip.contants import GEOLITE_LOC
@@ -38,7 +38,7 @@ def banned_ips(args: Namespace) -> None:
 
     files = [
         BANNED_IPS,
-        CUSTOM_BANS,
+        CUSTOM_BLACKLIST,
         TARGETS,
         GEOLITE_4,
         GEOLITE_6,
@@ -137,7 +137,7 @@ def banned_ips(args: Namespace) -> None:
     bag_of_nets = []
     bag_of_ips = []
 
-    with open(CUSTOM_BANS, "r") as f:
+    with open(CUSTOM_BLACKLIST, "r") as f:
         for line in f:
             if token := line.strip():
                 if "/" in token:
@@ -145,8 +145,8 @@ def banned_ips(args: Namespace) -> None:
                 else:
                     bag_of_ips.append(ipa.ip_address(token))
 
-    custom_bans = len(bag_of_ips) + len(bag_of_nets)
-    duplicates = custom_bans
+    custom_blacklist = len(bag_of_ips) + len(bag_of_nets)
+    duplicates = custom_blacklist
     bag_of_ips = [ip for
                   ip in bag_of_ips
                   if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
@@ -161,7 +161,7 @@ def banned_ips(args: Namespace) -> None:
     # will also reorder the file as: IPv4, IPv6, Subnets(v4),
     # Subnets(v6)
 
-    with open(CUSTOM_BANS, "w") as f:
+    with open(CUSTOM_BLACKLIST, "w") as f:
         for key in m_keys:
             for chunk in D[key]:
                 f.write(f"{format(chunk)}\n")
@@ -185,10 +185,10 @@ def banned_ips(args: Namespace) -> None:
     # Calculate final metrics and display results.
 
     ips_found = sum(len(D[key]) for key in b_keys)
-    total_bans = ips_found + custom_bans - duplicates
+    total_bans = ips_found + custom_blacklist - duplicates
 
     print(f"\n      Banned IPs found: {ips_found:>{PAD},d}")
-    print(f"  Custom bans provided: {custom_bans:>{PAD},d}")
+    print(f"  Custom bans provided: {custom_blacklist:>{PAD},d}")
     print(f"    Duplicates removed: {duplicates:>{PAD},d}")
     print(f"Total banned IPs saved: {total_bans:>{PAD},d}")
 

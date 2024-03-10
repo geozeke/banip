@@ -137,14 +137,15 @@ comments in the file will guide you.
 #### Custom bans
 
 ```shell
-cp sample-custom_bans.txt ./data/custom_bans.txt
+cp sample-custom_blacklist.txt ./data/custom_blacklist.txt
 ```
 
 These will be specific IP address or subnets (one per line, in
 [CIDR][def] format) that you want to block. Some of your custom IPs may
-be found when you run the tool, so this file (`custom_bans.txt`) will be
-overwritten to remove the duplicates. The contents of the de-duplicated
-file will be appended to the list generated when you run the program.
+be found when you run the tool, so this file (`custom_blacklist.txt`)
+will be overwritten to remove the duplicates. The contents of the
+de-duplicated file will be appended to the list generated when you run
+the program.
 
 *Note: If you're concerned about keeping your original list of custom
 bans, save a copy of it somewhere outside the repository.*
@@ -153,7 +154,7 @@ When you're done, the `~/banip/data` directory should look like this:
 
 ```text
 ├── data
-│   ├── custom_bans.txt
+│   ├── custom_blacklist.txt
 │   ├── geolite
 │   │   ├── COPYRIGHT.txt
 │   │   ├── GeoLite2-Country-Blocks-IPv4.csv

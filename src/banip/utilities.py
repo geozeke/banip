@@ -1,13 +1,24 @@
 """Utilities to support file processing."""
 
+import csv
 import ipaddress as ipa
 import os
 from ipaddress import IPv4Address
 from ipaddress import IPv4Network
+from ipaddress import IPv6Network
 from pathlib import Path
 from typing import Any
 
 from tqdm import tqdm  # type: ignore
+
+from banip.contants import BANNED_IPS
+from banip.contants import COUNTRY_NETS
+from banip.contants import GEOLITE_4
+from banip.contants import GEOLITE_6
+from banip.contants import GEOLITE_LOC
+from banip.contants import RENDERED_BLACKLIST
+
+# ===============================================================
 
 
 def clear() -> None:
@@ -16,6 +27,41 @@ def clear() -> None:
     OS-agnostic version, which will work with both Windows and Linux.
     """
     os.system("clear" if os.name == "posix" else "cls")
+
+
+# ===============================================================
+
+
+def extract_ip(from_str: str) -> Any:
+    """Convert a string to either an IP address or IP subnet.
+
+    Parameters
+    ----------
+    from_str : str
+        This will be a string, representing either an IP address, or IP
+        subnet.
+
+    Returns
+    -------
+    Any
+        This will be one of four types: IPv4Address | IPv6Address |
+        IPv4Network | IPv6Network.
+    """
+    to_ip: Any = None
+    if "/" in from_str:
+        try:
+            to_ip = ipa.ip_network(from_str)
+        except AttributeError:
+            return None
+    else:
+        try:
+            to_ip = ipa.ip_address(from_str)
+        except AttributeError:
+            return None
+    return to_ip
+
+
+# ===============================================================
 
 
 def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
@@ -69,6 +115,9 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
     return bag
 
 
+# ===============================================================
+
+
 def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
     """Split a list of tokens into two lists, based on protocol.
 
@@ -95,3 +144,148 @@ def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
         else:
             bag6.append(item)
     return bag4, bag6
+
+
+# ===============================================================
+
+
+def tag_networks() -> None:
+    """Create the haproxy_geo_ip.txt database.
+
+    This will create a HAProxy-friendly file of global subnets and their
+    associated two-letter country codes.
+    """
+    countries_D: dict[int, str] = {}
+    ipv4_D: dict[IPv4Network, str] = {}
+    ipv6_D: dict[IPv6Network, str] = {}
+
+    print("Pulling country IDs")
+    with open(GEOLITE_LOC, "r") as f:
+        lines = len(f.readlines()) - 1
+        f.seek(0)
+        reader = csv.reader(f)
+        next(reader)
+        for country in tqdm(
+            reader,
+            desc="Countries",
+            total=lines,
+            colour="#bf80f2",
+            unit="countries",
+        ):
+            # Lines from the country locations file look like this:
+            # 4032283,en,OC,Oceania,TO,Tonga,0
+            # There are some country ids in the csv file that reflect
+            # continents (e.g. Europe), like this:
+            # 6255148,en,EU,Europe,,,0
+            # In that case, the two-letter country_ios_code (index 4) is
+            # blank, so we need to pull the two-letter continent code
+            # from index 2 in the csv file (indices start at 0).
+            if not (cic := country[4]):
+                cic = country[2]
+            countries_D[int(country[0])] = cic
+
+    print("\nGeotagging IPv4 Networks")
+    with open(GEOLITE_4, "r") as f:
+        lines = len(f.readlines()) - 1
+        f.seek(0)
+        reader = csv.reader(f)
+        next(reader)
+        for net in tqdm(
+            reader,
+            desc="IPv4 Networks",
+            total=lines,
+            colour="#bf80f2",
+            unit="nets",
+        ):
+            # Lines in the IPv4 country blocks file look like this:
+            # 1.47.160.0/19,1605651,1605651,,0,0,
+            # The variable "net" will hold each line of the file, and
+            # the code we're looking for is normally in index 1
+            # (starting from 0). If that entry is blank, use the code in
+            # index 2. Index 0 contains the IP address.
+            try:
+                country_id = countries_D[int(net[1])]
+            except ValueError:
+                country_id = countries_D[int(net[2])]
+            ipv4_D[ipa.IPv4Network(net[0])] = country_id
+
+    print("\nGeotagging IPv6 Networks")
+    with open(GEOLITE_6, "r") as f:
+        lines = len(f.readlines()) - 1
+        f.seek(0)
+        reader = csv.reader(f)
+        next(reader)
+        for net in tqdm(
+            reader,
+            desc="IPv6 Networks",
+            total=lines,
+            colour="#bf80f2",
+            unit="nets",
+        ):
+            # Lines in the IPv6 country blocks file look like this:
+            # 2001:67c:299c::/48,2921044,2921044,,0,0,
+            # The variable "net" will hold each line of the file, and
+            # the code we're looking for is normally in index 1
+            # (starting from 0). If that entry is blank, use the code in
+            # index 2. Index 0 contains the IP address.
+            try:
+                country_id = countries_D[int(net[1])]
+            except ValueError:
+                country_id = countries_D[int(net[2])]
+            ipv6_D[ipa.IPv6Network(net[0])] = country_id
+
+    print("\nGenerating files...", end="")
+    keys_4 = list(ipv4_D.keys())
+    keys_6 = list(ipv6_D.keys())
+    keys_4.sort()
+    keys_6.sort()
+    key: IPv4Network | IPv6Network
+    with open(COUNTRY_NETS, "w") as f:
+        for key in keys_4:
+            f.write(f"{format(key)} {ipv4_D[key]}\n")
+        for key in keys_6:
+            f.write(f"{format(key)} {ipv6_D[key]}\n")
+    print("Done\n")
+
+
+# ===============================================================
+
+
+def check_ip(ip: str) -> None:
+    """Display available data for a particular IP address.
+
+    Parameters
+    ----------
+    ip : str
+        IPv4 or IPv address of interest.
+    """
+    try:
+        ipa.ip_address(ip)
+    except ValueError:
+        print(f"{ip} is not a valid IP address.")
+        return
+
+    found = False
+    if RENDERED_BLACKLIST.exists():
+        with open(RENDERED_BLACKLIST, "r") as f:
+            for line in f:
+                if ip in line:
+                    source = RENDERED_BLACKLIST.name
+                    print(f"{ip} found in {source}")
+                    found = True
+                    break
+
+    if BANNED_IPS.exists():
+        with open(BANNED_IPS, "r") as f:
+            for line in f:
+                if ip in line:
+                    source = BANNED_IPS.name
+                    hitcount = line.split()[1]
+                    print(f"{ip} found in {source} with {hitcount} hits.")
+                    found = True
+                    break
+
+    if not found:
+        print(f"{ip} not found.")
+
+    return

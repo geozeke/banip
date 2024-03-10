@@ -4,26 +4,51 @@
 
 import argparse
 
+from argparse_formatter import ParagraphFormatter  # type:ignore
+
 from banip.build_list import banned_ips
+from banip.contants import RENDERED_BLACKLIST
+from banip.utilities import check_ip
+from banip.utilities import clear
 
 
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
-    msg = """This program will create a list of banned (blacklisted)
-    ip addresses to be used with a proxy server (like HAProxy) to block
-    network access. Please review the README file at
-    https://github.com/geozeke/ubuntu for detailed instructions."""
+    msg = """banip will create a list of banned (blacklisted)
+    client IP addresses to be used with a proxy server (like HAProxy) to
+    block network access from those clients. Alternatively, you can use
+    banip to check to see if a single IP address is found in the
+    blacklist.
+
+    Please review the README file at this link for detailed instructions
+    on setting up banip: https://github.com/geozeke/ubuntu"""
 
     epi = "Version: 0.1.0"
 
-    parser = argparse.ArgumentParser(description=msg, epilog=epi)
+    parser = argparse.ArgumentParser(
+        description=msg,
+        epilog=epi,
+        formatter_class=ParagraphFormatter,
+    )
+
+    subparsers = parser.add_subparsers(title="Sub-commands")
+    msg = """Alternatively, you can use banip to check to see if a
+    single IP address is found in the blacklist. Run banip check -h for
+    more."""
+    subparser_check = subparsers.add_parser(name="check", help=msg)
 
     msg = """Output file that will contain the generated list of banned
-    ip addresses."""
-    parser.add_argument("outfile", type=argparse.FileType("w"), help=msg)
+    IP addresses. If not provided, results will be saved to
+    ./data/ip_blacklist.txt"""
+    parser.add_argument(
+        "-o",
+        "--outfile",
+        type=argparse.FileType("w"),
+        help=msg,
+    )
 
-    msg = """Each banned ip address in the source database has a factor
-    (from 1 to 10) indicating a level of certainty that the ip address
+    msg = """Each banned IP address in the source database has a factor
+    (from 1 to 10) indicating a level of certainty that the IP address
     is a malicious actor. The default threshold used is 3. Anything
     less than that may result in false positives and increases the time
     required to generate the list. You may choose any threshold from 1
@@ -36,9 +61,26 @@ def main() -> None:
         default=3,
     )
 
+    msg = """This is the IPv4 or IPv6 address you're interested in.
+    After you run banip for the first time, you can use the "check"
+    subcommand to see if a single IP address is found in the blacklist.
+    Making subsequent runs of banip to generate new blacklists will use
+    the updated information for future IP checking."""
+    subparser_check.add_argument(
+        "ip",
+        type=str,
+        help=msg,
+    )
+
     args = parser.parse_args()
-    banned_ips(args)
-    args.outfile.close()
+    clear()
+    if hasattr(args, "ip"):
+        check_ip(args.ip)
+    else:
+        if not args.outfile:
+            args.outfile = open(RENDERED_BLACKLIST, "w")
+        banned_ips(args)
+        args.outfile.close()
     return
 
 

@@ -134,27 +134,50 @@ cp sample-targets.txt ./data/targets.txt
 Modify `./data/targets.txt` to select your desired target countries. The
 comments in the file will guide you.
 
-#### Custom bans
+#### Custom whitelist (optional)
 
 ```shell
-cp sample-custom_bans.txt ./data/custom_bans.txt
+cp sample-custom_whitelist.txt ./data/custom_whitelist.txt
 ```
 
-These will be specific IP address or subnets (one per line, in
-[CIDR][def] format) that you want to block. Some of your custom IPs may
-be found when you run the tool, so this file (`custom_bans.txt`) will be
+There may be IP addresses that banip will flag as malicious, but you
+still want to whitelist them (for example to use for testing). This file
+will contain specific IP addresses, one per line, that you want to
+allow.
+
+This file is optional. If you choose not to use it, banip will create a
+blank one when you run it.
+
+#### Custom blacklist (optional)
+
+```shell
+cp sample-custom_blacklist.txt ./data/custom_blacklist.txt
+```
+
+The source database of banned IPs isn't perfect. You may determine that
+there's an IP address you want to ban this is not found in `ipsum.txt`.
+Also, the `ipsum.txt` file only contains IP addesses, and you may want
+to ban an entire subnet. The custom blacklist allows you to capture
+specific IP addresses or subnets (in [CIDR][def] format), one per line,
+that you want to block. Some of your custom blacklist IPs may be found
+when you run the banip, so this file (`custom_blacklist.txt`) will be
 overwritten to remove the duplicates. The contents of the de-duplicated
-file will be appended to the list generated when you run the program.
+file will then be appended to the list generated when you run the
+program.
+
+This file is optional. If you choose not to use it, banip will create a
+blank one when you run it.
 
 *Note: If you're concerned about keeping your original list of custom
-bans, save a copy of it somewhere outside the repository.*
+blacklisted IPs, save a copy of it somewhere outside the repository.*
 
 When you're done, the `~/banip/data` directory should look like this:
 
 ```text
 ├── data
-│   ├── custom_bans.txt
-│   ├── geolite
+│   ├── custom_blacklist.txt (optional)
+│   ├── custom_whitelist.txt (optional)
+│   ├── geolite (required)
 │   │   ├── COPYRIGHT.txt
 │   │   ├── GeoLite2-Country-Blocks-IPv4.csv
 │   │   ├── GeoLite2-Country-Blocks-IPv6.csv
@@ -167,8 +190,8 @@ When you're done, the `~/banip/data` directory should look like this:
 │   │   ├── GeoLite2-Country-Locations-ru.csv
 │   │   ├── GeoLite2-Country-Locations-zh-CN.csv
 │   │   └── LICENSE.txt
-│   ├── ipsum.txt
-│   └── targets.txt
+│   ├── ipsum.txt (required)
+│   └── targets.txt (required)
 ```
 
 ## Running

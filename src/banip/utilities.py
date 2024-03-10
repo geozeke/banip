@@ -11,10 +11,12 @@ from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
+from banip.contants import BANNED_IPS
 from banip.contants import COUNTRY_NETS
 from banip.contants import GEOLITE_4
 from banip.contants import GEOLITE_6
 from banip.contants import GEOLITE_LOC
+from banip.contants import RENDERED_BLACKLIST
 
 # ===============================================================
 
@@ -244,3 +246,46 @@ def tag_networks() -> None:
         for key in keys_6:
             f.write(f"{format(key)} {ipv6_D[key]}\n")
     print("Done\n")
+
+
+# ===============================================================
+
+
+def check_ip(ip: str) -> None:
+    """Display available data for a particular IP address.
+
+    Parameters
+    ----------
+    ip : str
+        IPv4 or IPv address of interest.
+    """
+    try:
+        ipa.ip_address(ip)
+    except ValueError:
+        print(f"{ip} is not a valid IP address.")
+        return
+
+    found = False
+    if RENDERED_BLACKLIST.exists():
+        with open(RENDERED_BLACKLIST, "r") as f:
+            for line in f:
+                if ip in line:
+                    source = RENDERED_BLACKLIST.name
+                    print(f"{ip} found in {source}")
+                    found = True
+                    break
+
+    if BANNED_IPS.exists():
+        with open(BANNED_IPS, "r") as f:
+            for line in f:
+                if ip in line:
+                    source = BANNED_IPS.name
+                    hitcount = line.split()[1]
+                    print(f"{ip} found in {source} with {hitcount} hits.")
+                    found = True
+                    break
+
+    if not found:
+        print(f"{ip} not found.")
+
+    return

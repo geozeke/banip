@@ -22,7 +22,6 @@ from banip.contants import IPS
 from banip.contants import PAD
 from banip.contants import RENDERED_BLACKLIST
 from banip.contants import TARGETS
-from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import filter
 from banip.utilities import split46
@@ -37,8 +36,6 @@ def banned_ips(args: Namespace) -> None:
     args : Namespace
         Command line arguments.
     """
-    clear()
-
     # Start by stubbing-out custom files if they're not already in
     # place.
 

@@ -73,7 +73,7 @@ own use.
 
 *Details on gitignore files are available on [GitHub][def3].*
 
-### List of blacklisted IPs
+### Global list of blacklisted IPs
 
 Download the list as follows:
 
@@ -90,11 +90,11 @@ already is*).
 
 ### Unpack GeoLite2 data
 
-Unpack the GeoLite2-Country file and save the files to a location you
-can easily get to.
+Unpack the GeoLite2-Country zip archive and save the files to a location
+you can easily get to.
 
 *Note: if you're looking for a quick way to download the MaxMind data
-using `curl` and a direct download link, [SEE HERE][def4].*
+using `curl` and a direct download permalink, [SEE HERE][def4].*
 
 ### Clone the repository
 
@@ -201,12 +201,6 @@ to learn how to build your custom blacklist:
 
 ```shell
 poetry run banip -h
-```
-
-When you're ready, run banip again using poetry:
-
-```shell
-poetry run banip <output_file> [OPTIONS]
 ```
 
 ## Updating

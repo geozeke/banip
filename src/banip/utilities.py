@@ -290,3 +290,26 @@ def check_ip(ip: str) -> None:
         print(f"{ip} not found.")
 
     return
+
+
+# ===============================================================
+
+
+def ip_in_network(
+    ip: Any,
+    networks: list[Any],
+    start: int,
+    finish: int,
+) -> bool:
+    """Do this."""
+    if start > finish:
+        return False
+    mid = (start + finish) // 2
+    # print(type(ip), type(networks[mid]))
+    if ip in networks[mid]:
+        return True
+    inner_edge = ipa.ip_network(networks[mid])[0]
+    if ip < inner_edge:
+        return ip_in_network(ip, networks, start, mid - 1)
+    else:
+        return ip_in_network(ip, networks, mid + 1, finish)

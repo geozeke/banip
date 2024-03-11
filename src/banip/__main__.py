@@ -9,7 +9,6 @@ from argparse_formatter import ParagraphFormatter  # type:ignore
 from banip.build_list import banned_ips
 from banip.contants import RENDERED_BLACKLIST
 from banip.utilities import check_ip
-from banip.utilities import clear
 
 
 def main() -> None:
@@ -73,7 +72,6 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    clear()
     if hasattr(args, "ip"):
         check_ip(args.ip)
     else:

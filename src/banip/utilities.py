@@ -265,6 +265,7 @@ def check_ip(ip: str) -> None:
         print(f"{ip} is not a valid IP address.")
         return
 
+    print()
     found = False
     if RENDERED_BLACKLIST.exists():
         with open(RENDERED_BLACKLIST, "r") as f:

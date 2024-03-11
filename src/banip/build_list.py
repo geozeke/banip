@@ -6,6 +6,7 @@ import shutil
 import sys
 from argparse import Namespace
 from datetime import datetime as dt
+from ipaddress import IPv4Address
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +26,7 @@ from banip.contants import TARGETS
 from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import filter
+from banip.utilities import ip_in_network
 from banip.utilities import split46
 from banip.utilities import tag_networks
 
@@ -85,7 +87,8 @@ def banned_ips(args: Namespace) -> None:
     # Create a dictionary to hold all generated lists. These are the
     # keys that will be used:
 
-    # CN:  Country subnets.
+    # CN4: Country subnets (IPv4).
+    # CN6: Country subnets (IPv6).
     # II:  Blacklisted IPs from the ipsum.txt curated list that meet the
     #      minimum confidence factor.
     # BI4: Blacklisted IPv4 addresses from the ipsum.txt curated list
@@ -101,11 +104,16 @@ def banned_ips(args: Namespace) -> None:
 
     D: dict[str, list[Any]] = {}
 
-    # Create a list of all networks for target countries.
+    # Create a list of all networks for target countries and separate
+    # them by IP version, then sort them so we can perform binary
+    # searches when determining if a given IP exists in a given network.
 
     print(f"Pulling networks for country codes: {countries}")
-    D["CN"] = filter(COUNTRY_NETS, countries)
-    print(f"Networks pulled: {len(D['CN']):,d}")
+    bag_of_nets = filter(COUNTRY_NETS, countries)
+    D["CN4"], D["CN6"] = split46(bag_of_nets)
+    D["CN4"].sort()
+    D["CN6"].sort()
+    print(f"Networks pulled: {len(bag_of_nets):,d}")
 
     # Now process the ipsum.txt file of blacklisted IPs, filtering out
     # those that have less than the desired number of blacklist
@@ -116,9 +124,8 @@ def banned_ips(args: Namespace) -> None:
     D["II"] = filter(BANNED_IPS, args.threshold)
     print(f"IPs pulled: {len(D['II']):,d}")
 
-    # This part takes the longest. Store those blacklisted IPs, with the
-    # minimum number of hits, that are also hosted on the networks of
-    # target countries.
+    # Store those blacklisted IPs, with the minimum number of hits, that
+    # are also hosted on the networks of target countries.
 
     print()
     bag_of_ips = []
@@ -130,10 +137,13 @@ def banned_ips(args: Namespace) -> None:
         colour="#bf80f2",
         unit="IPs",
     ):
-        for network in D["CN"]:
-            if ip in network:
-                bag_of_ips.append(ip)
-                break
+        if type(ip) is IPv4Address:
+            target_net = D["CN4"]
+        else:
+            target_net = D["CN6"]
+        found = ip_in_network(ip, target_net, 0, len(target_net) - 1)
+        if found:
+            bag_of_ips.append(ip)
 
     # Separate and sort the blacklisted IPs into IPv4 and IPV6. This is
     # required because you cannot sort a mixed list of v4/v6 items.

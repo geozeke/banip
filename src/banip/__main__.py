@@ -4,8 +4,6 @@
 
 import argparse
 
-from argparse_formatter import ParagraphFormatter  # type:ignore
-
 from banip.build_list import banned_ips
 from banip.contants import RENDERED_BLACKLIST
 from banip.utilities import check_ip
@@ -13,33 +11,31 @@ from banip.utilities import check_ip
 
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
-    msg = """banip will create a list of banned (blacklisted)
-    client IP addresses to be used with a proxy server (like HAProxy) to
-    block network access from those clients. Alternatively, you can use
-    banip to check to see if a single IP address is found in the
-    blacklist.
-
-    Please review the README file at this link for detailed instructions
-    on setting up banip: https://github.com/geozeke/ubuntu"""
+    msg = """Generate and query IP blacklists for use with proxy servers
+    (like HAProxy). Please review the README file at
+    https://github.com/geozeke/ubuntu for detailed instructions on
+    setting up banip."""
 
     epi = "Version: 0.1.0"
 
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,
-        formatter_class=ParagraphFormatter,
     )
 
-    subparsers = parser.add_subparsers(title="Sub-commands")
-    msg = """Alternatively, you can use banip to check to see if a
-    single IP address is found in the blacklist. Run banip check -h for
-    more."""
+    subparsers = parser.add_subparsers(title="Commands")
+    msg = """Check to see if a single IP address is found in the
+    blacklist. Run \"banip check -h" for more."""
     subparser_check = subparsers.add_parser(name="check", help=msg)
+    msg = """Create a list of banned (blacklisted) client IP addresses
+    to be used with a proxy server (like HAProxy) to block network
+    access from those clients. Run \"banip build -h" for more."""
+    subparser_build = subparsers.add_parser(name="build", help=msg)
 
-    msg = """Output file that will contain the generated list of banned
-    IP addresses. If not provided, results will be saved to
+    msg = """Output file that will contain the generated list of
+    blacklisted IP addresses. If not provided, results will be saved to
     ./data/ip_blacklist.txt"""
-    parser.add_argument(
+    subparser_build.add_argument(
         "-o",
         "--outfile",
         type=argparse.FileType("w"),
@@ -51,9 +47,9 @@ def main() -> None:
     is a malicious actor (higher is more confident). The default
     threshold used is 3. Anything less than that may result in false
     positives, but you may choose any threshold from 1 to 10. If you
-    find you are getting false positives, just re-run banip with a
-    higher threshold."""
-    parser.add_argument(
+    find you're getting false positives, just re-run banip with a higher
+    threshold."""
+    subparser_build.add_argument(
         "-t",
         "--threshold",
         type=int,

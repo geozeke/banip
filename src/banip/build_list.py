@@ -221,8 +221,9 @@ def banned_ips(args: Namespace) -> None:
     # ./data/ip_blacklist.txt. This will be used when running banip to
     # check an individual IP address.
 
+    args.outfile.close()
     if Path(args.outfile.name) != RENDERED_BLACKLIST:
-        shutil.copyfile(args.outfile.name, RENDERED_BLACKLIST)
+        shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     # Calculate final metrics and display results.
 

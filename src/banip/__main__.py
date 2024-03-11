@@ -80,7 +80,6 @@ def main() -> None:
         if not args.outfile:
             args.outfile = open(RENDERED_BLACKLIST, "w")
         banned_ips(args)
-        args.outfile.close()
     return
 
 

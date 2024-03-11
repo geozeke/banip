@@ -47,11 +47,12 @@ def main() -> None:
     )
 
     msg = """Each banned IP address in the source database has a factor
-    (from 1 to 10) indicating a level of certainty that the IP address
-    is a malicious actor. The default threshold used is 3. Anything
-    less than that may result in false positives and increases the time
-    required to generate the list. You may choose any threshold from 1
-    to 10, but I recommend not going lower than 3."""
+    (from 1 to 10) indicating a level of confidence that the IP address
+    is a malicious actor (higher is more confident). The default
+    threshold used is 3. Anything less than that may result in false
+    positives, but you may choose any threshold from 1 to 10. If you
+    find you are getting false positives, just re-run banip with a
+    higher threshold."""
     parser.add_argument(
         "-t",
         "--threshold",

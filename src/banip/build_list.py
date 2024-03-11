@@ -68,11 +68,11 @@ def banned_ips(args: Namespace) -> None:
     bag_of_ips: list[Any]
     bag_of_nets: list[Any]
 
-    # Create the haproxy_geo_ip (COUNTRY_NETS) file.
+    # Create the haproxy_geo_ip.txt (COUNTRY_NETS) file.
 
     tag_networks()
 
-    # Import target countries
+    # Import target countries (two-letter designations, e.g. US)
 
     with open(TARGETS, "r") as f:
         countries = [
@@ -81,18 +81,18 @@ def banned_ips(args: Namespace) -> None:
             if (country := line.strip()) and country[0] != "#"
         ]  # fmt: skip
 
-    # Create a dictionary to hold all the generated lists. These are the
+    # Create a dictionary to hold all generated lists. These are the
     # keys that will be used:
 
     # CN:  Country subnets.
-    # II:  Blacklisted IPs from the ipsum curated list that meet the
+    # II:  Blacklisted IPs from the ipsum.txt curated list that meet the
     #      minimum confidence factor.
-    # BI4: Blacklisted IPv4 addresses from the ipsum curated list that
-    #      meet the minimum confidence factor and are also from a target
-    #      country.
-    # BI6: Blacklisted IPv6 addresses from the ipsum curated list that
-    #      meet the minimum confidence factor and are also from a target
-    #      country.
+    # BI4: Blacklisted IPv4 addresses from the ipsum.txt curated list
+    #      that meet the minimum confidence factor and are also from a
+    #      target country.
+    # BI6: Blacklisted IPv6 addresses from the ipsum.txt curated list
+    #      that meet the minimum confidence factor and are also from a
+    #      target country.
     # CI4: My custom blacklisted IPv4 addresses.
     # CI6: My custom blacklisted IPv6 addresses.
     # CN4: My custom blacklisted IPv4 subnets.
@@ -100,15 +100,15 @@ def banned_ips(args: Namespace) -> None:
 
     D: dict[str, list[Any]] = {}
 
-    # Create a list of all networks just for target countries.
+    # Create a list of all networks for target countries.
 
     print(f"Pulling networks for country codes: {countries}")
     D["CN"] = filter(COUNTRY_NETS, countries)
     print(f"Networks pulled: {len(D['CN']):,d}")
 
-    # Now process the ipsum file of blacklisted IPs, filtering out those
-    # that have less than the desired number of blacklist occurrences
-    # (hits)
+    # Now process the ipsum.txt file of blacklisted IPs, filtering out
+    # those that have less than the desired number of blacklist
+    # occurrences (hits)
 
     print()
     print(f"Pulling blacklisted IPs with >= {args.threshold} hits.")
@@ -116,7 +116,7 @@ def banned_ips(args: Namespace) -> None:
     print(f"IPs pulled: {len(D['II']):,d}")
 
     # This part takes the longest. Store those blacklisted IPs, with the
-    # minimum number of hits that are also hosted on the networks of
+    # minimum number of hits, that are also hosted on the networks of
     # target countries.
 
     print()
@@ -135,21 +135,20 @@ def banned_ips(args: Namespace) -> None:
                 break
 
     # Separate and sort the blacklisted IPs into IPv4 and IPV6. This is
-    # required, because you cannot sort a mixed list of v4/v6 items.
+    # required because you cannot sort a mixed list of v4/v6 items.
 
     D["BI4"], D["BI6"] = split46(bag_of_ips)
     b_keys = ["BI4", "BI6"]
     for key in b_keys:
         D[key].sort()
-
     print(f"IPs pulled: {len(bag_of_ips):,d}")
 
     # Open the custom blacklist and prune any IPs or networks that were
     # already discovered while building the list of blacklisted IPs.
     # Finally, create individual lists of IPs/Nets and sort them. There
     # are two levels of validation: (1) Make sure the input line is not
-    # blank, and (2) Make sure the line converts to either a valid IP
-    # addess or valid IP subnet.
+    # blank, and (2) Make sure a given line converts to either a valid
+    # IP address or valid IP subnet.
 
     bag_of_nets = []
     bag_of_ips = []
@@ -174,7 +173,7 @@ def banned_ips(args: Namespace) -> None:
     for key in c_keys:
         D[key].sort()
 
-    # Overwrite my custom blacklist with the duplicates removed. This
+    # Overwrite the custom blacklist with the duplicates removed. This
     # will also reorder the file as: IPv4, IPv6, Subnets(v4),
     # Subnets(v6)
 
@@ -183,10 +182,10 @@ def banned_ips(args: Namespace) -> None:
             for chunk in D[key]:
                 f.write(f"{format(chunk)}\n")
 
-    # Remove any custom whitelisted IPs from those that may have been
-    # found by banip. There are two levels of validation: (1) Make sure
-    # the input line is not blank, and (2) Make sure the line converts
-    # to either a valid IP addess or valid IP subnet.
+    # Remove any custom whitelisted IPs from the blacklist created by
+    # banip. There are two levels of validation: (1) Make sure the input
+    # line is not blank, and (2) Make sure the line converts to either a
+    # valid IP addess or valid IP subnet.
 
     whitelist: Any = []
     with open(CUSTOM_WHITELIST, "r") as f:

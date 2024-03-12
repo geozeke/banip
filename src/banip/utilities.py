@@ -234,7 +234,7 @@ def tag_networks() -> None:
                 country_id = countries_D[int(net[2])]
             ipv6_D[ipa.IPv6Network(net[0])] = country_id
 
-    print("\nGenerating files...", end="")
+    print("\nGenerating interim build products...", end="")
     keys_4 = list(ipv4_D.keys())
     keys_6 = list(ipv6_D.keys())
     keys_4.sort()
@@ -298,18 +298,40 @@ def check_ip(ip: str) -> None:
 def ip_in_network(
     ip: Any,
     networks: list[Any],
-    start: int,
-    finish: int,
+    first: int,
+    last: int,
 ) -> bool:
-    """Do this."""
-    if start > finish:
+    """Check if a single IP is in a list of networks.
+
+    This is a recursive binary search across a list of networks (either
+    all IPv4 or all IPv6) to see if a single IP address is contained in
+    any of the networks.
+
+    Parameters
+    ----------
+    ip : Any
+        This will be either an IPv4 or IPv6 address, in ip_address()
+        format.
+    networks : list[Any]
+        This is a homogenous list of networks. The type of items in the
+        list with be either IPv4Network or IPv6Network.
+    first : int
+        The starting index in the binary search.
+    last : int
+        The ending index in the binary search.
+
+    Returns
+    -------
+    bool
+        True if ip is in any of the networks in the list; False
+        otherwise.
+    """
+    if first > last:
         return False
-    mid = (start + finish) // 2
-    # print(type(ip), type(networks[mid]))
-    if ip in networks[mid]:
+    mid = (first + last) // 2
+    clients = ipa.ip_network(networks[mid])
+    if ip in clients:
         return True
-    inner_edge = ipa.ip_network(networks[mid])[0]
-    if ip < inner_edge:
-        return ip_in_network(ip, networks, start, mid - 1)
-    else:
-        return ip_in_network(ip, networks, mid + 1, finish)
+    if ip < clients[0]:
+        return ip_in_network(ip, networks, first, mid - 1)
+    return ip_in_network(ip, networks, mid + 1, last)

@@ -156,7 +156,7 @@ cp sample-custom_blacklist.txt ./data/custom_blacklist.txt
 
 The source database of banned IPs isn't perfect. You may determine that
 there's an IP address you want to ban this is not found in `ipsum.txt`.
-Also, the `ipsum.txt` file only contains IP addesses, and you may want
+Also, the `ipsum.txt` file only contains IP addresses, and you may want
 to ban an entire subnet. The custom blacklist allows you to capture
 specific IP addresses or subnets (in [CIDR][def] format), one per line,
 that you want to block. Some of your custom blacklist IPs may be found
@@ -174,24 +174,24 @@ blacklisted IPs, save a copy of it somewhere outside the repository.*
 When you're done, the `~/banip/data` directory should look like this:
 
 ```text
-├── data
-│   ├── custom_blacklist.txt (optional)
-│   ├── custom_whitelist.txt (optional)
-│   ├── geolite (required)
-│   │   ├── COPYRIGHT.txt
-│   │   ├── GeoLite2-Country-Blocks-IPv4.csv
-│   │   ├── GeoLite2-Country-Blocks-IPv6.csv
-│   │   ├── GeoLite2-Country-Locations-de.csv
-│   │   ├── GeoLite2-Country-Locations-en.csv
-│   │   ├── GeoLite2-Country-Locations-es.csv
-│   │   ├── GeoLite2-Country-Locations-fr.csv
-│   │   ├── GeoLite2-Country-Locations-ja.csv
-│   │   ├── GeoLite2-Country-Locations-pt-BR.csv
-│   │   ├── GeoLite2-Country-Locations-ru.csv
-│   │   ├── GeoLite2-Country-Locations-zh-CN.csv
-│   │   └── LICENSE.txt
-│   ├── ipsum.txt (required)
-│   └── targets.txt (required)
+data
+├── custom_blacklist.txt (optional)
+├── custom_whitelist.txt (optional)
+├── geolite (required)
+│   ├── COPYRIGHT.txt
+│   ├── GeoLite2-Country-Blocks-IPv4.csv
+│   ├── GeoLite2-Country-Blocks-IPv6.csv
+│   ├── GeoLite2-Country-Locations-de.csv
+│   ├── GeoLite2-Country-Locations-en.csv
+│   ├── GeoLite2-Country-Locations-es.csv
+│   ├── GeoLite2-Country-Locations-fr.csv
+│   ├── GeoLite2-Country-Locations-ja.csv
+│   ├── GeoLite2-Country-Locations-pt-BR.csv
+│   ├── GeoLite2-Country-Locations-ru.csv
+│   ├── GeoLite2-Country-Locations-zh-CN.csv
+│   └── LICENSE.txt
+├── ipsum.txt (required)
+└── targets.txt (required)
 ```
 
 ## Running

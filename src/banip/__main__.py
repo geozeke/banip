@@ -24,13 +24,13 @@ def main() -> None:
     )
 
     subparsers = parser.add_subparsers(title="Commands")
-    msg = """Check to see if a single IP address is found in the
-    blacklist. Run \"banip check -h" for more."""
-    subparser_check = subparsers.add_parser(name="check", help=msg)
     msg = """Create a list of banned (blacklisted) client IP addresses
     to be used with a proxy server (like HAProxy) to block network
     access from those clients. Run \"banip build -h" for more."""
     subparser_build = subparsers.add_parser(name="build", help=msg)
+    msg = """Check to see if a single IP address is found in the
+    blacklist. Run \"banip check -h" for more."""
+    subparser_check = subparsers.add_parser(name="check", help=msg)
 
     msg = """Output file that will contain the generated list of
     blacklisted IP addresses. If not provided, results will be saved to

@@ -218,14 +218,20 @@ def banned_ips(args: Namespace) -> None:
         for ip in D[key]:
             args.outfile.write(f"{format(ip)}\n")
 
-    now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-    args.outfile.write("\n# ------------custom entries -------------\n")
-    args.outfile.write(f"# Added on: {now}\n")
-    args.outfile.write("# ----------------------------------------\n\n")
-
+    custom_present = False
     for key in c_keys:
-        for chunk in D[key]:
-            args.outfile.write(f"{format(chunk)}\n")
+        if len(D[key]) > 0:
+            custom_present = True
+            break
+
+    if custom_present:
+        now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        args.outfile.write("\n# ------------custom entries -------------\n")
+        args.outfile.write(f"# Added on: {now}\n")
+        args.outfile.write("# ----------------------------------------\n\n")
+        for key in c_keys:
+            for chunk in D[key]:
+                args.outfile.write(f"{format(chunk)}\n")
 
     # Save a copy of the generated IP blacklist to
     # ./data/ip_blacklist.txt. This will be used when running banip to

@@ -21,7 +21,12 @@ from banip.contants import HOME
 from banip.contants import RENDERED_BLACKLIST
 from banip.utilities import clear
 
-target_country = sys.argv[1].upper()
+try:
+    target_country = sys.argv[1].upper()
+except IndexError:
+    print("Please provide a two-letter country code.")
+    sys.exit(1)
+
 regex = r"(?<=[\s=])(\w+)=([^=\s]+)(?=\s|$)"
 LOGS = HOME / "data/logs.txt"
 clear()

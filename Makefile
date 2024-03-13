@@ -10,6 +10,14 @@ ifeq (,$(wildcard .init/setup))
 	@if [ ! -d "./data" ]; then \
 		mkdir -p data/geolite; \
 	fi
+	@if [ ! -d "./src/plugins/argument_parsers" ]; then \
+		mkdir -p src/plugins/argument_parsers; \
+		touch src/plugins/argument_parsers/__init__.py; \
+	fi
+	@if [ ! -d "./src/plugins/code" ]; then \
+		mkdir -p src/plugins/code; \
+		touch src/plugins/code/__init__.py; \
+	fi
 	mkdir .init
 	touch .init/setup
 	poetry install --only=main
@@ -55,8 +63,8 @@ reset: clean ## remove venv, artifacts, and init directory
 # --------------------------------------------
 
 .PHONY: clean
-clean: ## cleanup python build artifacts
-	@echo Cleaning python build artifacts
+clean: ## cleanup python runtime artifacts
+	@echo Cleaning python runtime artifacts
 	@find . -type d -name __pycache__ -exec rm -rf {} \; -prune
 
 # --------------------------------------------

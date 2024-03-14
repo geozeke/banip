@@ -30,6 +30,10 @@ those whitelisted countries. This tool accomplishes that.
 
 * [Requirements](#requirements)
 * [Setup](#setup)
+* [Running](#running)
+* [Updating](#updating)
+* [Plugins](#plugins)
+* [Uninstalling](#uninstall)
 
 ## <a id="requirements"></a> Requirements
 
@@ -201,7 +205,9 @@ data
 └── targets.txt (required)
 ```
 
-## Running
+[top](#top)
+
+## <a id="running"></a> Running
 
 After copying/tweaking all the required files, start with this command
 to learn how to build your custom blacklist:
@@ -210,7 +216,9 @@ to learn how to build your custom blacklist:
 poetry run banip -h
 ```
 
-## Updating
+[top](#top)
+
+## <a id="updating"></a> Updating
 
 MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
 and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
@@ -218,16 +226,17 @@ updated copies of both and put them in `banip/data/geolite` (for the
 GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run `banip`
 again to generate an updated blacklist.
 
-## Plugins
+[top](#top)
 
-banip generates some useful data that you may want to use for other
-purposes. For example, everytime you build a new blacklist banip also
-creates and saves a textfile of all worldwide subnets, each tagged with
-a two-letter country code. The file is saved in
-`./banip/data/haproxy_geo_ip.txt`. Next time you run banip, open that
-file and take a look at it. Since you may have a very specific usecase
-for that data, you can write a plugin for banip which will make use of
-the build products for your purposes.
+## <a id="plugins"></a> Plugins
+
+banip generates some data that you may want to use for other purposes.
+For example, everytime you build a new blacklist banip also creates and
+saves a textfile of all worldwide subnets, each tagged with a two-letter
+country code. The file is saved in `./banip/data/haproxy_geo_ip.txt`.
+Next time you run banip, open that file and take a look at it. Since you
+may have a very specific usecase for that data, you can write a plugin
+for banip which will make use of the build products for your purposes.
 
 A banip plugin allows you to create new commands and consists of two
 required files:
@@ -236,23 +245,29 @@ required files:
 2. Code that implements the functionality of your new command.
 
 All your plugins go into the `./src/plugins` directory in the
-appropriate subdirectory (either `argument_parsers` or `code`). Plugins
-are not under version control, so they will only be local to your
-machine. Look at the comments in these two files for instructions on
-creating your own commands:
+appropriate subdirectory (either `argument_parsers` or `code`). Your
+plugins are not under version control, so they will only reside on your
+machine.
+
+Look at the comments in these two files for instructions on how to
+create your own commands:
 
 ```text
-./samples/plugins/foo_args.py
 ./samples/plugins/foo.py
+./samples/plugins/foo_args.py
 ```
 
-## Uninstalling banip
+[top](#top)
+
+## <a id="uninstall"></a> Uninstalling banip
 
 If you want out, just do this:
 
 ```shell
 rm -rf ~/.banip
 ```
+
+[top](#top)
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/

@@ -74,7 +74,7 @@ def main() -> None:
     (like HAProxy). For help on any command, run: "banip {command} -h".
     Please review the README file at https://github.com/geozeke/ubuntu
     for detailed instructions on setting up banip."""
-    epi = "Version: 0.2.0"
+    epi = "Version: 1.0.0"
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,

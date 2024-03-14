@@ -158,4 +158,5 @@ cython_debug/
 # Custom exclusions
 data/
 src/plugins/
+scratch/
 .init/

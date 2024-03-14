@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "banip"
-version = "0.2.0"
+version = "1.0.0"
 description = "Create a custom list of band ip for specific countries"
 authors = ["Peter Nardi <pete@nardi.com>"]
 license = "MIT"

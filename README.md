@@ -1,4 +1,4 @@
-# banip
+# <a id="top"></a> banip
 
 <img
 src="https://drive.google.com/uc?export=view&id=1H04KVAA3ohH_dLXIrC0bXuJXDn3VutKc"
@@ -26,7 +26,12 @@ from all countries except those that I've whitelisted. I also want the
 ability to create a customized IP list to block any bad actors from
 those whitelisted countries. This tool accomplishes that.
 
-## Requirements
+## Contents
+
+* [Requirements](#requirements)
+* [Setup](#setup)
+
+## <a id="requirements"></a> Requirements
 
 ### Operating System
 
@@ -86,7 +91,9 @@ curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ips
 You'll need the [make][def6] utility installed (*it probably
 already is*).
 
-## Setup
+[top](#top)
+
+## <a id="setup"></a> Setup
 
 ### Unpack GeoLite2 data
 
@@ -128,7 +135,7 @@ cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 #### Target countries
 
 ```shell
-cp sample-targets.txt ./data/targets.txt
+cp ./samples/targets.txt ./data/targets.txt
 ```
 
 Modify `./data/targets.txt` to select your desired target countries. The
@@ -137,7 +144,7 @@ comments in the file will guide you.
 #### Custom whitelist (optional)
 
 ```shell
-cp sample-custom_whitelist.txt ./data/custom_whitelist.txt
+cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
 ```
 
 There may be IP addresses that banip will flag as malicious, but you
@@ -151,7 +158,7 @@ blank one when you run it.
 #### Custom blacklist (optional)
 
 ```shell
-cp sample-custom_blacklist.txt ./data/custom_blacklist.txt
+cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt
 ```
 
 The source database of banned IPs isn't perfect. You may determine that
@@ -210,6 +217,42 @@ and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
 updated copies of both and put them in `banip/data/geolite` (for the
 GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run `banip`
 again to generate an updated blacklist.
+
+## Plugins
+
+banip generates some useful data that you may want to use for other
+purposes. For example, everytime you build a new blacklist banip also
+creates and saves a textfile of all worldwide subnets, each tagged with
+a two-letter country code. The file is saved in
+`./banip/data/haproxy_geo_ip.txt`. Next time you run banip, open that
+file and take a look at it. Since you may have a very specific usecase
+for that data, you can write a plugin for banip which will make use of
+the build products for your purposes.
+
+A banip plugin allows you to create new commands and consists of two
+required files:
+
+1. Code that generates an argument parser for your new command.
+2. Code that implements the functionality of your new command.
+
+All your plugins go into the `./src/plugins` directory in the
+appropriate subdirectory (either `argument_parsers` or `code`). Plugins
+are not under version control, so they will only be local to your
+machine. Look at the comments in these two files for instructions on
+creating your own commands:
+
+```text
+./samples/plugins/foo_args.py
+./samples/plugins/foo.py
+```
+
+## Uninstalling banip
+
+If you want out, just do this:
+
+```shell
+rm -rf ~/.banip
+```
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/

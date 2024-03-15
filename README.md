@@ -47,7 +47,7 @@ Machine, or [Windows Subsystem for Linux (WSL)][def7] is required.
 You'll need a copy of the [MaxMind][def8] GeoLite2 database for
 country-level geotagging of IP addresses. If you have a premium or
 corporate MaxMind account, you're all set. If not, the free GeoLite2
-account will work just fine ([signup here][def5]). Once you login, on
+account will work just fine ([signup here][def5]). Once you login, using
 the menu on the top right select:
 
 ```text
@@ -84,7 +84,8 @@ own use.
 
 ### Global list of blacklisted IPs
 
-Download the list as follows:
+banip uses the [ipsum][def9] threat intelligence blacklist. You can
+direct download it using:
 
 ```shell
 curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ipsum.txt
@@ -209,11 +210,17 @@ data
 
 ## <a id="running"></a> Running
 
-After copying/tweaking all the required files, start with this command
-to learn how to build your custom blacklist:
+After copying/tweaking all the required files, start by activating the
+python virtual environment:
 
 ```shell
-poetry run banip -h
+source .venv/bin/activate
+```
+
+Now run this command to learn how to build your custom blacklist:
+
+```shell
+banip -h
 ```
 
 [top](#top)
@@ -233,13 +240,17 @@ again to generate an updated blacklist.
 banip generates some data that you may want to use for other purposes.
 For example, everytime you build a new blacklist banip also creates and
 saves a textfile of all worldwide subnets, each tagged with a two-letter
-country code. The file is saved in `./banip/data/haproxy_geo_ip.txt`.
+country code. The file is saved in:
+
+```'text
+./banip/data/haproxy_geo_ip.txt
+```
+
 Next time you run banip, open that file and take a look at it. Since you
 may have a very specific usecase for that data, you can write a plugin
 for banip which will make use of the build products for your purposes.
 
-A banip plugin allows you to create new commands and consists of two
-required files:
+A banip plugin consists of two required files:
 
 1. Code that generates an argument parser for your new command.
 2. Code that implements the functionality of your new command.
@@ -250,7 +261,7 @@ plugins are not under version control, so they will only reside on your
 machine.
 
 Look at the comments in these two files for instructions on how to
-create your own commands:
+create your own plugins:
 
 ```text
 ./samples/plugins/foo.py
@@ -277,3 +288,4 @@ rm -rf ~/.banip
 [def4]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
 [def5]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
 [def8]: https://www.maxmind.com/en/home
+[def9]: https://github.com/stamparm/ipsum

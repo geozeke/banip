@@ -245,7 +245,7 @@ required files:
 2. Code that implements the functionality of your new command.
 
 All your plugins go into the `./src/plugins` directory in the
-appropriate subdirectory (either `argument_parsers` or `code`). Your
+appropriate subdirectory (either `parsers` or `code`). Your
 plugins are not under version control, so they will only reside on your
 machine.
 

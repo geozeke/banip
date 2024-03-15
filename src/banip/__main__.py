@@ -32,9 +32,9 @@ def collect_modules(start: Path) -> list[str]:
     for p in start.iterdir():
         if p.is_file() and p.name != "__init__.py":
             if "plugins" in str(p):
-                prefix = "plugins.argument_parsers"
+                prefix = "plugins.parsers"
             else:
-                prefix = "argument_parsers"
+                prefix = "parsers"
             module_names.append(f"{prefix}.{p.stem}")
     return module_names
 

@@ -8,10 +8,10 @@ from pathlib import Path
 
 HOME = Path(__file__).parents[2]
 
-ARG_PARSERS_BASE = HOME / "src/argument_parsers"
+ARG_PARSERS_BASE = HOME / "src/parsers"
 BANNED_IPS = HOME / "data/ipsum.txt"
 COUNTRY_NETS = HOME / "data/haproxy_geo_ip.txt"
-CUSTOM_ARG_PARSERS = HOME / "src/plugins/argument_parsers"
+CUSTOM_ARG_PARSERS = HOME / "src/plugins/parsers"
 CUSTOM_BLACKLIST = HOME / "data/custom_blacklist.txt"
 CUSTOM_CODE = HOME / "src/plugins/code"
 CUSTOM_WHITELIST = HOME / "data/custom_whitelist.txt"

@@ -10,9 +10,9 @@ ifeq (,$(wildcard .init/setup))
 	@if [ ! -d "./data" ]; then \
 		mkdir -p data/geolite; \
 	fi
-	@if [ ! -d "./src/plugins/argument_parsers" ]; then \
-		mkdir -p src/plugins/argument_parsers; \
-		touch src/plugins/argument_parsers/__init__.py; \
+	@if [ ! -d "./src/plugins/parsers" ]; then \
+		mkdir -p src/plugins/parsers; \
+		touch src/plugins/parsers/__init__.py; \
 	fi
 	@if [ ! -d "./src/plugins/code" ]; then \
 		mkdir -p src/plugins/code; \

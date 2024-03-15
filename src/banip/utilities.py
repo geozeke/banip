@@ -3,6 +3,7 @@
 import csv
 import ipaddress as ipa
 import os
+import textwrap
 from ipaddress import IPv4Address
 from ipaddress import IPv4Network
 from ipaddress import IPv6Network
@@ -11,14 +12,37 @@ from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
-from banip.contants import BANNED_IPS
-from banip.contants import COUNTRY_NETS
-from banip.contants import GEOLITE_4
-from banip.contants import GEOLITE_6
-from banip.contants import GEOLITE_LOC
-from banip.contants import RENDERED_BLACKLIST
+from banip.constants import COUNTRY_NETS
+from banip.constants import GEOLITE_4
+from banip.constants import GEOLITE_6
+from banip.constants import GEOLITE_LOC
 
-# ===============================================================
+# ======================================================================
+
+
+def wrap_tight(msg: str, columns=70) -> str:
+    """Clean up a multi-line docstring.
+
+    Take a multi-line docstring and wrap it cleanly as a paragraph to a
+    specified column width.
+
+    Parameters
+    ----------
+    msg : str
+        The docstring to be wrapped.
+    columns : int, optional
+        Column width for wrapping, by default 70.
+
+    Returns
+    -------
+    str
+        A wrapped paragraph.
+    """
+    clean = " ".join([t for token in msg.split("\n") if (t := token.strip())])
+    return textwrap.fill(clean, width=columns)
+
+
+# ======================================================================
 
 
 def clear() -> None:
@@ -29,7 +53,7 @@ def clear() -> None:
     os.system("clear" if os.name == "posix" else "cls")
 
 
-# ===============================================================
+# ======================================================================
 
 
 def extract_ip(from_str: str) -> Any:
@@ -61,7 +85,7 @@ def extract_ip(from_str: str) -> Any:
     return to_ip
 
 
-# ===============================================================
+# ======================================================================
 
 
 def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
@@ -93,7 +117,7 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
         f.seek(0)
         for line in tqdm(
             f,
-            desc="Lines",
+            desc="  Total lines",
             total=lines,
             colour="#bf80f2",
             unit="lines",
@@ -115,7 +139,7 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
     return bag
 
 
-# ===============================================================
+# ======================================================================
 
 
 def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
@@ -146,7 +170,7 @@ def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
     return bag4, bag6
 
 
-# ===============================================================
+# ======================================================================
 
 
 def tag_networks() -> None:
@@ -167,7 +191,7 @@ def tag_networks() -> None:
         next(reader)
         for country in tqdm(
             reader,
-            desc="Countries",
+            desc="    Countries",
             total=lines,
             colour="#bf80f2",
             unit="countries",
@@ -248,51 +272,7 @@ def tag_networks() -> None:
     print("Done\n")
 
 
-# ===============================================================
-
-
-def check_ip(ip: str) -> None:
-    """Display available data for a particular IP address.
-
-    Parameters
-    ----------
-    ip : str
-        IPv4 or IPv address of interest.
-    """
-    try:
-        ipa.ip_address(ip)
-    except ValueError:
-        print(f"{ip} is not a valid IP address.")
-        return
-
-    print()
-    found = False
-    if RENDERED_BLACKLIST.exists():
-        with open(RENDERED_BLACKLIST, "r") as f:
-            for line in f:
-                if ip in line:
-                    source = RENDERED_BLACKLIST.name
-                    print(f"{ip} found in {source}")
-                    found = True
-                    break
-
-    if BANNED_IPS.exists():
-        with open(BANNED_IPS, "r") as f:
-            for line in f:
-                if ip in line:
-                    source = BANNED_IPS.name
-                    hitcount = line.split()[1]
-                    print(f"{ip} found in {source} with {hitcount} hits.")
-                    found = True
-                    break
-
-    if not found:
-        print(f"{ip} not found.")
-
-    return
-
-
-# ===============================================================
+# ======================================================================
 
 
 def ip_in_network(

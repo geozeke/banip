@@ -12,17 +12,17 @@ from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
-from banip.contants import BANNED_IPS
-from banip.contants import COUNTRY_NETS
-from banip.contants import CUSTOM_BLACKLIST
-from banip.contants import CUSTOM_WHITELIST
-from banip.contants import GEOLITE_4
-from banip.contants import GEOLITE_6
-from banip.contants import GEOLITE_LOC
-from banip.contants import IPS
-from banip.contants import PAD
-from banip.contants import RENDERED_BLACKLIST
-from banip.contants import TARGETS
+from banip.constants import BANNED_IPS
+from banip.constants import COUNTRY_NETS
+from banip.constants import CUSTOM_BLACKLIST
+from banip.constants import CUSTOM_WHITELIST
+from banip.constants import GEOLITE_4
+from banip.constants import GEOLITE_6
+from banip.constants import GEOLITE_LOC
+from banip.constants import IPS
+from banip.constants import PAD
+from banip.constants import RENDERED_BLACKLIST
+from banip.constants import TARGETS
 from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import filter
@@ -31,7 +31,7 @@ from banip.utilities import split46
 from banip.utilities import tag_networks
 
 
-def banned_ips(args: Namespace) -> None:
+def task_runner(args: Namespace) -> None:
     """Generate a custom list of banned IP addresses.
 
     Parameters
@@ -40,14 +40,24 @@ def banned_ips(args: Namespace) -> None:
         Command line arguments.
     """
     # Start by stubbing-out custom files if they're not already in
-    # place.
+    # place. In the case of the output file, check for two things: (1)
+    # Was a file specified? If not, then save results to the default
+    # (RENDERED_BLACKLIST). (2) If the file was specified, was it the
+    # same name as the default? If so, there's no need to make a local
+    # copy of it after computations are complete.
     clear()
+    make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
         f = open(CUSTOM_BLACKLIST, "w")
         f.close()
     if not CUSTOM_WHITELIST.exists():
         f = open(CUSTOM_WHITELIST, "w")
         f.close()
+    try:
+        if Path(args.outfile.name) != RENDERED_BLACKLIST:
+            make_local_copy = True
+    except AttributeError:
+        args.outfile = open(RENDERED_BLACKLIST, "w")
 
     # Now make sure everything is in place
 
@@ -58,6 +68,7 @@ def banned_ips(args: Namespace) -> None:
         GEOLITE_4,
         GEOLITE_6,
         GEOLITE_LOC,
+        RENDERED_BLACKLIST,
         TARGETS,
     ]
     for file in files:
@@ -129,10 +140,10 @@ def banned_ips(args: Namespace) -> None:
 
     print()
     bag_of_ips = []
-    print(f"Building blacklisted IP list for country codes: {countries}")
+    print(f"Pulling blacklisted IP list for country codes: {countries}")
     for ip in tqdm(
         D["II"],
-        desc="IPs",
+        desc="Blacklist IPs",
         total=len(D["II"]),
         colour="#bf80f2",
         unit="IPs",
@@ -233,12 +244,13 @@ def banned_ips(args: Namespace) -> None:
             for chunk in D[key]:
                 args.outfile.write(f"{format(chunk)}\n")
 
+    args.outfile.close()
+
     # Save a copy of the generated IP blacklist to
     # ./data/ip_blacklist.txt. This will be used when running banip to
     # check an individual IP address.
 
-    args.outfile.close()
-    if Path(args.outfile.name) != RENDERED_BLACKLIST:
+    if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     # Calculate final metrics and display results.
@@ -252,3 +264,7 @@ def banned_ips(args: Namespace) -> None:
     print(f"Total banned IPs saved: {total_bans:>{PAD},d}")
 
     return
+
+
+if __name__ == "__main__":
+    pass

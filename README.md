@@ -1,4 +1,4 @@
-# banip
+# <a id="top"></a> banip
 
 <img
 src="https://drive.google.com/uc?export=view&id=1H04KVAA3ohH_dLXIrC0bXuJXDn3VutKc"
@@ -26,7 +26,16 @@ from all countries except those that I've whitelisted. I also want the
 ability to create a customized IP list to block any bad actors from
 those whitelisted countries. This tool accomplishes that.
 
-## Requirements
+## Contents
+
+* [Requirements](#requirements)
+* [Setup](#setup)
+* [Running](#running)
+* [Updating](#updating)
+* [Plugins](#plugins)
+* [Uninstalling](#uninstall)
+
+## <a id="requirements"></a> Requirements
 
 ### Operating System
 
@@ -38,7 +47,7 @@ Machine, or [Windows Subsystem for Linux (WSL)][def7] is required.
 You'll need a copy of the [MaxMind][def8] GeoLite2 database for
 country-level geotagging of IP addresses. If you have a premium or
 corporate MaxMind account, you're all set. If not, the free GeoLite2
-account will work just fine ([signup here][def5]). Once you login, on
+account will work just fine ([signup here][def5]). Once you login, using
 the menu on the top right select:
 
 ```text
@@ -75,7 +84,8 @@ own use.
 
 ### Global list of blacklisted IPs
 
-Download the list as follows:
+banip uses the [ipsum][def9] threat intelligence blacklist. You can
+direct download it using:
 
 ```shell
 curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ipsum.txt
@@ -86,7 +96,9 @@ curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ips
 You'll need the [make][def6] utility installed (*it probably
 already is*).
 
-## Setup
+[top](#top)
+
+## <a id="setup"></a> Setup
 
 ### Unpack GeoLite2 data
 
@@ -128,7 +140,7 @@ cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 #### Target countries
 
 ```shell
-cp sample-targets.txt ./data/targets.txt
+cp ./samples/targets.txt ./data/targets.txt
 ```
 
 Modify `./data/targets.txt` to select your desired target countries. The
@@ -137,7 +149,7 @@ comments in the file will guide you.
 #### Custom whitelist (optional)
 
 ```shell
-cp sample-custom_whitelist.txt ./data/custom_whitelist.txt
+cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
 ```
 
 There may be IP addresses that banip will flag as malicious, but you
@@ -151,7 +163,7 @@ blank one when you run it.
 #### Custom blacklist (optional)
 
 ```shell
-cp sample-custom_blacklist.txt ./data/custom_blacklist.txt
+cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt
 ```
 
 The source database of banned IPs isn't perfect. You may determine that
@@ -194,22 +206,79 @@ data
 └── targets.txt (required)
 ```
 
-## Running
+[top](#top)
 
-After copying/tweaking all the required files, start with this command
-to learn how to build your custom blacklist:
+## <a id="running"></a> Running
+
+After copying/tweaking all the required files, start by activating the
+python virtual environment:
 
 ```shell
-poetry run banip -h
+source .venv/bin/activate
 ```
 
-## Updating
+Now run this command to learn how to build your custom blacklist:
+
+```shell
+banip -h
+```
+
+[top](#top)
+
+## <a id="updating"></a> Updating
 
 MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
 and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
 updated copies of both and put them in `banip/data/geolite` (for the
 GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run `banip`
 again to generate an updated blacklist.
+
+[top](#top)
+
+## <a id="plugins"></a> Plugins
+
+banip generates some data that you may want to use for other purposes.
+For example, everytime you build a new blacklist banip also creates and
+saves a textfile of all worldwide subnets, each tagged with a two-letter
+country code. The file is saved in:
+
+```'text
+./banip/data/haproxy_geo_ip.txt
+```
+
+Next time you run banip, open that file and take a look at it. Since you
+may have a very specific usecase for that data, you can write a plugin
+for banip which will make use of the build products for your purposes.
+
+A banip plugin consists of two required files:
+
+1. Code that generates an argument parser for your new command.
+2. Code that implements the functionality of your new command.
+
+All your plugins go into the `./src/plugins` directory in the
+appropriate subdirectory (either `parsers` or `code`). Your
+plugins are not under version control, so they will only reside on your
+machine.
+
+Look at the comments in these two files for instructions on how to
+create your own plugins:
+
+```text
+./samples/plugins/foo.py
+./samples/plugins/foo_args.py
+```
+
+[top](#top)
+
+## <a id="uninstall"></a> Uninstalling banip
+
+If you want out, just do this:
+
+```shell
+rm -rf ~/.banip
+```
+
+[top](#top)
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [def2]: https://python-poetry.org/
@@ -219,3 +288,4 @@ again to generate an updated blacklist.
 [def4]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
 [def5]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
 [def8]: https://www.maxmind.com/en/home
+[def9]: https://github.com/stamparm/ipsum

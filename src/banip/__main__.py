@@ -3,78 +3,113 @@
 """Entry point for banip."""
 
 import argparse
+import importlib
+from pathlib import Path
+from types import ModuleType
 
-from banip.build_list import banned_ips
-from banip.contants import RENDERED_BLACKLIST
-from banip.utilities import check_ip
+from banip.constants import ARG_PARSERS_BASE
+from banip.constants import CUSTOM_ARG_PARSERS
+from banip.constants import CUSTOM_CODE
+from banip.utilities import wrap_tight
+
+# ======================================================================
+
+
+def collect_modules(start: Path) -> list[str]:
+    """Collect the names of all modules to import.
+
+    Parameters
+    ----------
+    start : Path
+        This the starting point (directory) for collection.
+
+    Returns
+    -------
+    list[str]
+        A list of module names.
+    """
+    module_names: list[str] = []
+    for p in start.iterdir():
+        if p.is_file() and p.name != "__init__.py":
+            if "plugins" in str(p):
+                prefix = "plugins.parsers"
+            else:
+                prefix = "parsers"
+            module_names.append(f"{prefix}.{p.stem}")
+    return module_names
+
+
+# ======================================================================
+
+
+def load_custom_module(cmd: str) -> ModuleType | None:
+    """Given the name of a command, return the associated module.
+
+    By design, the code associated with a given command must have the
+    same name as the command itself.
+
+    Parameters
+    ----------
+    cmd : str
+        The name of a banip command
+
+    Returns
+    -------
+    ModuleType | None
+        This will be a pointer to the imported python module.
+    """
+    for p in CUSTOM_CODE.iterdir():
+        if p.is_file():
+            if p.stem == cmd:
+                return importlib.import_module(f"plugins.code.{p.stem}")
+    return None
+
+
+# ======================================================================
 
 
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
     msg = """Generate and query IP blacklists for use with proxy servers
-    (like HAProxy). Please review the README file at
-    https://github.com/geozeke/ubuntu for detailed instructions on
-    setting up banip."""
-
-    epi = "Version: 0.1.0"
-
+    (like HAProxy). For help on any command, run: "banip {command} -h".
+    Please review the README file at https://github.com/geozeke/ubuntu
+    for detailed instructions on setting up banip."""
+    epi = "Version: 1.0.0"
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,
     )
+    subparsers = parser.add_subparsers(title="commands", dest="cmd")
 
-    subparsers = parser.add_subparsers(title="Commands")
-    msg = """Create a list of banned (blacklisted) client IP addresses
-    to be used with a proxy server (like HAProxy) to block network
-    access from those clients. Run \"banip build -h" for more."""
-    subparser_build = subparsers.add_parser(name="build", help=msg)
-    msg = """Check to see if a single IP address is found in the
-    blacklist. Run \"banip check -h" for more."""
-    subparser_check = subparsers.add_parser(name="check", help=msg)
+    # Dynamically load argument subparsers.
 
-    msg = """Output file that will contain the generated list of
-    blacklisted IP addresses. If not provided, results will be saved to
-    ./data/ip_blacklist.txt"""
-    subparser_build.add_argument(
-        "-o",
-        "--outfile",
-        type=argparse.FileType("w"),
-        help=msg,
-    )
-
-    msg = """Each banned IP address in the source database has a factor
-    (from 1 to 10) indicating a level of confidence that the IP address
-    is a malicious actor (higher is more confident). The default
-    threshold used is 3. Anything less than that may result in false
-    positives, but you may choose any threshold from 1 to 10. If you
-    find you're getting false positives, just re-run banip with a higher
-    threshold."""
-    subparser_build.add_argument(
-        "-t",
-        "--threshold",
-        type=int,
-        help=msg,
-        default=3,
-    )
-
-    msg = """This is the IPv4 or IPv6 address you're interested in.
-    After you run banip for the first time, you can use the "check"
-    subcommand to see if a single IP address is found in the blacklist.
-    Making subsequent runs of banip to generate new blacklists will use
-    the updated information for future IP checking."""
-    subparser_check.add_argument(
-        "ip",
-        type=str,
-        help=msg,
-    )
+    module_names: list[str] = []
+    mod: ModuleType | None = None
+    module_names = collect_modules(ARG_PARSERS_BASE)
+    module_names += collect_modules(CUSTOM_ARG_PARSERS)
+    for mod_name in module_names:
+        mod = importlib.import_module(mod_name)
+        mod.load_command_args(subparsers)
 
     args = parser.parse_args()
-    if hasattr(args, "ip"):
-        check_ip(args.ip)
-    else:
-        if not args.outfile:
-            args.outfile = open(RENDERED_BLACKLIST, "w")
-        banned_ips(args)
+    match (args.cmd):
+        case "build":
+            mod = importlib.import_module("banip.build")
+        case "check":
+            mod = importlib.import_module("banip.check")
+        case _:
+            if args.cmd:
+                if not (mod := load_custom_module(args.cmd)):
+                    msg = f"""Code for a given command must have the
+                    same name as the command itself. Make sure you have
+                    a program file called \"{args.cmd}.py\" in
+                    {CUSTOM_CODE}/"""
+                    print(wrap_tight(msg))
+                    mod = importlib.import_module("banip.null")
+            else:
+                mod = importlib.import_module("banip.null")
+    mod.task_runner(args)
+
     return
 
 

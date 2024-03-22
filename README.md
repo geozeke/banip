@@ -82,7 +82,7 @@ own use.
 
 *Details on gitignore files are available on [GitHub][def3].*
 
-### Global list of blacklisted IPs
+### Global List of Blacklisted IPs
 
 banip uses the [ipsum][def9] threat intelligence blacklist. You can
 direct download it using:
@@ -108,7 +108,7 @@ you can easily get to.
 *Note: if you're looking for a quick way to download the MaxMind data
 using `curl` and a direct download permalink, [SEE HERE][def4].*
 
-### Clone the repository
+### Clone the Repository
 
 Clone this repository. We'll assume you clone it to your home directory
 (`~`):
@@ -123,7 +123,7 @@ Change to `~/banip` and run this command:
 make setup
 ```
 
-### Copy files
+### Copy Files
 
 #### GeoLite2 Files
 
@@ -137,7 +137,7 @@ cp <wherever you put them>/* ./data/geolite/
 cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 ```
 
-#### Target countries
+#### Target Countries
 
 ```shell
 cp ./samples/targets.txt ./data/targets.txt
@@ -146,7 +146,7 @@ cp ./samples/targets.txt ./data/targets.txt
 Modify `./data/targets.txt` to select your desired target countries. The
 comments in the file will guide you.
 
-#### Custom whitelist (optional)
+#### Custom Whitelist (Optional)
 
 ```shell
 cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
@@ -160,7 +160,7 @@ allow.
 This file is optional. If you choose not to use it, banip will create a
 blank one when you run it.
 
-#### Custom blacklist (optional)
+#### Custom Blacklist (Optional)
 
 ```shell
 cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt

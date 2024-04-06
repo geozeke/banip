@@ -176,7 +176,7 @@ def task_runner(args: Namespace) -> None:
     bag_of_nets = []
     bag_of_ips = []
     with open(CUSTOM_BLACKLIST, "r") as f:
-        lines = list(set(f.readlines()))
+        lines = set(f.readlines())
     for line in lines:
         if token := line.strip():
             if ip := extract_ip(token):

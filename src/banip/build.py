@@ -170,18 +170,20 @@ def task_runner(args: Namespace) -> None:
     # Finally, create individual lists of IPs/Nets and sort them. There
     # are two levels of validation: (1) Make sure the input line is not
     # blank, and (2) Make sure a given line converts to either a valid
-    # IP address or valid IP subnet.
+    # IP address or valid IP subnet. Start by pruning the blacklist to
+    # ensure there are no duplicates at the start.
 
     bag_of_nets = []
     bag_of_ips = []
     with open(CUSTOM_BLACKLIST, "r") as f:
-        for line in f:
-            if token := line.strip():
-                if ip := extract_ip(token):
-                    if type(ip) in IPS:
-                        bag_of_ips.append(ip)
-                    else:
-                        bag_of_nets.append(ip)
+        lines = list(set(f.readlines()))
+    for line in lines:
+        if token := line.strip():
+            if ip := extract_ip(token):
+                if type(ip) in IPS:
+                    bag_of_ips.append(ip)
+                else:
+                    bag_of_nets.append(ip)
 
     num_custom_blacklist = len(bag_of_ips) + len(bag_of_nets)
     num_duplicates = num_custom_blacklist

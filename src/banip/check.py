@@ -33,12 +33,14 @@ def task_runner(args: argparse.Namespace) -> None:
                     break
 
     if BANNED_IPS.exists():
+        source = BANNED_IPS.name
         with open(BANNED_IPS, "r") as f:
             for line in f:
                 if args.ip in line:
-                    source = BANNED_IPS.name
-                    hitcount = line.split()[1]
-                    print(f"{args.ip} found in {source} with {hitcount} hits.")
+                    hitcount = int(line.split()[1])
+                    msg = f"{args.ip} found in {source} with {hitcount}"
+                    noun = "hits" if hitcount > 1 else "hit"
+                    print(f"{msg} {noun}.")
                     found = True
                     break
 

@@ -72,7 +72,7 @@ def main() -> None:
     """Get user input and build the list of banned IP addresses."""
     msg = """Generate and query IP blacklists for use with proxy servers
     (like HAProxy). For help on any command, run: "banip {command} -h".
-    Please review the README file at https://github.com/geozeke/ubuntu
+    Please review the README file at https://github.com/geozeke/banip
     for detailed instructions on setting up banip."""
     epi = "Version: 1.0.0"
     parser = argparse.ArgumentParser(

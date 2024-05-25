@@ -51,6 +51,7 @@ def clear() -> None:
     OS-agnostic version, which will work with both Windows and Linux.
     """
     os.system("clear" if os.name == "posix" else "cls")
+    return
 
 
 # ======================================================================
@@ -167,6 +168,7 @@ def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
             bag4.append(item)
         else:
             bag6.append(item)
+
     return bag4, bag6
 
 
@@ -270,6 +272,8 @@ def tag_networks() -> None:
         for key in keys_6:
             f.write(f"{format(key)} {ipv6_D[key]}\n")
     print("Done\n")
+
+    return
 
 
 # ======================================================================

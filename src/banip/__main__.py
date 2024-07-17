@@ -8,7 +8,7 @@ from pathlib import Path
 from types import ModuleType
 
 from banip.constants import ARG_PARSERS_BASE
-from banip.constants import CUSTOM_ARG_PARSERS
+from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
 from banip.utilities import wrap_tight
 
@@ -86,7 +86,7 @@ def main() -> None:
     module_names: list[str] = []
     mod: ModuleType | None = None
     module_names = collect_modules(ARG_PARSERS_BASE)
-    module_names += collect_modules(CUSTOM_ARG_PARSERS)
+    module_names += collect_modules(ARG_PARSERS_CUSTOM)
     for mod_name in module_names:
         mod = importlib.import_module(mod_name)
         mod.load_command_args(subparsers)

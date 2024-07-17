@@ -89,8 +89,8 @@ def main() -> None:
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
     for p_name in parser_names:
-        parse = importlib.import_module(p_name)
-        parse.load_command_args(subparsers)
+        parser_code = importlib.import_module(p_name)
+        parser_code.load_command_args(subparsers)
 
     args = parser.parse_args()
     match (args.cmd):

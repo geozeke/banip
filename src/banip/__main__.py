@@ -15,8 +15,8 @@ from banip.utilities import wrap_tight
 # ======================================================================
 
 
-def collect_modules(start: Path) -> list[str]:
-    """Collect the names of all modules to import.
+def collect_parsers(start: Path) -> list[str]:
+    """Collect the filenames of all argument parsers to import.
 
     Parameters
     ----------
@@ -26,7 +26,7 @@ def collect_modules(start: Path) -> list[str]:
     Returns
     -------
     list[str]
-        A list of module names.
+        A list of argument parser filenames (complete paths).
     """
     module_names: list[str] = []
     for p in start.iterdir():
@@ -46,7 +46,8 @@ def load_custom_module(cmd: str) -> ModuleType | None:
     """Given the name of a command, return the associated module.
 
     By design, the code associated with a given command must have the
-    same name as the command itself.
+    same name as the command itself. This function loads the module, and
+    returns a pointer to it.
 
     Parameters
     ----------
@@ -83,13 +84,13 @@ def main() -> None:
 
     # Dynamically load argument subparsers.
 
-    module_names: list[str] = []
+    parser_names: list[str] = []
     mod: ModuleType | None = None
-    module_names = collect_modules(ARG_PARSERS_BASE)
-    module_names += collect_modules(ARG_PARSERS_CUSTOM)
-    for mod_name in module_names:
-        mod = importlib.import_module(mod_name)
-        mod.load_command_args(subparsers)
+    parser_names = collect_parsers(ARG_PARSERS_BASE)
+    parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
+    for p_name in parser_names:
+        parse = importlib.import_module(p_name)
+        parse.load_command_args(subparsers)
 
     args = parser.parse_args()
     match (args.cmd):

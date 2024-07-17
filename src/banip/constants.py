@@ -8,6 +8,7 @@ from pathlib import Path
 
 HOME = Path(__file__).parents[2]
 
+APPLICATION_NAME = "banip"
 ARG_PARSERS_BASE = HOME / "src" / "parsers"
 ARG_PARSERS_CUSTOM = HOME / "src" / "plugins" / "parsers"
 BANNED_IPS = HOME / "data" / "ipsum.txt"

@@ -30,15 +30,15 @@ def collect_parsers(start: Path) -> list[str]:
     list[str]
         A list of argument parser module names.
     """
-    module_names: list[str] = []
+    parser_names: list[str] = []
     for p in start.iterdir():
         if p.is_file() and p.name != "__init__.py":
             if "plugins" in str(p):
                 prefix = "plugins.parsers"
             else:
                 prefix = "parsers"
-            module_names.append(f"{prefix}.{p.stem}")
-    return module_names
+            parser_names.append(f"{prefix}.{p.stem}")
+    return parser_names
 
 
 # ======================================================================

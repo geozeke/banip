@@ -50,10 +50,16 @@ def main() -> None:
     (like HAProxy). For help on any command, run: "banip {command} -h".
     Please review the README file at https://github.com/geozeke/banip
     for detailed instructions on setting up banip."""
-    epi = "Version: 1.0.0"
+    epi = "Version: 1.0.1"
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,
+    )
+    parser.add_argument(
+        "--version",
+        "-v",
+        action="version",
+        version="%(prog)s 1.0.1",
     )
     subparsers = parser.add_subparsers(title="commands", dest="cmd")
 

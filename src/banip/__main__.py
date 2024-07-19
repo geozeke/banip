@@ -47,9 +47,9 @@ def collect_parsers(start: Path) -> list[str]:
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
     msg = """Generate and query IP blacklists for use with proxy servers
-    (like HAProxy). For help on any command, run: "banip {command} -h".
-    Please review the README file at https://github.com/geozeke/banip
-    for detailed instructions on setting up banip."""
+    (like HAProxy). Please review the README file at
+    https://github.com/geozeke/banip for detailed instructions on
+    setting up banip."""
     epi = "Version: 1.0.1"
     parser = argparse.ArgumentParser(
         description=msg,
@@ -61,7 +61,12 @@ def main() -> None:
         action="version",
         version="%(prog)s 1.0.1",
     )
-    subparsers = parser.add_subparsers(title="commands", dest="cmd")
+    msg = "For help on any command below, run: banip {command} -h."
+    subparsers = parser.add_subparsers(
+        title="commands",
+        dest="cmd",
+        description=msg,
+    )
 
     # Dynamically load argument subparsers and process command line
     # arguments.

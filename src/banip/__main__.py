@@ -12,6 +12,7 @@ from banip.constants import APPLICATION_NAME
 from banip.constants import ARG_PARSERS_BASE
 from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
+from banip.constants import VERSION
 from banip.utilities import wrap_tight
 
 # ======================================================================
@@ -50,7 +51,7 @@ def main() -> None:
     (like HAProxy). Please review the README file at
     https://github.com/geozeke/banip for detailed instructions on
     setting up banip."""
-    epi = "Version: 1.0.1"
+    epi = f"Version: {VERSION}"
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,
@@ -59,7 +60,7 @@ def main() -> None:
         "-v",
         "--version",
         action="version",
-        version="%(prog)s 1.0.1",
+        version=f"{APPLICATION_NAME} {VERSION}",
     )
     msg = "For help on any command below, run: banip {command} -h."
     subparsers = parser.add_subparsers(

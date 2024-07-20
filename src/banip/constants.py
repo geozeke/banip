@@ -23,6 +23,7 @@ IPS = [IPv4Address, IPv6Address]
 NETS = [IPv4Network, IPv6Network]
 RENDERED_BLACKLIST = HOME / "data" / "ip_blacklist.txt"
 TARGETS = HOME / "data" / "targets.txt"
+VERSION = "1.0.1"
 
 # Padding for pretty printing.
 PAD = 6

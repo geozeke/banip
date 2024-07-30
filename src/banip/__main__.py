@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from types import ModuleType
 
-from banip.constants import APPLICATION_NAME
+from banip.constants import APP_NAME
 from banip.constants import ARG_PARSERS_BASE
 from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
@@ -60,7 +60,7 @@ def main() -> None:
         "-v",
         "--version",
         action="version",
-        version=f"{APPLICATION_NAME} {VERSION}",
+        version=f"{APP_NAME} {VERSION}",
     )
     msg = "For help on any command below, run: banip {command} -h."
     subparsers = parser.add_subparsers(
@@ -90,7 +90,7 @@ def main() -> None:
 
     if args.cmd:
         if f"parsers.{args.cmd}_args" in parser_names:
-            prefix = f"{APPLICATION_NAME}"
+            prefix = f"{APP_NAME}"
         else:
             prefix = "plugins.code"
         try:
@@ -102,7 +102,7 @@ def main() -> None:
             print(wrap_tight(msg))
             sys.exit(1)
     else:
-        mod = importlib.import_module(f"{APPLICATION_NAME}.null")
+        mod = importlib.import_module(f"{APP_NAME}.null")
     mod.task_runner(args)
 
     return

@@ -263,8 +263,8 @@ def task_runner(args: Namespace) -> None:
         args.outfile.write(f"# Added on: {now}\n")
         args.outfile.write("# ----------------------------------------\n\n")
         for key in keys_custom:
-            for chunk in D[key]:
-                args.outfile.write(f"{format(chunk)}\n")
+            for token in D[key]:
+                args.outfile.write(f"{format(token)}\n")
 
     args.outfile.close()
 

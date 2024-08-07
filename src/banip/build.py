@@ -228,15 +228,16 @@ def task_runner(args: Namespace) -> None:
                 continue
             else:
                 address_tokens = D[ipaddress].copy()
-                for network_token in D[network]:
-                    for address_token in address_tokens:
+                for address_token in address_tokens:
+                    for network_token in D[network]:
                         if address_token in network_token:
                             D[ipaddress].remove(address_token)
                             num_duplicates += 1
+                            break
 
-    # Overwrite the custom blacklist with the duplicates removed. This
-    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
-    # Subnets(v6)
+    # Overwrite the provided custom blacklist with the duplicates
+    # removed. This will also reorder the file as: IPv4, IPv6,
+    # Subnets(v4), Subnets(v6)
 
     with open(CUSTOM_BLACKLIST, "w") as f:
         for key in keys_custom:

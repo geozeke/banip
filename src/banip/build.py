@@ -226,14 +226,14 @@ def task_runner(args: Namespace) -> None:
         for ipaddress in keys_ips:
             if ipaddress[-1] != network[-1]:
                 continue
-            else:
-                address_tokens = D[ipaddress].copy()
-                for address_token in address_tokens:
-                    for network_token in D[network]:
-                        if address_token in network_token:
-                            D[ipaddress].remove(address_token)
-                            num_duplicates += 1
-                            break
+            matching_addresses = [
+                ip
+                for ip in D[ipaddress]
+                if any(ip in subnet for subnet in D[network])
+            ]  # fmt: skip
+            for ip in matching_addresses:
+                D[ipaddress].remove(ip)
+                num_duplicates += 1
 
     # Overwrite the provided custom blacklist with the duplicates
     # removed. This will also reorder the file as: IPv4, IPv6,

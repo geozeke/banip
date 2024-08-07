@@ -113,6 +113,10 @@ def task_runner(args: Namespace) -> None:
     # CN4: My custom blacklisted IPv4 subnets.
     # CN6: My custom blacklisted IPv6 subnets.
 
+    keys_custom = ["CI4", "CI6", "CN4", "CN6"]
+    keys_blacklist = ["BI4", "BI6"]
+    keys_networks = ["CN4", "CN6"]
+    keys_ips = ["BI4", "BI6", "CI4", "CI6"]
     D: dict[str, list[Any]] = {}
 
     # Create a list of all networks for target countries and separate
@@ -160,9 +164,9 @@ def task_runner(args: Namespace) -> None:
     # required because you cannot sort a mixed list of v4/v6 items.
 
     D["BI4"], D["BI6"] = split46(bag_of_ips)
-    b_keys = ["BI4", "BI6"]
-    for key in b_keys:
+    for key in keys_blacklist:
         D[key].sort()
+    ips_found = sum(len(D[key]) for key in keys_blacklist)
     print(f"IPs pulled: {len(bag_of_ips):,d}")
 
     # Open the custom blacklist and prune any IPs or networks that were
@@ -193,18 +197,8 @@ def task_runner(args: Namespace) -> None:
     num_duplicates -= len(bag_of_ips) + len(bag_of_nets)
     D["CI4"], D["CI6"] = split46(bag_of_ips)
     D["CN4"], D["CN6"] = split46(bag_of_nets)
-    c_keys = ["CI4", "CI6", "CN4", "CN6"]
-    for key in c_keys:
+    for key in keys_custom:
         D[key].sort()
-
-    # Overwrite the custom blacklist with the duplicates removed. This
-    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
-    # Subnets(v6)
-
-    with open(CUSTOM_BLACKLIST, "w") as f:
-        for key in c_keys:
-            for chunk in D[key]:
-                f.write(f"{format(chunk)}\n")
 
     # Remove any custom whitelisted IPs from the blacklist created by
     # banip. There are two levels of validation: (1) Make sure the input
@@ -224,15 +218,40 @@ def task_runner(args: Namespace) -> None:
         elif token in D["BI6"]:
             D["BI6"].remove(token)
 
+    # Remove any individual IP addresses that are already covered by a
+    # custom IP subnet. Do this for both the rendered blacklist, as well
+    # as the custom blacklist.
+
+    for network in keys_networks:
+        for ipaddress in keys_ips:
+            if ipaddress[-1] != network[-1]:
+                continue
+            else:
+                address_tokens = D[ipaddress].copy()
+                for network_token in D[network]:
+                    for address_token in address_tokens:
+                        if address_token in network_token:
+                            D[ipaddress].remove(address_token)
+                            num_duplicates += 1
+
+    # Overwrite the custom blacklist with the duplicates removed. This
+    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
+    # Subnets(v6)
+
+    with open(CUSTOM_BLACKLIST, "w") as f:
+        for key in keys_custom:
+            for chunk in D[key]:
+                f.write(f"{format(chunk)}\n")
+
     # Write blacklisted IPs and custom entries to the file selected on
     # the command line.
 
-    for key in b_keys:
+    for key in keys_blacklist:
         for ip in D[key]:
             args.outfile.write(f"{format(ip)}\n")
 
     custom_present = False
-    for key in c_keys:
+    for key in keys_custom:
         if len(D[key]) > 0:
             custom_present = True
             break
@@ -242,7 +261,7 @@ def task_runner(args: Namespace) -> None:
         args.outfile.write("\n# ------------custom entries -------------\n")
         args.outfile.write(f"# Added on: {now}\n")
         args.outfile.write("# ----------------------------------------\n\n")
-        for key in c_keys:
+        for key in keys_custom:
             for chunk in D[key]:
                 args.outfile.write(f"{format(chunk)}\n")
 
@@ -257,13 +276,12 @@ def task_runner(args: Namespace) -> None:
 
     # Calculate final metrics and display results.
 
-    ips_found = sum(len(D[key]) for key in b_keys)
     total_bans = ips_found + num_custom_blacklist - num_duplicates
 
     print(f"\n      Banned IPs found: {ips_found:>{PAD},d}")
     print(f"  Custom bans provided: {num_custom_blacklist:>{PAD},d}")
     print(f"    Duplicates removed: {num_duplicates:>{PAD},d}")
-    print(f"Total banned IPs saved: {total_bans:>{PAD},d}")
+    print(f"      Total bans saved: {total_bans:>{PAD},d}")
 
     return
 

@@ -279,10 +279,10 @@ def task_runner(args: Namespace) -> None:
 
     total_bans = ips_found + num_custom_blacklist - num_duplicates
 
-    print(f"\n      Banned IPs found: {ips_found:>{PAD},d}")
-    print(f"  Custom bans provided: {num_custom_blacklist:>{PAD},d}")
-    print(f"    Duplicates removed: {num_duplicates:>{PAD},d}")
-    print(f"      Total bans saved: {total_bans:>{PAD},d}")
+    print(f"\n    Banned IPs found: {ips_found:>{PAD},d}")
+    print(f"Custom bans provided: {num_custom_blacklist:>{PAD},d}")
+    print(f"  Duplicates removed: {num_duplicates:>{PAD},d}")
+    print(f"    Total bans saved: {total_bans:>{PAD},d}")
 
     return
 

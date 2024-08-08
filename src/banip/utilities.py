@@ -313,9 +313,8 @@ def ip_in_network(
     if first > last:
         return False
     mid = (first + last) // 2
-    clients = ipa.ip_network(networks[mid])
-    if ip in clients:
+    if ip in networks[mid]:
         return True
-    if ip < clients[0]:
+    if ip < networks[mid][0]:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)

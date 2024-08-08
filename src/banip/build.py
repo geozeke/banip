@@ -153,11 +153,10 @@ def task_runner(args: Namespace) -> None:
         unit="IPs",
     ):
         if type(ip) is IPv4Address:
-            target_net = D["CN4"]
+            target_nets = D["CN4"]
         else:
-            target_net = D["CN6"]
-        found = ip_in_network(ip, target_net, 0, len(target_net) - 1)
-        if found:
+            target_nets = D["CN6"]
+        if ip_in_network(ip, target_nets, 0, len(target_nets) - 1):
             bag_of_ips.append(ip)
 
     # Separate and sort the blacklisted IPs into IPv4 and IPV6. This is
@@ -226,12 +225,12 @@ def task_runner(args: Namespace) -> None:
         for ipaddress in keys_ips:
             if ipaddress[-1] != network[-1]:
                 continue
-            matching_addresses = [
+            dupe_ips = [
                 ip
                 for ip in D[ipaddress]
                 if any(ip in subnet for subnet in D[network])
             ]  # fmt: skip
-            for ip in matching_addresses:
+            for ip in dupe_ips:
                 D[ipaddress].remove(ip)
                 num_duplicates += 1
 

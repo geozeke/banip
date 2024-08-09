@@ -112,7 +112,7 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
         A list of IP subnets based on target countries, or a list of IP
         addresses based on confidence thresholds.
     """
-    bag: list[Any] = []
+    tokens: list[Any] = []
     with open(fname, "r") as f:
         lines = len(f.readlines())
         f.seek(0)
@@ -127,7 +127,7 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
                 parts = clean.split()
                 if type(metric) is list:
                     if parts[1] in metric:
-                        bag.append(
+                        tokens.append(
                             ipa.ip_network(
                                 parts[0],
                                 strict=False,
@@ -135,22 +135,22 @@ def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
                         )
                 elif type(metric) is int:
                     if int(parts[1]) >= metric:
-                        bag.append(ipa.ip_address(parts[0]))
+                        tokens.append(ipa.ip_address(parts[0]))
 
-    return bag
+    return tokens
 
 
 # ======================================================================
 
 
-def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
+def split46(tokens: list[Any]) -> tuple[list[Any], list[Any]]:
     """Split a list of tokens into two lists, based on protocol.
 
     Tokens will either be IPv4/6 Addresses, or IPv4/6 subnets.
 
     Parameters
     ----------
-    bag_of_stuff : list[Any]
+    tokens : list[Any]
         This will contain either a mix of IP addresses (v4/v6) or a mix
         of subnets (v4/v6). A single input will contain either all IP
         addresses or all subnets, but not a mix of both.
@@ -161,15 +161,15 @@ def split46(bag_of_stuff: list[Any]) -> tuple[list[Any], list[Any]]:
         The input split into two separate lists, with v4 protocol first
         and v6 protocol second.
     """
-    bag4: list[Any] = []
-    bag6: list[Any] = []
-    for item in bag_of_stuff:
+    tokens4: list[Any] = []
+    tokens6: list[Any] = []
+    for item in tokens:
         if type(item) is IPv4Address or type(item) is IPv4Network:
-            bag4.append(item)
+            tokens4.append(item)
         else:
-            bag6.append(item)
+            tokens6.append(item)
 
-    return bag4, bag6
+    return tokens4, tokens6
 
 
 # ======================================================================

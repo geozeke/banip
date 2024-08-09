@@ -79,8 +79,8 @@ def task_runner(args: Namespace) -> None:
 
     # Placeholders for IP addresses and networks
 
-    bag_of_ips: list[Any]
-    bag_of_nets: list[Any]
+    list_of_ips: list[Any]
+    list_of_nets: list[Any]
 
     # Create the haproxy_geo_ip.txt (COUNTRY_NETS) file.
 
@@ -124,11 +124,11 @@ def task_runner(args: Namespace) -> None:
     # searches when determining if a given IP exists in a given network.
 
     print(f"Pulling networks for country codes: {countries}")
-    bag_of_nets = filter(COUNTRY_NETS, countries)
-    D["CN4"], D["CN6"] = split46(bag_of_nets)
+    list_of_nets = filter(COUNTRY_NETS, countries)
+    D["CN4"], D["CN6"] = split46(list_of_nets)
     D["CN4"].sort()
     D["CN6"].sort()
-    print(f"Networks pulled: {len(bag_of_nets):,d}")
+    print(f"Networks pulled: {len(list_of_nets):,d}")
 
     # Now process the ipsum.txt file of blacklisted IPs, filtering out
     # those that have less than the desired number of blacklist
@@ -143,7 +143,7 @@ def task_runner(args: Namespace) -> None:
     # are also hosted on the networks of target countries.
 
     print()
-    bag_of_ips = []
+    list_of_ips = []
     print(f"Pulling blacklisted IP list for country codes: {countries}")
     for ip in tqdm(
         D["II"],
@@ -157,16 +157,16 @@ def task_runner(args: Namespace) -> None:
         else:
             target_nets = D["CN6"]
         if ip_in_network(ip, target_nets, 0, len(target_nets) - 1):
-            bag_of_ips.append(ip)
+            list_of_ips.append(ip)
 
     # Separate and sort the blacklisted IPs into IPv4 and IPV6. This is
     # required because you cannot sort a mixed list of v4/v6 items.
 
-    D["BI4"], D["BI6"] = split46(bag_of_ips)
+    D["BI4"], D["BI6"] = split46(list_of_ips)
     for key in keys_blacklist:
         D[key].sort()
     ips_found = sum(len(D[key]) for key in keys_blacklist)
-    print(f"IPs pulled: {len(bag_of_ips):,d}")
+    print(f"IPs pulled: {len(list_of_ips):,d}")
 
     # Open the custom blacklist and prune any IPs or networks that were
     # already discovered while building the list of blacklisted IPs.
@@ -176,26 +176,26 @@ def task_runner(args: Namespace) -> None:
     # IP address or valid IP subnet. Start by pruning the blacklist to
     # ensure there are no duplicates at the start.
 
-    bag_of_nets = []
-    bag_of_ips = []
+    list_of_nets = []
+    list_of_ips = []
     with open(CUSTOM_BLACKLIST, "r") as f:
         lines = set(f.readlines())
     for line in lines:
         if token := line.strip():
             if ip := extract_ip(token):
                 if type(ip) in IPS:
-                    bag_of_ips.append(ip)
+                    list_of_ips.append(ip)
                 else:
-                    bag_of_nets.append(ip)
+                    list_of_nets.append(ip)
 
-    num_custom_blacklist = len(bag_of_ips) + len(bag_of_nets)
+    num_custom_blacklist = len(list_of_ips) + len(list_of_nets)
     num_duplicates = num_custom_blacklist
-    bag_of_ips = [ip for
-                  ip in bag_of_ips
-                  if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
-    num_duplicates -= len(bag_of_ips) + len(bag_of_nets)
-    D["CI4"], D["CI6"] = split46(bag_of_ips)
-    D["CN4"], D["CN6"] = split46(bag_of_nets)
+    list_of_ips = [ip for
+                   ip in list_of_ips
+                   if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
+    num_duplicates -= len(list_of_ips) + len(list_of_nets)
+    D["CI4"], D["CI6"] = split46(list_of_ips)
+    D["CN4"], D["CN6"] = split46(list_of_nets)
     for key in keys_custom:
         D[key].sort()
 

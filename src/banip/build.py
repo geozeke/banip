@@ -12,7 +12,6 @@ from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
-from banip.constants import BANNED_IPS
 from banip.constants import COUNTRY_NETS
 from banip.constants import CUSTOM_BLACKLIST
 from banip.constants import CUSTOM_WHITELIST
@@ -20,6 +19,7 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPS
+from banip.constants import IPSUM_IPS
 from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import TARGETS
@@ -62,12 +62,12 @@ def task_runner(args: Namespace) -> None:
     # Now make sure everything is in place
 
     files = [
-        BANNED_IPS,
         CUSTOM_BLACKLIST,
         CUSTOM_WHITELIST,
         GEOLITE_4,
         GEOLITE_6,
         GEOLITE_LOC,
+        IPSUM_IPS,
         RENDERED_BLACKLIST,
         TARGETS,
     ]
@@ -136,7 +136,7 @@ def task_runner(args: Namespace) -> None:
 
     print()
     print(f"Pulling blacklisted IPs with >= {args.threshold} hits.")
-    D["II"] = filter(BANNED_IPS, args.threshold)
+    D["II"] = filter(IPSUM_IPS, args.threshold)
     print(f"IPs pulled: {len(D['II']):,d}")
 
     # Store those blacklisted IPs, with the minimum number of hits, that

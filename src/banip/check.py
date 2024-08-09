@@ -3,7 +3,7 @@
 import argparse
 import ipaddress as ipa
 
-from banip.constants import BANNED_IPS
+from banip.constants import IPSUM_IPS
 from banip.constants import RENDERED_BLACKLIST
 
 
@@ -32,9 +32,9 @@ def task_runner(args: argparse.Namespace) -> None:
                     found = True
                     break
 
-    if BANNED_IPS.exists():
-        source = BANNED_IPS.name
-        with open(BANNED_IPS, "r") as f:
+    if IPSUM_IPS.exists():
+        source = IPSUM_IPS.name
+        with open(IPSUM_IPS, "r") as f:
             for line in f:
                 if args.ip in line:
                     hitcount = int(line.split()[1])

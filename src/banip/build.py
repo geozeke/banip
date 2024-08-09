@@ -12,7 +12,6 @@ from typing import Any
 
 from tqdm import tqdm  # type: ignore
 
-from banip.constants import BANNED_IPS
 from banip.constants import COUNTRY_NETS
 from banip.constants import CUSTOM_BLACKLIST
 from banip.constants import CUSTOM_WHITELIST
@@ -20,6 +19,7 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPS
+from banip.constants import IPSUM_IPS
 from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import TARGETS
@@ -62,12 +62,12 @@ def task_runner(args: Namespace) -> None:
     # Now make sure everything is in place
 
     files = [
-        BANNED_IPS,
         CUSTOM_BLACKLIST,
         CUSTOM_WHITELIST,
         GEOLITE_4,
         GEOLITE_6,
         GEOLITE_LOC,
+        IPSUM_IPS,
         RENDERED_BLACKLIST,
         TARGETS,
     ]
@@ -79,8 +79,8 @@ def task_runner(args: Namespace) -> None:
 
     # Placeholders for IP addresses and networks
 
-    bag_of_ips: list[Any]
-    bag_of_nets: list[Any]
+    list_of_ips: list[Any]
+    list_of_nets: list[Any]
 
     # Create the haproxy_geo_ip.txt (COUNTRY_NETS) file.
 
@@ -113,6 +113,10 @@ def task_runner(args: Namespace) -> None:
     # CN4: My custom blacklisted IPv4 subnets.
     # CN6: My custom blacklisted IPv6 subnets.
 
+    keys_custom = ["CI4", "CI6", "CN4", "CN6"]
+    keys_blacklist = ["BI4", "BI6"]
+    keys_networks = ["CN4", "CN6"]
+    keys_ips = ["BI4", "BI6", "CI4", "CI6"]
     D: dict[str, list[Any]] = {}
 
     # Create a list of all networks for target countries and separate
@@ -120,11 +124,11 @@ def task_runner(args: Namespace) -> None:
     # searches when determining if a given IP exists in a given network.
 
     print(f"Pulling networks for country codes: {countries}")
-    bag_of_nets = filter(COUNTRY_NETS, countries)
-    D["CN4"], D["CN6"] = split46(bag_of_nets)
+    list_of_nets = filter(COUNTRY_NETS, countries)
+    D["CN4"], D["CN6"] = split46(list_of_nets)
     D["CN4"].sort()
     D["CN6"].sort()
-    print(f"Networks pulled: {len(bag_of_nets):,d}")
+    print(f"Networks pulled: {len(list_of_nets):,d}")
 
     # Now process the ipsum.txt file of blacklisted IPs, filtering out
     # those that have less than the desired number of blacklist
@@ -132,14 +136,14 @@ def task_runner(args: Namespace) -> None:
 
     print()
     print(f"Pulling blacklisted IPs with >= {args.threshold} hits.")
-    D["II"] = filter(BANNED_IPS, args.threshold)
+    D["II"] = filter(IPSUM_IPS, args.threshold)
     print(f"IPs pulled: {len(D['II']):,d}")
 
     # Store those blacklisted IPs, with the minimum number of hits, that
     # are also hosted on the networks of target countries.
 
     print()
-    bag_of_ips = []
+    list_of_ips = []
     print(f"Pulling blacklisted IP list for country codes: {countries}")
     for ip in tqdm(
         D["II"],
@@ -149,21 +153,20 @@ def task_runner(args: Namespace) -> None:
         unit="IPs",
     ):
         if type(ip) is IPv4Address:
-            target_net = D["CN4"]
+            target_nets = D["CN4"]
         else:
-            target_net = D["CN6"]
-        found = ip_in_network(ip, target_net, 0, len(target_net) - 1)
-        if found:
-            bag_of_ips.append(ip)
+            target_nets = D["CN6"]
+        if ip_in_network(ip, target_nets, 0, len(target_nets) - 1):
+            list_of_ips.append(ip)
 
     # Separate and sort the blacklisted IPs into IPv4 and IPV6. This is
     # required because you cannot sort a mixed list of v4/v6 items.
 
-    D["BI4"], D["BI6"] = split46(bag_of_ips)
-    b_keys = ["BI4", "BI6"]
-    for key in b_keys:
+    D["BI4"], D["BI6"] = split46(list_of_ips)
+    for key in keys_blacklist:
         D[key].sort()
-    print(f"IPs pulled: {len(bag_of_ips):,d}")
+    ips_found = sum(len(D[key]) for key in keys_blacklist)
+    print(f"IPs pulled: {len(list_of_ips):,d}")
 
     # Open the custom blacklist and prune any IPs or networks that were
     # already discovered while building the list of blacklisted IPs.
@@ -173,38 +176,28 @@ def task_runner(args: Namespace) -> None:
     # IP address or valid IP subnet. Start by pruning the blacklist to
     # ensure there are no duplicates at the start.
 
-    bag_of_nets = []
-    bag_of_ips = []
+    list_of_nets = []
+    list_of_ips = []
     with open(CUSTOM_BLACKLIST, "r") as f:
         lines = set(f.readlines())
     for line in lines:
         if token := line.strip():
             if ip := extract_ip(token):
                 if type(ip) in IPS:
-                    bag_of_ips.append(ip)
+                    list_of_ips.append(ip)
                 else:
-                    bag_of_nets.append(ip)
+                    list_of_nets.append(ip)
 
-    num_custom_blacklist = len(bag_of_ips) + len(bag_of_nets)
+    num_custom_blacklist = len(list_of_ips) + len(list_of_nets)
     num_duplicates = num_custom_blacklist
-    bag_of_ips = [ip for
-                  ip in bag_of_ips
-                  if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
-    num_duplicates -= len(bag_of_ips) + len(bag_of_nets)
-    D["CI4"], D["CI6"] = split46(bag_of_ips)
-    D["CN4"], D["CN6"] = split46(bag_of_nets)
-    c_keys = ["CI4", "CI6", "CN4", "CN6"]
-    for key in c_keys:
+    list_of_ips = [ip for
+                   ip in list_of_ips
+                   if ip not in D["BI4"] and ip not in D["BI6"]]  # fmt:skip
+    num_duplicates -= len(list_of_ips) + len(list_of_nets)
+    D["CI4"], D["CI6"] = split46(list_of_ips)
+    D["CN4"], D["CN6"] = split46(list_of_nets)
+    for key in keys_custom:
         D[key].sort()
-
-    # Overwrite the custom blacklist with the duplicates removed. This
-    # will also reorder the file as: IPv4, IPv6, Subnets(v4),
-    # Subnets(v6)
-
-    with open(CUSTOM_BLACKLIST, "w") as f:
-        for key in c_keys:
-            for chunk in D[key]:
-                f.write(f"{format(chunk)}\n")
 
     # Remove any custom whitelisted IPs from the blacklist created by
     # banip. There are two levels of validation: (1) Make sure the input
@@ -224,15 +217,41 @@ def task_runner(args: Namespace) -> None:
         elif token in D["BI6"]:
             D["BI6"].remove(token)
 
+    # Remove any individual IP addresses that are already covered by a
+    # custom IP subnet. Do this for both the rendered blacklist, as well
+    # as the custom blacklist.
+
+    for network in keys_networks:
+        for ipaddress in keys_ips:
+            if ipaddress[-1] != network[-1]:
+                continue
+            dupe_ips = [
+                ip
+                for ip in D[ipaddress]
+                if any(ip in subnet for subnet in D[network])
+            ]  # fmt: skip
+            for ip in dupe_ips:
+                D[ipaddress].remove(ip)
+                num_duplicates += 1
+
+    # Overwrite the provided custom blacklist with the duplicates
+    # removed. This will also reorder the file as: IPv4, IPv6,
+    # Subnets(v4), Subnets(v6)
+
+    with open(CUSTOM_BLACKLIST, "w") as f:
+        for key in keys_custom:
+            for chunk in D[key]:
+                f.write(f"{format(chunk)}\n")
+
     # Write blacklisted IPs and custom entries to the file selected on
     # the command line.
 
-    for key in b_keys:
+    for key in keys_blacklist:
         for ip in D[key]:
             args.outfile.write(f"{format(ip)}\n")
 
     custom_present = False
-    for key in c_keys:
+    for key in keys_custom:
         if len(D[key]) > 0:
             custom_present = True
             break
@@ -242,9 +261,9 @@ def task_runner(args: Namespace) -> None:
         args.outfile.write("\n# ------------custom entries -------------\n")
         args.outfile.write(f"# Added on: {now}\n")
         args.outfile.write("# ----------------------------------------\n\n")
-        for key in c_keys:
-            for chunk in D[key]:
-                args.outfile.write(f"{format(chunk)}\n")
+        for key in keys_custom:
+            for token in D[key]:
+                args.outfile.write(f"{format(token)}\n")
 
     args.outfile.close()
 
@@ -257,13 +276,12 @@ def task_runner(args: Namespace) -> None:
 
     # Calculate final metrics and display results.
 
-    ips_found = sum(len(D[key]) for key in b_keys)
     total_bans = ips_found + num_custom_blacklist - num_duplicates
 
-    print(f"\n      Banned IPs found: {ips_found:>{PAD},d}")
-    print(f"  Custom bans provided: {num_custom_blacklist:>{PAD},d}")
-    print(f"    Duplicates removed: {num_duplicates:>{PAD},d}")
-    print(f"Total banned IPs saved: {total_bans:>{PAD},d}")
+    print(f"\n    Banned IPs found: {ips_found:>{PAD},d}")
+    print(f"Custom bans provided: {num_custom_blacklist:>{PAD},d}")
+    print(f"  Duplicates removed: {num_duplicates:>{PAD},d}")
+    print(f"    Total bans saved: {total_bans:>{PAD},d}")
 
     return
 

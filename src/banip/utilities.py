@@ -73,23 +73,20 @@ def extract_ip(from_str: str) -> Any:
         IPv4Network | IPv6Network.
     """
     to_ip: Any = None
-    if "/" in from_str:
-        try:
+    try:
+        if "/" in from_str:
             to_ip = ipa.ip_network(from_str)
-        except ValueError:
-            return None
-    else:
-        try:
+        else:
             to_ip = ipa.ip_address(from_str)
-        except ValueError:
-            return None
+    except ValueError:
+        return None
     return to_ip
 
 
 # ======================================================================
 
 
-def filter(fname: str | Path, metric: list[str] | int) -> list[Any]:
+def filter(fname: Path, metric: list[str] | int) -> list[Any]:
     """Filter items from lists of networks or IP addresses.
 
     Parameters
@@ -318,3 +315,48 @@ def ip_in_network(
     if ip < networks[mid][0]:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
+
+
+# ======================================================================
+
+
+def load_dictionary(target_file: Path) -> dict[str, list[Any]] | None:
+    """Load and return a dictionary of IP objects.
+
+    This will process the given file return a dictionary with individual
+    lists of: IPv4Addresses, IPv6Addresses, IPv4Networks, IPv6Networks.
+    The dictionary keys are:
+
+    V4A: IPv4 Addresses.
+    V6A: IPv6 Addresses.
+    V4N: IPv4 Subnets.
+    V6N: IPv6 Subnets.
+
+    Parameters
+    ----------
+    target_file : str | Path
+        File to be processed
+
+    Returns
+    -------
+    dict[str, list[Any]] | None
+        A dictionary of ipaddress-type objects. If the target_file does
+        not exist, then return None.
+    """
+    # Strategically name the dictionary keys, so we can extract them
+    # from the type information of each token as we process it.
+    D: dict[str, list[Any]] = {
+        "V4A": [],
+        "V6A": [],
+        "V4N": [],
+        "V6N": [],
+    }
+    if not target_file.exists():
+        return None
+    token: Any = None
+    with open(target_file, "r") as f:
+        for line in f:
+            if not (token := extract_ip(line.strip())):
+                continue
+            D[f"V{str(type(token))[-10:-8]}"].append(token)
+    return D

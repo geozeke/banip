@@ -76,12 +76,12 @@ def extract_ip(from_str: str) -> Any:
     if "/" in from_str:
         try:
             to_ip = ipa.ip_network(from_str)
-        except AttributeError:
+        except ValueError:
             return None
     else:
         try:
             to_ip = ipa.ip_address(from_str)
-        except AttributeError:
+        except ValueError:
             return None
     return to_ip
 

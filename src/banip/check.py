@@ -58,4 +58,5 @@ def task_runner(args: argparse.Namespace) -> None:
     if not found:
         print(f"{target} not found.")
 
+    print()
     return

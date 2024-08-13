@@ -34,8 +34,7 @@ def task_runner(args: argparse.Namespace) -> None:
     if not (D := load_dictionary(RENDERED_BLACKLIST)):
         print(f"Source file: {source} not found.")
         return
-    found = target in (D["V4A"] + D["V6A"])
-    if not found:
+    if not (found := target in (D["V4A"] + D["V6A"])):
         found = any([net
                     for net in (D["V4N"] + D["V6N"])
                     if target in net])  # fmt: skip

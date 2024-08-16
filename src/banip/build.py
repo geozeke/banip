@@ -113,10 +113,10 @@ def task_runner(args: Namespace) -> None:
     # CN4: My custom blacklisted IPv4 subnets.
     # CN6: My custom blacklisted IPv6 subnets.
 
-    keys_custom = ["CI4", "CI6", "CN4", "CN6"]
     keys_blacklist = ["BI4", "BI6"]
-    keys_networks = ["CN4", "CN6"]
+    keys_custom = ["CI4", "CI6", "CN4", "CN6"]
     keys_ips = ["BI4", "BI6", "CI4", "CI6"]
+    keys_networks = ["CN4", "CN6"]
     D: dict[str, list[Any]] = {}
 
     # Create a list of all networks for target countries and separate

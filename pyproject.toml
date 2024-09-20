@@ -1,26 +1,39 @@
-[tool.poetry]
+[project]
 name = "banip"
 version = "1.0.2"
 description = "Create a custom list of band ip for specific countries"
-authors = ["Peter Nardi <pete@nardi.com>"]
-license = "MIT"
-readme = "README.md"
-packages = [{ include = "banip", from = "src" }]
+license = {file = "LICENSE"}
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.10"
+dependencies = [
+    "banip",
+    "tqdm>=4.66.5",
+]
+authors = [
+    {author = "Peter Nardi", email = "pete@nardi.com"},
+]
 
-[tool.poetry.scripts]
+[project.scripts]
 banip = "banip.__main__:main"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-tqdm = "^4.66.2"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.8.0"
-ruff = "^0.6.6"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.ruff.lint.isort]
 force-single-line = true
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.11.2",
+    "ruff>=0.6.6",
+]
+
+[tool.uv.sources]
+banip = { workspace = true }
+
+[tool.hatch.build]
+include = [
+    "LICENSE",
+    "LICENSE-tqdm"
+]

@@ -14,14 +14,13 @@ banip = "banip.__main__:main"
 python = "^3.10"
 tqdm = "^4.66.2"
 
-
 [tool.poetry.group.dev.dependencies]
-flake8 = "^7.0.0"
-flake8-docstrings = "^1.7.0"
 mypy = "^1.8.0"
-black = "^24.2.0"
-isort = "^5.13.2"
+ruff = "^0.6.6"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff.lint.isort]
+force-single-line = true

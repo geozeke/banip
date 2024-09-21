@@ -154,7 +154,7 @@ cython_debug/
 #.idea/
 
 # Custom exclusions
-data/
-src/plugins/
-scratch/
 .init/
+data/
+scratch/
+src/plugins/

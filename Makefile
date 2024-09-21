@@ -5,8 +5,8 @@ all: help
 .PHONY: setup
 setup: ## setup project with runtime dependencies
 ifeq (,$(wildcard .init/setup))
-	@(which poetry > /dev/null 2>&1) || \
-	(echo "banip requires poetry. See README for instructions."; exit 1)
+	@(which uv > /dev/null 2>&1) || \
+	(echo "banip requires uv. See README for instructions."; exit 1)
 	@if [ ! -d "./scratch" ]; then \
 		mkdir -p scratch; \
 	fi
@@ -23,7 +23,7 @@ ifeq (,$(wildcard .init/setup))
 	fi
 	mkdir .init
 	touch .init/setup
-	poetry install --only=main
+	uv sync --no-dev --upgrade
 else
 	@echo "Initial setup is already complete. If you are having issues, run:"
 	@echo
@@ -37,7 +37,7 @@ endif
 .PHONY: dev
 dev: ## add development dependencies (run make setup first)
 ifneq (,$(wildcard .init/setup))
-	poetry install
+	uv sync --upgrade
 	@touch .init/dev
 else
 	@echo "Please run \"make setup\" first"
@@ -45,15 +45,15 @@ endif
 
 # --------------------------------------------
 
-.PHONY: update
-update: ## update banip code and dependencies
-	@echo Updating banip
+.PHONY: upgrade
+upgrade: ## upgrade banip code and dependencies
+	@echo Upgrading banip
 	git pull
-	@echo Updating dependencies
+	@echo Upgrading dependencies
 ifeq (,$(wildcard .init/dev))
-	poetry update --only=main
+	uv sync --no-dev --upgrade
 else
-	poetry update
+	uv sync --upgrade
 endif
 
 # --------------------------------------------
@@ -61,7 +61,7 @@ endif
 .PHONY: reset
 reset: clean ## remove venv, artifacts, and init directory
 	@echo Resetting project state
-	rm -rf .init .mypy_cache .ruff_cache .venv
+	rm -rf .init .mypy_cache .ruff_cache .venv dist
 
 # --------------------------------------------
 

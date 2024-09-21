@@ -62,14 +62,12 @@ want to download is:
 GeoLite2 Country: CSV format
 ```
 
-### poetry
+### uv
 
-banip requires [poetry][def2] for dependency management. Poetry is well
-behaved and if you're a Python developer you should check it out. It
-installs itself in a virtual environment, uninstalls cleanly and easily,
-and doesn't require `sudo` for installation. Visit the [poetry
-site][def2] and install it using your preferred method, with the
-instructions for your operating system.
+banip requires [uv][def2] for dependency management. uv is well behaved
+and extremely fast. If you're a Python developer you should check it
+out. Visit the [uv site][def2] and install it using your preferred
+method, with the instructions for your operating system.
 
 ### gitignore (optional)
 
@@ -290,7 +288,7 @@ MIT license. The full license text can be found in the
 [top](#top)
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
-[def2]: https://python-poetry.org/
+[def2]: https://docs.astral.sh/uv/
 [def3]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 [def4]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
 [def5]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data

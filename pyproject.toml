@@ -10,7 +10,7 @@ dependencies = [
     "tqdm>=4.66.5",
 ]
 authors = [
-    {author = "Peter Nardi", email = "pete@nardi.com"},
+    {name = "Peter Nardi", email = "pete@nardi.com"},
 ]
 
 [project.scripts]
@@ -35,5 +35,5 @@ banip = { workspace = true }
 [tool.hatch.build]
 include = [
     "LICENSE",
-    "LICENSE-tqdm"
+    "LICENSE-tqdm",
 ]

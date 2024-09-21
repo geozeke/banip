@@ -13,9 +13,6 @@ authors = [
     {name = "Peter Nardi", email = "pete@nardi.com"},
 ]
 
-[project.scripts]
-banip = "banip.__main__:main"
-
 [tool.ruff.lint.isort]
 force-single-line = true
 
@@ -28,12 +25,9 @@ dev-dependencies = [
 [tool.uv.sources]
 banip = { workspace = true }
 
+[project.scripts]
+banip = "banip.app:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.hatch.build]
-include = [
-    "LICENSE",
-    "LICENSE-tqdm",
-]

@@ -46,7 +46,7 @@ endif
 # --------------------------------------------
 
 .PHONY: upgrade
-update: ## upgrade banip code and dependencies
+upgrade: ## upgrade banip code and dependencies
 	@echo Upgrading banip
 	git pull
 	@echo Upgrading dependencies

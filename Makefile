@@ -46,9 +46,7 @@ endif
 # --------------------------------------------
 
 .PHONY: upgrade
-upgrade: ## upgrade banip code and dependencies
-	@echo Upgrading banip
-	git pull
+upgrade: ## upgrade banip dependencies
 	@echo Upgrading dependencies
 ifeq (,$(wildcard .init/dev))
 	uv sync --no-dev --upgrade

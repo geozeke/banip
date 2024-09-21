@@ -31,3 +31,12 @@ banip = "banip.app:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build]
+exclude = [
+    ".gitignore",
+    "global-gitignore.txt",
+    "Makefile",
+    "samples/**",
+    "uv.lock",
+]

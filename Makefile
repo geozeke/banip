@@ -47,12 +47,7 @@ endif
 
 .PHONY: upgrade
 upgrade: ## upgrade banip dependencies
-	@echo Upgrading dependencies
-ifeq (,$(wildcard .init/dev))
-	uv sync --no-dev --upgrade
-else
-	uv sync --upgrade
-endif
+	uv lock --upgrade
 
 # --------------------------------------------
 

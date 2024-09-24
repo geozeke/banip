@@ -58,7 +58,7 @@ endif
 .PHONY: reset
 reset: clean ## remove venv, artifacts, and init directory
 	@echo Resetting project state
-	rm -rf .init .mypy_cache .ruff_cache .venv dist
+	rm -rf .init .mypy_cache .ruff_cache .venv
 
 # --------------------------------------------
 
@@ -66,6 +66,7 @@ reset: clean ## remove venv, artifacts, and init directory
 clean: ## cleanup python runtime artifacts
 	@echo Cleaning python runtime artifacts
 	@find . -type d -name __pycache__ -exec rm -rf {} \; -prune
+	rm -rf dist
 
 # --------------------------------------------
 

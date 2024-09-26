@@ -46,7 +46,7 @@ endif
 # --------------------------------------------
 
 .PHONY: upgrade
-upgrade: ## upgrade banip dependencies
+upgrade: ## upgrade project dependencies
 ifeq (,$(wildcard .init/dev))
 	uv sync --no-dev --upgrade
 else

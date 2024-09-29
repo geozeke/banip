@@ -47,10 +47,12 @@ def collect_parsers(start: Path) -> list[str]:
 
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
-    msg = """Generate and query IP blacklists for use with proxy servers
-    (like HAProxy). Please review the README file at
+    msg = """
+    Generate and query IP blacklists for use with proxy servers (like
+    HAProxy). Please review the README file at
     https://github.com/geozeke/banip for detailed instructions on
-    setting up banip."""
+    setting up banip.
+    """
     epi = f"Version: {VERSION}"
     parser = argparse.ArgumentParser(
         description=msg,
@@ -96,9 +98,11 @@ def main() -> None:
         try:
             mod = importlib.import_module(f"{prefix}.{args.cmd}")
         except ModuleNotFoundError:
-            msg = f"""Code for a custom command must have the same
-            filename as the command itself. Make sure you have a program
-            file called \"{args.cmd}.py\" in {CUSTOM_CODE}/"""
+            msg = f"""
+            Code for a custom command must have the same filename as the
+            command itself. Make sure you have a program file called
+            \"{args.cmd}.py\" in {CUSTOM_CODE}/
+            """
             print(wrap_tight(msg))
             sys.exit(1)
     else:

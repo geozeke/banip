@@ -27,8 +27,10 @@ COMMAND_NAME = "foo"
 
 def load_command_args(sp: _SubParsersAction) -> None:
     """Assemble the argument parser."""
-    msg = """This command takes two intergers on the command line, adds
-    them together, then prints the result. Isn't that wonderful!"""
+    msg = """
+    This command takes two intergers on the command line, adds them
+    together, then prints the result. Isn't that wonderful!
+    """
     parser = sp.add_parser(
         name=COMMAND_NAME,
         help=msg,

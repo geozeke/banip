@@ -23,7 +23,6 @@ from banip.constants import IPSUM_IPS
 from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import TARGETS
-from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import filter
 from banip.utilities import ip_in_network
@@ -45,7 +44,7 @@ def task_runner(args: Namespace) -> None:
     # (RENDERED_BLACKLIST). (2) If the file was specified, was it the
     # same name as the default? If so, there's no need to make a local
     # copy of it after computations are complete.
-    clear()
+    print()
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
         f = open(CUSTOM_BLACKLIST, "w")

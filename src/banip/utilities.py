@@ -2,7 +2,6 @@
 
 import csv
 import ipaddress as ipa
-import os
 import textwrap
 from ipaddress import IPv4Address
 from ipaddress import IPv4Network
@@ -40,18 +39,6 @@ def wrap_tight(msg: str, columns=70) -> str:
     """
     clean = " ".join([t for token in msg.split("\n") if (t := token.strip())])
     return textwrap.fill(clean, width=columns)
-
-
-# ======================================================================
-
-
-def clear() -> None:
-    """Clear the screen.
-
-    OS-agnostic version, which will work with both Windows and Linux.
-    """
-    os.system("clear" if os.name == "posix" else "cls")
-    return
 
 
 # ======================================================================

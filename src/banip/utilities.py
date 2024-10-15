@@ -9,7 +9,7 @@ from ipaddress import IPv6Network
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm  # type: ignore
+from tqdm import tqdm
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4

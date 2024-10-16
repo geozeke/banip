@@ -10,7 +10,7 @@ from ipaddress import IPv4Address
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm  # type: ignore
+from tqdm import tqdm
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import CUSTOM_BLACKLIST
@@ -203,7 +203,7 @@ def task_runner(args: Namespace) -> None:
     # line is not blank, and (2) Make sure the line converts to either a
     # valid IP addess or valid IP subnet.
 
-    whitelist: Any = []
+    whitelist: list[Any] = []
     with open(CUSTOM_WHITELIST, "r") as f:
         for line in f:
             if token := line.strip():

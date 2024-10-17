@@ -5,6 +5,7 @@ import ipaddress as ipa
 import textwrap
 from ipaddress import IPv4Address
 from ipaddress import IPv4Network
+from ipaddress import IPv6Address
 from ipaddress import IPv6Network
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,9 @@ from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
+from banip.constants import PAD
+from banip.constants import AddressType
+from banip.constants import NetworkType
 
 # ======================================================================
 
@@ -44,7 +48,34 @@ def wrap_tight(msg: str, columns=70) -> str:
 # ======================================================================
 
 
-def extract_ip(from_str: str) -> Any:
+def custom_sort(
+    collection: list[AddressType | NetworkType] | set[AddressType | NetworkType],
+) -> list[AddressType | NetworkType]:
+    """Create a custom sorting of a heterogenous collection of IPTypes.
+
+    Parameters
+    ----------
+    collection : list[IPType] | set[IPType]
+        A collection of objects to be sorted.
+
+    Returns
+    -------
+    list[IPType]
+        A list that is sorted, with the IP addresses first, followed by
+        Subnets.
+    """
+    # Split addresses and networks so we can stack them separately.
+    addresses = [token for token in collection if isinstance(token, AddressType)]
+    networks = [token for token in collection if isinstance(token, NetworkType)]
+    addresses = sorted(addresses, key=lambda x: int(x))
+    networks = sorted(networks, key=lambda x: int(x.network_address))
+    return addresses + networks
+
+
+# ======================================================================
+
+
+def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     """Convert a string to either an IP address or IP subnet.
 
     Parameters
@@ -59,7 +90,7 @@ def extract_ip(from_str: str) -> Any:
         This will be one of four types: IPv4Address | IPv6Address |
         IPv4Network | IPv6Network.
     """
-    to_ip: Any = None
+    to_ip: AddressType | NetworkType | None = None
     try:
         if "/" in from_str:
             to_ip = ipa.ip_network(from_str)
@@ -159,113 +190,85 @@ def split46(tokens: list[Any]) -> tuple[list[Any], list[Any]]:
 # ======================================================================
 
 
-def tag_networks() -> None:
+def tag_networks() -> dict[NetworkType, str]:
     """Create the haproxy_geo_ip.txt database.
 
     This will create a HAProxy-friendly file of global subnets and their
     associated two-letter country codes.
     """
-    countries_D: dict[int, str] = {}
-    ipv4_D: dict[IPv4Network, str] = {}
-    ipv6_D: dict[IPv6Network, str] = {}
+    countries: dict[int, str] = {}
+    networks: dict[NetworkType, str] = {}
 
-    print("Pulling country IDs")
+    # Lines from the country locations file look like this:
+    # 4032283,en,OC,Oceania,TO,Tonga,0
+    # There are some country ids in the csv file that reflect continents
+    # (e.g. Europe), like this:
+    # 6255148,en,EU,Europe,,,0
+    # In that case, the two-letter country_ios_code (index 4) is blank,
+    # so we need to pull the two-letter continent code from index 2 in
+    # the csv file (indices start at 0).
+    print(f"{'Pulling country IDs':.<{PAD}}", end="", flush=True)
     with open(GEOLITE_LOC, "r") as f:
-        lines = len(f.readlines()) - 1
-        f.seek(0)
         reader = csv.reader(f)
         next(reader)
-        for country in tqdm(
-            reader,
-            desc="    Countries",
-            total=lines,
-            colour="#bf80f2",
-            unit="countries",
-        ):
-            # Lines from the country locations file look like this:
-            # 4032283,en,OC,Oceania,TO,Tonga,0
-            # There are some country ids in the csv file that reflect
-            # continents (e.g. Europe), like this:
-            # 6255148,en,EU,Europe,,,0
-            # In that case, the two-letter country_ios_code (index 4) is
-            # blank, so we need to pull the two-letter continent code
-            # from index 2 in the csv file (indices start at 0).
+        for country in reader:
             if not (cic := country[4]):
                 cic = country[2]
-            countries_D[int(country[0])] = cic
+            countries[int(country[0])] = cic
+    print("done")
 
-    print("\nGeotagging IPv4 Networks")
+    # Lines in the IPv4 country blocks file look like this:
+    # 1.47.160.0/19,1605651,1605651,,0,0,
+    # The variable "net" will hold each line of the file, and the code
+    # we're looking for is normally in index 1 (starting from 0). If
+    # that entry is blank, use the code in index 2. Index 0 contains the
+    # IP address.
+    print(f"{'Geotagging IPv4 Networks':.<{PAD}}", end="", flush=True)
     with open(GEOLITE_4, "r") as f:
-        lines = len(f.readlines()) - 1
-        f.seek(0)
         reader = csv.reader(f)
         next(reader)
-        for net in tqdm(
-            reader,
-            desc="IPv4 Networks",
-            total=lines,
-            colour="#bf80f2",
-            unit="nets",
-        ):
-            # Lines in the IPv4 country blocks file look like this:
-            # 1.47.160.0/19,1605651,1605651,,0,0,
-            # The variable "net" will hold each line of the file, and
-            # the code we're looking for is normally in index 1
-            # (starting from 0). If that entry is blank, use the code in
-            # index 2. Index 0 contains the IP address.
+        for net in reader:
             try:
-                country_id = countries_D[int(net[1])]
+                country_id = countries[int(net[1])]
             except ValueError:
-                country_id = countries_D[int(net[2])]
-            ipv4_D[ipa.IPv4Network(net[0])] = country_id
+                country_id = countries[int(net[2])]
+            networks[ipa.IPv4Network(net[0])] = country_id
+    print("done")
 
-    print("\nGeotagging IPv6 Networks")
+    # Lines in the IPv6 country blocks file look like this:
+    # 2001:67c:299c::/48,2921044,2921044,,0,0,
+    # The variable "net" will hold each line of the file, and the code
+    # we're looking for is normally in index 1 (starting from 0). If
+    # that entry is blank, use the code in index 2. Index 0 contains the
+    # IP address.
+    print(f"{'Geotagging IPv6 Networks':.<{PAD}}", end="", flush=True)
     with open(GEOLITE_6, "r") as f:
-        lines = len(f.readlines()) - 1
-        f.seek(0)
         reader = csv.reader(f)
         next(reader)
-        for net in tqdm(
-            reader,
-            desc="IPv6 Networks",
-            total=lines,
-            colour="#bf80f2",
-            unit="nets",
-        ):
-            # Lines in the IPv6 country blocks file look like this:
-            # 2001:67c:299c::/48,2921044,2921044,,0,0,
-            # The variable "net" will hold each line of the file, and
-            # the code we're looking for is normally in index 1
-            # (starting from 0). If that entry is blank, use the code in
-            # index 2. Index 0 contains the IP address.
+        for net in reader:
             try:
-                country_id = countries_D[int(net[1])]
+                country_id = countries[int(net[1])]
             except ValueError:
-                country_id = countries_D[int(net[2])]
-            ipv6_D[ipa.IPv6Network(net[0])] = country_id
+                country_id = countries[int(net[2])]
+            networks[ipa.IPv6Network(net[0])] = country_id
+    print("done")
 
-    print("\nGenerating interim build products...", end="")
-    keys_4 = list(ipv4_D.keys())
-    keys_6 = list(ipv6_D.keys())
-    keys_4.sort()
-    keys_6.sort()
-    key: IPv4Network | IPv6Network
+    print(f"{'Generating build products':.<{PAD}}", end="", flush=True)
+    keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
     with open(COUNTRY_NETS, "w") as f:
-        for key in keys_4:
-            f.write(f"{format(key)} {ipv4_D[key]}\n")
-        for key in keys_6:
-            f.write(f"{format(key)} {ipv6_D[key]}\n")
-    print("Done\n")
+        for key in keys:
+            f.write(f"{format(key)} {networks[key]}\n")
+    print("done")
 
-    return
+    return networks
 
 
 # ======================================================================
 
 
 def ip_in_network(
-    ip: Any,
-    networks: list[Any],
+    ip: IPv4Address | IPv6Address,
+    networks: list[IPv4Network | IPv6Network],
     first: int,
     last: int,
 ) -> bool:
@@ -297,9 +300,12 @@ def ip_in_network(
     if first > last:
         return False
     mid = (first + last) // 2
-    if ip in networks[mid]:
+    ip_int = int(ip)
+    network_address = int(networks[mid].network_address)
+    broadcast_address = int(networks[mid].broadcast_address)
+    if ip_int >= network_address and ip_int <= broadcast_address:
         return True
-    if ip < networks[mid][0]:
+    if ip_int < network_address:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
 

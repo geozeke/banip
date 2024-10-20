@@ -7,10 +7,6 @@ from ipaddress import IPv4Address
 from ipaddress import IPv4Network
 from ipaddress import IPv6Address
 from ipaddress import IPv6Network
-from pathlib import Path
-from typing import Any
-
-from tqdm import tqdm
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
@@ -48,33 +44,6 @@ def wrap_tight(msg: str, columns=70) -> str:
 # ======================================================================
 
 
-def custom_sort(
-    collection: list[AddressType | NetworkType] | set[AddressType | NetworkType],
-) -> list[AddressType | NetworkType]:
-    """Create a custom sorting of a heterogenous collection of IPTypes.
-
-    Parameters
-    ----------
-    collection : list[IPType] | set[IPType]
-        A collection of objects to be sorted.
-
-    Returns
-    -------
-    list[IPType]
-        A list that is sorted, with the IP addresses first, followed by
-        Subnets.
-    """
-    # Split addresses and networks so we can stack them separately.
-    addresses = [token for token in collection if isinstance(token, AddressType)]
-    networks = [token for token in collection if isinstance(token, NetworkType)]
-    addresses = sorted(addresses, key=lambda x: int(x))
-    networks = sorted(networks, key=lambda x: int(x.network_address))
-    return addresses + networks
-
-
-# ======================================================================
-
-
 def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     """Convert a string to either an IP address or IP subnet.
 
@@ -99,92 +68,6 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     except ValueError:
         return None
     return to_ip
-
-
-# ======================================================================
-
-
-def filter(fname: Path, metric: list[str] | int) -> list[Any]:
-    """Filter items from lists of networks or IP addresses.
-
-    Parameters
-    ----------
-    fname : str | Path
-        The file containing country subnets or IP addresses.
-    metric : list[str] | int
-        Either a list of target countries to filter, or a target
-        threshold for IP address filtering. Each banned ip address in
-        the source database has a factor (from 1 to 10) indicating a
-        level of certainty that the ip address is a malicious actor. The
-        default threshold used is 3. Anything less than that may result
-        in false positives and increases the time required to generate
-        the list. You may choose any threshold from 1 to 10, but I
-        recommend not going lower than 3.
-
-    Returns
-    -------
-    list[Any]
-        A list of IP subnets based on target countries, or a list of IP
-        addresses based on confidence thresholds.
-    """
-    tokens: list[Any] = []
-    with open(fname, "r") as f:
-        lines = len(f.readlines())
-        f.seek(0)
-        for line in tqdm(
-            f,
-            desc="  Total lines",
-            total=lines,
-            colour="#bf80f2",
-            unit="lines",
-        ):
-            if (clean := line.strip()) and clean[0] != "#":
-                parts = clean.split()
-                if type(metric) is list:
-                    if parts[1] in metric:
-                        tokens.append(
-                            ipa.ip_network(
-                                parts[0],
-                                strict=False,
-                            )
-                        )
-                elif type(metric) is int:
-                    if int(parts[1]) >= metric:
-                        tokens.append(ipa.ip_address(parts[0]))
-
-    return tokens
-
-
-# ======================================================================
-
-
-def split46(tokens: list[Any]) -> tuple[list[Any], list[Any]]:
-    """Split a list of tokens into two lists, based on protocol.
-
-    Tokens will either be IPv4/6 Addresses, or IPv4/6 subnets.
-
-    Parameters
-    ----------
-    tokens : list[Any]
-        This will contain either a mix of IP addresses (v4/v6) or a mix
-        of subnets (v4/v6). A single input will contain either all IP
-        addresses or all subnets, but not a mix of both.
-
-    Returns
-    -------
-    tuple[list[Any], list[Any]]
-        The input split into two separate lists, with v4 protocol first
-        and v6 protocol second.
-    """
-    tokens4: list[Any] = []
-    tokens6: list[Any] = []
-    for item in tokens:
-        if type(item) is IPv4Address or type(item) is IPv4Network:
-            tokens4.append(item)
-        else:
-            tokens6.append(item)
-
-    return tokens4, tokens6
 
 
 # ======================================================================
@@ -308,48 +191,3 @@ def ip_in_network(
     if ip_int < network_address:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
-
-
-# ======================================================================
-
-
-def load_dictionary(target_file: Path) -> dict[str, list[Any]] | None:
-    """Load and return a dictionary of IP objects.
-
-    This will process the given file return a dictionary with individual
-    lists of: IPv4Addresses, IPv6Addresses, IPv4Networks, IPv6Networks.
-    The dictionary keys are:
-
-    V4A: IPv4 Addresses.
-    V6A: IPv6 Addresses.
-    V4N: IPv4 Subnets.
-    V6N: IPv6 Subnets.
-
-    Parameters
-    ----------
-    target_file : str | Path
-        File to be processed
-
-    Returns
-    -------
-    dict[str, list[Any]] | None
-        A dictionary of ipaddress-type objects. If the target_file does
-        not exist, then return None.
-    """
-    # Strategically name the dictionary keys, so we can extract them
-    # from the type information of each token as we process it.
-    D: dict[str, list[Any]] = {
-        "V4A": [],
-        "V6A": [],
-        "V4N": [],
-        "V6N": [],
-    }
-    if not target_file.exists():
-        return None
-    token: Any = None
-    with open(target_file, "r") as f:
-        for line in f:
-            if not (token := extract_ip(line.strip())):
-                continue
-            D[f"V{str(type(token))[-10:-8]}"].append(token)
-    return D

@@ -29,7 +29,6 @@ def task_runner(args: argparse.Namespace) -> None:
     # ----------------------------------------------------------------------
 
     # Load ipsum file into a dictionary.
-
     with open(IPSUM, "r") as f:
         ipsum: dict[AddressType, int] = {}
         for line in f:
@@ -44,7 +43,6 @@ def task_runner(args: argparse.Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Load rendered blacklist and split into networks and ip addresses
-
     with open(RENDERED_BLACKLIST, "r") as f:
         rendered: list[AddressType | NetworkType] = [
             token for line in f if (token := extract_ip(line.strip()))
@@ -62,7 +60,6 @@ def task_runner(args: argparse.Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Check for membership.
-
     source = RENDERED_BLACKLIST.name
     found = False
     in_subnet = ip_in_network(

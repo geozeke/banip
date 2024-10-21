@@ -112,7 +112,7 @@ def task_runner(args: Namespace) -> None:
             token.upper() for line in f if (token := line.strip()) and token[0] != "#"
         ]
     geolite = sorted(
-        [key for key in geolite_D if geolite_D[key] in countries],
+        [ip for ip in geolite_D if geolite_D[ip] in countries],
         key=lambda x: int(x.network_address),
     )
     geolite_size = len(geolite)
@@ -161,7 +161,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Re-package and save cleaned-up custom nets and ips
+    # Re-package and save cleaned-up custom ips and networks
     print(f"{'Re-packaging custom ips':.<{PAD}}", end="", flush=True)
     with open(CUSTOM_BLACKLIST, "w") as f:
         for ip in custom_ips:

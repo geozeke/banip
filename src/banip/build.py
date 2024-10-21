@@ -133,7 +133,7 @@ def task_runner(args: Namespace) -> None:
             except ValueError:
                 continue
 
-    ipsum_D: dict[AddressType, int] = load_ipsum(IPSUM)
+    ipsum_D: dict[AddressType, int] = load_ipsum()
     ipsum: list[AddressType] = [
         ip
         for ip in ipsum_D

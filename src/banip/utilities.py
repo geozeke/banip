@@ -3,16 +3,12 @@
 import csv
 import ipaddress as ipa
 import textwrap
-from ipaddress import IPv4Address
-from ipaddress import IPv4Network
-from ipaddress import IPv6Address
-from ipaddress import IPv6Network
-from pathlib import Path
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
+from banip.constants import IPSUM
 from banip.constants import PAD
 from banip.constants import AddressType
 from banip.constants import NetworkType
@@ -56,9 +52,8 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
 
     Returns
     -------
-    Any
-        This will be one of four types: IPv4Address | IPv6Address |
-        IPv4Network | IPv6Network.
+    AddressType | NetworkType | None
+        The formated ipaddress object.
     """
     to_ip: AddressType | NetworkType | None = None
     try:
@@ -75,10 +70,16 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
 
 
 def tag_networks() -> dict[NetworkType, str]:
-    """Create the haproxy_geo_ip.txt database.
+    """Generate the haproxy_geo_ip.txt database.
 
     This will create a HAProxy-friendly file of global subnets and their
     associated two-letter country codes.
+
+    Returns
+    -------
+    dict[NetworkType, str]
+        Return the generated database as a dictionary object to use in
+        other parts of the code.
     """
     countries: dict[int, str] = {}
     networks: dict[NetworkType, str] = {}
@@ -151,10 +152,7 @@ def tag_networks() -> dict[NetworkType, str]:
 
 
 def ip_in_network(
-    ip: IPv4Address | IPv6Address,
-    networks: list[IPv4Network | IPv6Network],
-    first: int,
-    last: int,
+    ip: AddressType, networks: list[NetworkType], first: int, last: int
 ) -> bool:
     """Check if a single IP is in a list of networks.
 
@@ -164,10 +162,10 @@ def ip_in_network(
 
     Parameters
     ----------
-    ip : Any
+    ip : AddressType
         This will be either an IPv4 or IPv6 address, in ip_address()
         format.
-    networks : list[Any]
+    networks : list[NetworkType]
         This is a homogenous list of networks. The type of items in the
         list with be either IPv4Network or IPv6Network.
     first : int
@@ -197,20 +195,15 @@ def ip_in_network(
 # ======================================================================
 
 
-def load_ipsum(ipsum_file: Path) -> dict[AddressType, int]:
+def load_ipsum() -> dict[AddressType, int]:
     """Load the ipsum.txt file into a dictionary.
-
-    Parameters
-    ----------
-    ipsum_file : Path
-        pathlib Path object pointing to the ipsum.txt file.
 
     Returns
     -------
     dict[AddressType, int]
         The ipsum.txt file loaded into a dictionary.
     """
-    with open(ipsum_file, "r") as f:
+    with open(IPSUM, "r") as f:
         ipsum: dict[AddressType, int] = {}
         for line in f:
             parts = line.strip().split()

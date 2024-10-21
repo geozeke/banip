@@ -30,7 +30,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # ----------------------------------------------------------------------
 
     # Load ipsum file into a dictionary.
-    ipsum: dict[AddressType, int] = load_ipsum(IPSUM)
+    ipsum: dict[AddressType, int] = load_ipsum()
 
     # ------------------------------------------------------------------
 

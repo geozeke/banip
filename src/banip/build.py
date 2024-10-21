@@ -146,7 +146,6 @@ def task_runner(args: Namespace) -> None:
             and ipsum_D[ip] >= args.threshold
         )
     ]
-
     ipsum = sorted(ipsum, key=lambda x: int(x))
     ipsum_size = len(ipsum)
     print("done")
@@ -190,7 +189,6 @@ def task_runner(args: Namespace) -> None:
     args.outfile.close()
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
-
     print(f"{'Blacklist entries saved':.<{PAD}}", end="", flush=True)
     total_size = ipsum_size + custom_nets_size + custom_ips_size
     print(f"{(total_size):,d}")

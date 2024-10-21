@@ -4,7 +4,7 @@ version = "1.0.2"
 description = "Create a custom list of band ip for specific countries"
 license = {file = "LICENSE"}
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "banip",
     "tqdm>=4.66.5",

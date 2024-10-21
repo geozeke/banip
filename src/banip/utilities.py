@@ -7,6 +7,7 @@ from ipaddress import IPv4Address
 from ipaddress import IPv4Network
 from ipaddress import IPv6Address
 from ipaddress import IPv6Network
+from pathlib import Path
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
@@ -191,3 +192,32 @@ def ip_in_network(
     if ip_int < network_address:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
+
+
+# ======================================================================
+
+
+def load_ipsum(ipsum_file: Path) -> dict[AddressType, int]:
+    """Load the ipsum.txt file into a dictionary.
+
+    Parameters
+    ----------
+    ipsum_file : Path
+        pathlib Path object pointing to the ipsum.txt file.
+
+    Returns
+    -------
+    dict[AddressType, int]
+        The ipsum.txt file loaded into a dictionary.
+    """
+    with open(ipsum_file, "r") as f:
+        ipsum: dict[AddressType, int] = {}
+        for line in f:
+            parts = line.strip().split()
+            try:
+                ip = ipa.ip_address(parts[0])
+                hits = int(parts[1])
+            except (ValueError, NameError):
+                continue
+            ipsum[ip] = hits
+    return ipsum

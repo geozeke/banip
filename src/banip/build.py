@@ -22,6 +22,7 @@ from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
+from banip.utilities import load_ipsum
 from banip.utilities import tag_networks
 
 
@@ -76,8 +77,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Load custom blacklist and split it into lists of networks and
-    # addresses
+    # Load custom blacklist and split it into separate lists of networks
+    # and addresses.
     print(f"{'Pruning custom blacklist':.<{PAD}}", end="", flush=True)
     with open(CUSTOM_BLACKLIST, "r") as f:
         custom: list[AddressType | NetworkType] = [
@@ -130,30 +131,24 @@ def task_runner(args: Namespace) -> None:
                 ip = ipa.ip_address(line.strip())
             except ValueError:
                 continue
-    with open(IPSUM, "r") as f:
-        ipsum: list[AddressType] = []
-        for line in f:
-            parts = line.strip().split()
-            try:
-                ip = ipa.ip_address(parts[0])
-                hits = int(parts[1])
-            except (ValueError, NameError):
-                continue
-            if (
-                ip_in_network(ip=ip, networks=geolite, first=0, last=geolite_size - 1)
-                and not ip_in_network(
-                    ip=ip,
-                    networks=custom_nets,
-                    first=0,
-                    last=custom_nets_size - 1,
-                )
-                and ip not in whitelist
-                and (hits >= args.threshold)
-            ):
-                ipsum.append(ip)
-        ipsum = sorted(ipsum, key=lambda x: int(x))
-        ipsum_size = len(ipsum)
-        print("done")
+
+    ipsum_D: dict[AddressType, int] = load_ipsum(IPSUM)
+    ipsum: list[AddressType] = [
+        ip
+        for ip in ipsum_D
+        if (
+            ip_in_network(ip=ip, networks=geolite, first=0, last=geolite_size - 1)
+            and not ip_in_network(
+                ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
+            )
+            and ip not in whitelist
+            and ipsum_D[ip] >= args.threshold
+        )
+    ]
+
+    ipsum = sorted(ipsum, key=lambda x: int(x))
+    ipsum_size = len(ipsum)
+    print("done")
 
     # ------------------------------------------------------------------
 

@@ -9,6 +9,7 @@ from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
+from banip.utilities import load_ipsum
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -29,16 +30,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # ----------------------------------------------------------------------
 
     # Load ipsum file into a dictionary.
-    with open(IPSUM, "r") as f:
-        ipsum: dict[AddressType, int] = {}
-        for line in f:
-            parts = line.strip().split()
-            try:
-                ip = ipa.ip_address(parts[0])
-                hits = int(parts[1])
-            except (ValueError, NameError):
-                continue
-            ipsum[ip] = hits
+    ipsum: dict[AddressType, int] = load_ipsum(IPSUM)
 
     # ------------------------------------------------------------------
 

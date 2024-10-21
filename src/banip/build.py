@@ -105,7 +105,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Geo-tag all global networks and save entries for target countries
+    # Geotag all global networks and save entries for target countries
     geolite_D = tag_networks()
     with open(TARGETS, "r") as f:
         countries = [
@@ -129,6 +129,7 @@ def task_runner(args: Namespace) -> None:
         for line in f:
             try:
                 ip = ipa.ip_address(line.strip())
+                whitelist.append(ip)
             except ValueError:
                 continue
 

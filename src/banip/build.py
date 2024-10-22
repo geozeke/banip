@@ -119,10 +119,10 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune ipsum.txt to only keep ips from target countries, ips that
-    # are not already covered by a custom subnet, ips that meet the
-    # minimum threshold for number of hits, and ips that are not in the
-    # custom whitelist.
+    # Prune ipsum.txt to only keep ips (1) from target countries, (2)
+    # ips that are not already covered by a custom subnet, (3) ips that
+    # meet the minimum threshold for number of hits, and (4) ips that
+    # are not in the custom whitelist.
     print(f"{'Pruning ipsum.txt':.<{PAD}}", end="", flush=True)
     whitelist: list[AddressType] = []
     with open(CUSTOM_WHITELIST, "r") as f:

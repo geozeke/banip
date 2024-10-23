@@ -1,11 +1,15 @@
 """Taskrunner for check command."""
 
 import argparse
+import ipaddress as ipa
 
-from banip.constants import IPSUM_IPS
+from banip.constants import IPSUM
 from banip.constants import RENDERED_BLACKLIST
+from banip.constants import AddressType
+from banip.constants import NetworkType
 from banip.utilities import extract_ip
-from banip.utilities import load_dictionary
+from banip.utilities import ip_in_network
+from banip.utilities import load_ipsum
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -17,45 +21,59 @@ def task_runner(args: argparse.Namespace) -> None:
         args.ip will be either IPv4 or IPv address of interest.
     """
     print()
-    if not (target := extract_ip(args.ip)):
+    try:
+        target = ipa.ip_address(args.ip)
+    except ValueError:
         print(f"{args.ip} is not a valid IP address.")
         return
 
-    # Create a dictionary to hold lists of the file contents. These are
-    # the keys that will be used:
+    # ----------------------------------------------------------------------
 
-    # V4A: IPv4 Addresses.
-    # V6A: IPv6 Addresses.
-    # V4N: IPv4 Subnets.
-    # V6N: IPv6 Subnets.
+    # Load ipsum file into a dictionary.
+    ipsum: dict[AddressType, int] = load_ipsum()
 
+    # ------------------------------------------------------------------
+
+    # Load rendered blacklist and split into networks and ip addresses
+    with open(RENDERED_BLACKLIST, "r") as f:
+        rendered: list[AddressType | NetworkType] = [
+            token for line in f if (token := extract_ip(line.strip()))
+        ]
+        rendered_nets: list[NetworkType] = sorted(
+            [token for token in rendered if isinstance(token, NetworkType)],
+            key=lambda x: int(x.network_address),
+        )
+        rendered_nets_size = len(rendered_nets)
+        rendered_ips: list[AddressType] = sorted(
+            [token for token in rendered if isinstance(token, AddressType)],
+            key=lambda x: int(x),
+        )
+
+    # ------------------------------------------------------------------
+
+    # Check for membership.
     source = RENDERED_BLACKLIST.name
-    msg = ""
-    if not (D := load_dictionary(RENDERED_BLACKLIST)):
-        print(f"Source file: {source} not found.")
-        return
-    if not (found := target in (D["V4A"] + D["V6A"])):
-        found = any([net
-                    for net in (D["V4N"] + D["V6N"])
-                    if target in net])  # fmt: skip
-        msg = " (captured in subnet)"
-    if found:
-        print(f"{target} found in {source}{msg}")
+    found = False
+    in_subnet = ip_in_network(
+        ip=target, networks=rendered_nets, first=0, last=rendered_nets_size - 1
+    )
+    if target in rendered_ips or in_subnet:
+        print(f"{target} found in {source}", end="")
+        found = True
+        if in_subnet:
+            print(" (captured in subnet)")
+        else:
+            print()
 
-    if IPSUM_IPS.exists():
-        source = IPSUM_IPS.name
-        with open(IPSUM_IPS, "r") as f:
-            for line in f:
-                if str(target) in line:
-                    hitcount = int(line.split()[1])
-                    msg = f"{args.ip} found in {source} with {hitcount}"
-                    noun = "hits" if hitcount > 1 else "hit"
-                    print(f"{msg} {noun}.")
-                    found = True
-                    break
+    if target in ipsum:
+        source = IPSUM.name
+        msg = f"{target} found in {source} with {ipsum[target]}"
+        noun = "hits" if ipsum[target] > 1 else "hit"
+        print(f"{msg} {noun}.")
+        found = True
 
     if not found:
         print(f"{target} not found.")
-
     print()
+
     return

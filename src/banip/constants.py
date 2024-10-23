@@ -18,12 +18,13 @@ CUSTOM_WHITELIST = HOME / "data" / "custom_whitelist.txt"
 GEOLITE_4 = HOME / "data" / "geolite" / "GeoLite2-Country-Blocks-IPv4.csv"
 GEOLITE_6 = HOME / "data" / "geolite" / "GeoLite2-Country-Blocks-IPv6.csv"
 GEOLITE_LOC = HOME / "data" / "geolite" / "GeoLite2-Country-Locations-en.csv"
-IPS = [IPv4Address, IPv6Address]
-IPSUM_IPS = HOME / "data" / "ipsum.txt"
-NETS = [IPv4Network, IPv6Network]
+IPSUM = HOME / "data" / "ipsum.txt"
 RENDERED_BLACKLIST = HOME / "data" / "ip_blacklist.txt"
 TARGETS = HOME / "data" / "targets.txt"
 VERSION = "1.0.2"
 
-# Padding for pretty printing.
-PAD = 6
+# Padding for pretty printing
+PAD = 30
+# Type aliases for IP data types
+AddressType = IPv4Address | IPv6Address
+NetworkType = IPv4Network | IPv6Network

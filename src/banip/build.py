@@ -112,7 +112,7 @@ def task_runner(args: Namespace) -> None:
             token.upper() for line in f if (token := line.strip()) and token[0] != "#"
         ]
     geolite = sorted(
-        [ip for ip in geolite_D if geolite_D[ip] in countries],
+        [net for net in geolite_D if geolite_D[net] in countries],
         key=lambda x: int(x.network_address),
     )
     geolite_size = len(geolite)

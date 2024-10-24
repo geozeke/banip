@@ -47,8 +47,8 @@ Machine, or [Windows Subsystem for Linux (WSL)][def7] is required.
 You'll need a copy of the [MaxMind][def8] GeoLite2 database for
 country-level geotagging of IP addresses. If you have a premium or
 corporate MaxMind account, you're all set. If not, the free GeoLite2
-account will work just fine ([signup here][def5]). Once you login, using
-the menu on the top right select:
+account will work just fine ([sign up here][def5]). Once you login,
+using the menu on the top right select:
 
 ```text
 My Account > My Account
@@ -275,8 +275,6 @@ If you want out, just do this:
 ```shell
 rm -rf ~/.banip
 ```
-
-[top](#top)
 
 [top](#top)
 

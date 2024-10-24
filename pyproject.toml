@@ -7,7 +7,6 @@ readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "banip",
-    "tqdm>=4.66.5",
 ]
 authors = [
     {name = "Peter Nardi", email = "pete@nardi.com"},
@@ -20,7 +19,6 @@ force-single-line = true
 dev-dependencies = [
     "mypy>=1.11.2",
     "ruff>=0.6.6",
-    "types-tqdm>=4.66.0.20240417",
 ]
 
 [tool.uv.sources]

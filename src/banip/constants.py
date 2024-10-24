@@ -5,6 +5,7 @@ from ipaddress import IPv4Network
 from ipaddress import IPv6Address
 from ipaddress import IPv6Network
 from pathlib import Path
+from typing import TypeAlias
 
 HOME = Path(__file__).parents[2]
 
@@ -26,5 +27,5 @@ VERSION = "1.1.0"
 # Padding for pretty printing
 PAD = 30
 # Type aliases for IP data types
-AddressType = IPv4Address | IPv6Address
-NetworkType = IPv4Network | IPv6Network
+AddressType: TypeAlias = IPv4Address | IPv6Address
+NetworkType: TypeAlias = IPv4Network | IPv6Network

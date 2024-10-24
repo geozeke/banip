@@ -34,7 +34,6 @@ those whitelisted countries. This tool accomplishes that.
 * [Updating](#updating)
 * [Plugins](#plugins)
 * [Uninstalling](#uninstall)
-* [Acknowledgements](#acknowledgements)
 
 ## <a id="requirements"></a> Requirements
 
@@ -279,12 +278,6 @@ rm -rf ~/.banip
 
 [top](#top)
 
-## <a id="acknowledgements"></a> Acknowledgements
-
-This project uses the [tqdm library][def10] which is licensed under the
-MIT license. The full license text can be found in the
-[LICENSE-tqdm][def11] file.
-
 [top](#top)
 
 [def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
@@ -296,5 +289,3 @@ MIT license. The full license text can be found in the
 [def7]: https://docs.microsoft.com/en-us/windows/wsl/install
 [def8]: https://www.maxmind.com/en/home
 [def9]: https://github.com/stamparm/ipsum
-[def10]: https://github.com/tqdm/tqdm
-[def11]: ./LICENSE-tqdm

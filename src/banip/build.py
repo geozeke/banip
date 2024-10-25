@@ -9,6 +9,7 @@ from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
 
+from banip.constants import COUNTRY_WHITELIST
 from banip.constants import CUSTOM_BLACKLIST
 from banip.constants import CUSTOM_WHITELIST
 from banip.constants import GEOLITE_4
@@ -116,6 +117,13 @@ def task_runner(args: Namespace) -> None:
         key=lambda x: int(x.network_address),
     )
     geolite_size = len(geolite)
+
+    # Save the cleaned-up country codes for later use in HAProxy
+    print(f"{'Saving country whitelist':.<{PAD}}", end="", flush=True)
+    countries.sort()
+    with open(COUNTRY_WHITELIST, "w") as f:
+        f.write(f"{'\n'.join(countries)}\n")
+    print("done")
 
     # ------------------------------------------------------------------
 

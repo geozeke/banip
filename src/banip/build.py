@@ -119,7 +119,7 @@ def task_runner(args: Namespace) -> None:
     geolite_size = len(geolite)
 
     # Save the cleaned-up country codes for later use in HAProxy
-    print(f"{'Saving country whitelist':.<{PAD}}", end="", flush=True)
+    print(f"{'Saving country targets':.<{PAD}}", end="", flush=True)
     countries.sort()
     with open(COUNTRY_WHITELIST, "w") as f:
         f.write(f"{'\n'.join(countries)}\n")
@@ -197,11 +197,18 @@ def task_runner(args: Namespace) -> None:
     args.outfile.close()
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
-    print(f"{'Blacklist entries saved':.<{PAD}}", end="", flush=True)
-    total_size = ipsum_size + custom_nets_size + custom_ips_size
-    print(f"{(total_size):,d}")
-    print(f"{'Whitelisted countries':.<{PAD}}", end="", flush=True)
+    print(f"{'Target countries':.<{PAD}}", end="", flush=True)
     print(",".join(countries))
+    print()
+    print(f"{'Blacklist IPs from ipsum.txt:':>{PAD}}", end="", flush=True)
+    print(f"{(ipsum_size):>7,d}")
+    print(f"{'Custom blacklist ips:':>{PAD}}", end="", flush=True)
+    print(f"{(custom_ips_size):>7,d}")
+    print(f"{'Custom blacklist subnets:':>{PAD}}", end="", flush=True)
+    print(f"{(custom_nets_size):>7,d}")
+    print(f"{'Total entries saved:':>{PAD}}", end="", flush=True)
+    total_size = ipsum_size + custom_nets_size + custom_ips_size
+    print(f"{(total_size):>7,d}")
 
     return
 

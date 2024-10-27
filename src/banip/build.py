@@ -200,6 +200,8 @@ def task_runner(args: Namespace) -> None:
     print(f"{'Blacklist entries saved':.<{PAD}}", end="", flush=True)
     total_size = ipsum_size + custom_nets_size + custom_ips_size
     print(f"{(total_size):,d}")
+    print(f"{'Whitelisted countries':.<{PAD}}", end="", flush=True)
+    print(",".join(countries))
 
     return
 

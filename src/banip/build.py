@@ -197,6 +197,7 @@ def task_runner(args: Namespace) -> None:
     args.outfile.close()
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
+
     print(f"{'Target countries':.<{PAD}}", end="", flush=True)
     print(",".join(countries))
     print()

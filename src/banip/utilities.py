@@ -3,7 +3,6 @@
 import csv
 import ipaddress as ipa
 import textwrap
-from typing import Optional
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
@@ -42,7 +41,7 @@ def wrap_tight(msg: str, columns=70) -> str:
 # ======================================================================
 
 
-def extract_ip(from_str: str) -> Optional[AddressType | NetworkType]:
+def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     """Convert a string to either an IP address or IP subnet.
 
     Parameters
@@ -56,7 +55,7 @@ def extract_ip(from_str: str) -> Optional[AddressType | NetworkType]:
     Optional[AddressType | NetworkType]
         The formated ipaddress object.
     """
-    to_ip: Optional[AddressType | NetworkType] = None
+    to_ip: AddressType | NetworkType | None = None
     try:
         if "/" in from_str:
             to_ip = ipa.ip_network(from_str)

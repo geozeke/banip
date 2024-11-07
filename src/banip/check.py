@@ -30,7 +30,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # ----------------------------------------------------------------------
 
     # Load ipsum file into a dictionary.
-    ipsum: dict[AddressType, int] = load_ipsum()
+    ipsum = load_ipsum()
 
     # ------------------------------------------------------------------
 
@@ -39,12 +39,12 @@ def task_runner(args: argparse.Namespace) -> None:
         rendered: list[AddressType | NetworkType] = [
             token for line in f if (token := extract_ip(line.strip()))
         ]
-        rendered_nets: list[NetworkType] = sorted(
+        rendered_nets = sorted(
             [token for token in rendered if isinstance(token, NetworkType)],
             key=lambda x: int(x.network_address),
         )
         rendered_nets_size = len(rendered_nets)
-        rendered_ips: list[AddressType] = sorted(
+        rendered_ips = sorted(
             [token for token in rendered if isinstance(token, AddressType)],
             key=lambda x: int(x),
         )

@@ -85,12 +85,12 @@ def task_runner(args: Namespace) -> None:
         custom: list[AddressType | NetworkType] = [
             ip for line in f if (ip := extract_ip(line.strip()))
         ]
-    custom_nets: list[NetworkType] = sorted(
+    custom_nets = sorted(
         [token for token in custom if isinstance(token, NetworkType)],
         key=lambda x: int(x.network_address),
     )
     custom_nets_size = len(custom_nets)
-    custom_ips: list[AddressType] = sorted(
+    custom_ips = sorted(
         [token for token in custom if isinstance(token, AddressType)],
         key=lambda x: int(x),
     )
@@ -141,7 +141,7 @@ def task_runner(args: Namespace) -> None:
             except ValueError:
                 continue
 
-    ipsum_D: dict[AddressType, int] = load_ipsum()
+    ipsum_D = load_ipsum()
     ipsum: list[AddressType] = [
         ip
         for ip in ipsum_D

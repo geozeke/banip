@@ -156,9 +156,9 @@ def ip_in_network(
 ) -> bool:
     """Check if a single IP is in a list of networks.
 
-    This is a recursive binary search across a list of networks (either
-    all IPv4 or all IPv6) to see if a single IP address is contained in
-    any of the networks.
+    This is a recursive binary search across a list of heterogeneous
+    networks (IPv4, IPv6 or both) to see if a single IP address is
+    contained in any of the networks.
 
     Parameters
     ----------
@@ -166,8 +166,8 @@ def ip_in_network(
         This will be either an IPv4 or IPv6 address, in ip_address()
         format.
     networks : list[NetworkType]
-        This is a homogenous list of networks. The type of items in the
-        list with be either IPv4Network or IPv6Network.
+        This is a heterogeneous list of networks. The type of items in
+        the list with be NetworkType.
     first : int
         The starting index in the binary search.
     last : int

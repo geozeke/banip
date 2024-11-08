@@ -273,7 +273,7 @@ create your own plugins:
 If you want out, just do this:
 
 ```shell
-rm -rf ~/.banip
+rm -rf ~/banip
 ```
 
 [top](#top)

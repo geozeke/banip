@@ -5,6 +5,7 @@
 import argparse
 import importlib
 import sys
+import textwrap
 from pathlib import Path
 from types import ModuleType
 from typing import Optional
@@ -14,7 +15,6 @@ from banip.constants import ARG_PARSERS_BASE
 from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
 from banip.constants import VERSION
-from banip.utilities import wrap_tight
 
 # ======================================================================
 
@@ -104,7 +104,7 @@ def main() -> None:
             command itself. Make sure you have a program file called
             \"{args.cmd}.py\" in {CUSTOM_CODE}/
             """
-            print(wrap_tight(msg))
+            print(textwrap.fill(text=" ".join(msg.split())))
             sys.exit(1)
     else:
         mod = importlib.import_module(f"{APP_NAME}.null")

@@ -2,7 +2,6 @@
 
 import csv
 import ipaddress as ipa
-import textwrap
 
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
@@ -12,31 +11,6 @@ from banip.constants import IPSUM
 from banip.constants import PAD
 from banip.constants import AddressType
 from banip.constants import NetworkType
-
-# ======================================================================
-
-
-def wrap_tight(msg: str, columns=70) -> str:
-    """Clean up a multi-line docstring.
-
-    Take a multi-line docstring and wrap it cleanly as a paragraph to a
-    specified column width.
-
-    Parameters
-    ----------
-    msg : str
-        The docstring to be wrapped.
-    columns : int, optional
-        Column width for wrapping, by default 70.
-
-    Returns
-    -------
-    str
-        A wrapped paragraph.
-    """
-    clean = " ".join([t for token in msg.split("\n") if (t := token.strip())])
-    return textwrap.fill(clean, width=columns)
-
 
 # ======================================================================
 

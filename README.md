@@ -65,7 +65,7 @@ GeoLite2 Country: CSV format
 
 *banip* requires [uv][def2] for dependency management. It is well
 behaved and extremely fast. If you're a Python developer you should
-check it out. Visit the [uv site][def2] and install it using using the
+check it out. Visit the [uv site][def2] and install it using the
 instructions for your operating system.
 
 ### gitignore (optional)

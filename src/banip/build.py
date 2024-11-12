@@ -79,19 +79,19 @@ def task_runner(args: Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Load custom blacklist and split it into separate lists of networks
-    # and addresses.
+    # and addresses. Remove any duplicates using sets.
     print(f"{'Pruning custom blacklist':.<{PAD}}", end="", flush=True)
     with open(CUSTOM_BLACKLIST, "r") as f:
         custom: list[AddressType | NetworkType] = [
             ip for line in f if (ip := extract_ip(line.strip()))
         ]
     custom_nets = sorted(
-        [token for token in custom if isinstance(token, NetworkType)],
+        list({token for token in custom if isinstance(token, NetworkType)}),
         key=lambda x: int(x.network_address),
     )
     custom_nets_size = len(custom_nets)
     custom_ips = sorted(
-        [token for token in custom if isinstance(token, AddressType)],
+        list({token for token in custom if isinstance(token, AddressType)}),
         key=lambda x: int(x),
     )
     # Remove any custom ips that are covered by existing custom subnets

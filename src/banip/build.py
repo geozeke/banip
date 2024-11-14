@@ -199,8 +199,7 @@ def task_runner(args: Namespace) -> None:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     print(f"{'Target countries':.<{PAD}}", end="", flush=True)
-    print(",".join(countries))
-    print()
+    print(f"{",".join(countries)}\n")
     print(f"{'Blacklist IPs from ipsum.txt:':>{PAD}}", end="", flush=True)
     print(f"{(ipsum_size):>7,d}")
     print(f"{'Custom blacklist ips:':>{PAD}}", end="", flush=True)

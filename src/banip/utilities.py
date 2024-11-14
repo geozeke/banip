@@ -66,7 +66,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # In that case, the two-letter country_ios_code (index 4) is blank,
     # so we need to pull the two-letter continent code from index 2 in
     # the csv file (indices start at 0).
-    print(f"{'Pulling country IDs':.<{PAD}}", end="", flush=True)
+    print(f"{"Pulling country IDs":.<{PAD}}", end="", flush=True)
     with open(GEOLITE_LOC, "r") as f:
         reader = csv.reader(f)
         next(reader)
@@ -82,7 +82,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    print(f"{'Geotagging IPv4 Networks':.<{PAD}}", end="", flush=True)
+    print(f"{"Geotagging IPv4 Networks":.<{PAD}}", end="", flush=True)
     with open(GEOLITE_4, "r") as f:
         reader = csv.reader(f)
         next(reader)
@@ -100,7 +100,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    print(f"{'Geotagging IPv6 Networks':.<{PAD}}", end="", flush=True)
+    print(f"{"Geotagging IPv6 Networks":.<{PAD}}", end="", flush=True)
     with open(GEOLITE_6, "r") as f:
         reader = csv.reader(f)
         next(reader)
@@ -112,7 +112,7 @@ def tag_networks() -> dict[NetworkType, str]:
             networks[ipa.IPv6Network(net[0])] = country_id
     print("done")
 
-    print(f"{'Generating build products':.<{PAD}}", end="", flush=True)
+    print(f"{"Generating build products":.<{PAD}}", end="", flush=True)
     keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
     with open(COUNTRY_NETS, "w") as f:
         for key in keys:

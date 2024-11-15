@@ -9,6 +9,9 @@ from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
 
+from rich.console import Console
+from rich.table import Table
+
 from banip.constants import COUNTRY_WHITELIST
 from banip.constants import CUSTOM_BLACKLIST
 from banip.constants import CUSTOM_WHITELIST
@@ -44,6 +47,8 @@ def task_runner(args: Namespace) -> None:
     # same name as the default? If so, there's no need to make a local
     # copy of it after computations are complete.
     print()
+    console = Console()
+    table = Table(title="Blacklist Stats")
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
         f = open(CUSTOM_BLACKLIST, "w")
@@ -80,50 +85,57 @@ def task_runner(args: Namespace) -> None:
 
     # Load custom blacklist and split it into separate lists of networks
     # and addresses. Remove any duplicates using sets.
-    print(f"{"Pruning custom blacklist":.<{PAD}}", end="", flush=True)
-    with open(CUSTOM_BLACKLIST, "r") as f:
-        custom: list[AddressType | NetworkType] = [
-            ip for line in f if (ip := extract_ip(line.strip()))
-        ]
-    custom_nets = sorted(
-        list({token for token in custom if isinstance(token, NetworkType)}),
-        key=lambda x: int(x.network_address),
-    )
-    custom_nets_size = len(custom_nets)
-    custom_ips = sorted(
-        list({token for token in custom if isinstance(token, AddressType)}),
-        key=lambda x: int(x),
-    )
-    # Remove any custom ips that are covered by existing custom subnets
-    custom_ips = [
-        ip
-        for ip in custom_ips
-        if not ip_in_network(
-            ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
+    msg = "Pruning custom blacklist"
+    with console.status(msg):
+        with open(CUSTOM_BLACKLIST, "r") as f:
+            custom: list[AddressType | NetworkType] = [
+                ip for line in f if (ip := extract_ip(line.strip()))
+            ]
+        custom_nets = sorted(
+            list({token for token in custom if isinstance(token, NetworkType)}),
+            key=lambda x: int(x.network_address),
         )
-    ]
-    print("done")
+        custom_nets_size = len(custom_nets)
+        custom_ips = sorted(
+            list({token for token in custom if isinstance(token, AddressType)}),
+            key=lambda x: int(x),
+        )
+        # Remove any custom ips that are covered by existing custom subnets
+        custom_ips = [
+            ip
+            for ip in custom_ips
+            if not ip_in_network(
+                ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
+            )
+        ]
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 
     # Geotag all global networks and save entries for target countries
     geolite_D = tag_networks()
-    with open(TARGETS, "r") as f:
-        countries = [
-            token.upper() for line in f if (token := line.strip()) and token[0] != "#"
-        ]
-    geolite = sorted(
-        [net for net in geolite_D if geolite_D[net] in countries],
-        key=lambda x: int(x.network_address),
-    )
-    geolite_size = len(geolite)
+    msg = "Filtering networks"
+    with console.status(msg):
+        with open(TARGETS, "r") as f:
+            countries = [
+                token.upper()
+                for line in f
+                if (token := line.strip()) and token[0] != "#"
+            ]
+        geolite = sorted(
+            [net for net in geolite_D if geolite_D[net] in countries],
+            key=lambda x: int(x.network_address),
+        )
+        geolite_size = len(geolite)
+    print(f"{msg:.<{PAD}}done")
 
     # Save the cleaned-up country codes for later use in HAProxy
-    print(f"{"Saving country targets":.<{PAD}}", end="", flush=True)
-    countries.sort()
-    with open(COUNTRY_WHITELIST, "w") as f:
-        f.write(f"{"\n".join(countries)}\n")
-    print("done")
+    msg = "Saving country targets"
+    with console.status(msg):
+        countries.sort()
+        with open(COUNTRY_WHITELIST, "w") as f:
+            f.write(f"{"\n".join(countries)}\n")
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 
@@ -131,84 +143,91 @@ def task_runner(args: Namespace) -> None:
     # ips that are not already covered by a custom subnet, (3) ips that
     # meet the minimum threshold for number of hits, and (4) ips that
     # are not in the custom whitelist.
-    print(f"{"Pruning ipsum.txt":.<{PAD}}", end="", flush=True)
-    whitelist: list[AddressType] = []
-    with open(CUSTOM_WHITELIST, "r") as f:
-        for line in f:
-            try:
-                ip = ipa.ip_address(line.strip())
-                whitelist.append(ip)
-            except ValueError:
-                continue
+    msg = "Pruning ipsum.txt"
+    with console.status(msg):
+        whitelist: list[AddressType] = []
+        with open(CUSTOM_WHITELIST, "r") as f:
+            for line in f:
+                try:
+                    ip = ipa.ip_address(line.strip())
+                    whitelist.append(ip)
+                except ValueError:
+                    continue
 
-    ipsum_D = load_ipsum()
-    ipsum: list[AddressType] = [
-        ip
-        for ip in ipsum_D
-        if (
-            ip_in_network(ip=ip, networks=geolite, first=0, last=geolite_size - 1)
-            and not ip_in_network(
-                ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
+        ipsum_D = load_ipsum()
+        ipsum: list[AddressType] = [
+            ip
+            for ip in ipsum_D
+            if (
+                ip_in_network(ip=ip, networks=geolite, first=0, last=geolite_size - 1)
+                and not ip_in_network(
+                    ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
+                )
+                and ip not in whitelist
+                and ipsum_D[ip] >= args.threshold
             )
-            and ip not in whitelist
-            and ipsum_D[ip] >= args.threshold
-        )
-    ]
-    ipsum = sorted(ipsum, key=lambda x: int(x))
-    ipsum_size = len(ipsum)
-    print("done")
+        ]
+        ipsum = sorted(ipsum, key=lambda x: int(x))
+        ipsum_size = len(ipsum)
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 
     # Prune any custom ips that are covered by ipsum.txt.
-    print(f"{"De-duplicating custom ips":.<{PAD}}", end="", flush=True)
-    custom_ips = [ip for ip in custom_ips if ip not in ipsum]
-    custom_ips_size = len(custom_ips)
-    print("done")
+    msg = "De-duplicating custom ips"
+    with console.status(msg):
+        custom_ips = [ip for ip in custom_ips if ip not in ipsum]
+        custom_ips_size = len(custom_ips)
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 
     # Re-package and save cleaned-up custom ips and networks
-    print(f"{"Re-packaging custom ips":.<{PAD}}", end="", flush=True)
-    with open(CUSTOM_BLACKLIST, "w") as f:
-        for ip in custom_ips:
-            f.write(f"{ip}\n")
-        for net in custom_nets:
-            f.write(f"{net}\n")
-    print("done")
+    msg = "Re-packaging custom ips"
+    with console.status(msg):
+        with open(CUSTOM_BLACKLIST, "w") as f:
+            for ip in custom_ips:
+                f.write(f"{ip}\n")
+            for net in custom_nets:
+                f.write(f"{net}\n")
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 
     # Render and save the complete ip_blacklist.txt
-    print(f"{"Rendering blacklist":.<{PAD}}", end="", flush=True)
-    with open(RENDERED_BLACKLIST, "w") as f:
-        for ip in ipsum:
-            f.write(f"{ip}\n")
-        now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-        f.write("\n# ------------custom entries -------------\n")
-        f.write(f"# Added on: {now}\n")
-        f.write("# ----------------------------------------\n\n")
-        for ip in custom_ips:
-            f.write(f"{ip}\n")
-        for net in custom_nets:
-            f.write(f"{net}\n")
-    print("done")
+    msg = "Rendering blacklist"
+    with console.status(msg):
+        with open(RENDERED_BLACKLIST, "w") as f:
+            for ip in ipsum:
+                f.write(f"{ip}\n")
+            now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+            f.write("\n# ------------custom entries -------------\n")
+            f.write(f"# Added on: {now}\n")
+            f.write("# ----------------------------------------\n\n")
+            for ip in custom_ips:
+                f.write(f"{ip}\n")
+            for net in custom_nets:
+                f.write(f"{net}\n")
+    print(f"{msg:.<{PAD}}done")
 
     args.outfile.close()
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
-    print(f"{"Target countries":.<{PAD}}", end="", flush=True)
-    print(f"{",".join(countries)}\n")
-    print(f"{"Blacklist IPs from ipsum.txt:":>{PAD}}", end="", flush=True)
-    print(f"{(ipsum_size):>7,d}")
-    print(f"{"Custom blacklist ips:":>{PAD}}", end="", flush=True)
-    print(f"{(custom_ips_size):>7,d}")
-    print(f"{"Custom blacklist subnets:":>{PAD}}", end="", flush=True)
-    print(f"{(custom_nets_size):>7,d}")
-    print(f"{"Total entries saved:":>{PAD}}", end="", flush=True)
+    # General table to display metrics
     total_size = ipsum_size + custom_nets_size + custom_ips_size
-    print(f"{(total_size):>7,d}")
+
+    table.add_column(header="Metric", justify="right")
+    table.add_column(header="Value", justify="right")
+
+    table.add_row("Target Countries", f"{",".join(countries)}")
+    table.add_row("Blacklist IPs from ipsum.txt", f"{(ipsum_size):,d}")
+    table.add_row("Custom blacklist ips", f"{(custom_ips_size):,d}")
+    table.add_row("Custom blacklist subnets", f"{(custom_nets_size):,d}")
+    table.add_row("Total entries saved", f"{(total_size):,d}")
+
+    print()
+    console.print(table)
 
     return
 

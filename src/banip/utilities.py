@@ -3,6 +3,8 @@
 import csv
 import ipaddress as ipa
 
+from rich.console import Console
+
 from banip.constants import COUNTRY_NETS
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
@@ -57,6 +59,7 @@ def tag_networks() -> dict[NetworkType, str]:
     """
     countries: dict[int, str] = {}
     networks: dict[NetworkType, str] = {}
+    console = Console()
 
     # Lines from the country locations file look like this:
     # 4032283,en,OC,Oceania,TO,Tonga,0
@@ -66,15 +69,16 @@ def tag_networks() -> dict[NetworkType, str]:
     # In that case, the two-letter country_ios_code (index 4) is blank,
     # so we need to pull the two-letter continent code from index 2 in
     # the csv file (indices start at 0).
-    print(f"{"Pulling country IDs":.<{PAD}}", end="", flush=True)
-    with open(GEOLITE_LOC, "r") as f:
-        reader = csv.reader(f)
-        next(reader)
-        for country in reader:
-            if not (cic := country[4]):
-                cic = country[2]
-            countries[int(country[0])] = cic
-    print("done")
+    msg = "Pulling country IDs"
+    with console.status(msg):
+        with open(GEOLITE_LOC, "r") as f:
+            reader = csv.reader(f)
+            next(reader)
+            for country in reader:
+                if not (cic := country[4]):
+                    cic = country[2]
+                countries[int(country[0])] = cic
+    print(f"{msg:.<{PAD}}done")
 
     # Lines in the IPv4 country blocks file look like this:
     # 1.47.160.0/19,1605651,1605651,,0,0,
@@ -82,17 +86,18 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    print(f"{"Geotagging IPv4 Networks":.<{PAD}}", end="", flush=True)
-    with open(GEOLITE_4, "r") as f:
-        reader = csv.reader(f)
-        next(reader)
-        for net in reader:
-            try:
-                country_id = countries[int(net[1])]
-            except ValueError:
-                country_id = countries[int(net[2])]
-            networks[ipa.IPv4Network(net[0])] = country_id
-    print("done")
+    msg = "Geotagging IPv4 Networks"
+    with console.status(msg):
+        with open(GEOLITE_4, "r") as f:
+            reader = csv.reader(f)
+            next(reader)
+            for net in reader:
+                try:
+                    country_id = countries[int(net[1])]
+                except ValueError:
+                    country_id = countries[int(net[2])]
+                networks[ipa.IPv4Network(net[0])] = country_id
+    print(f"{msg:.<{PAD}}done")
 
     # Lines in the IPv6 country blocks file look like this:
     # 2001:67c:299c::/48,2921044,2921044,,0,0,
@@ -100,24 +105,26 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    print(f"{"Geotagging IPv6 Networks":.<{PAD}}", end="", flush=True)
-    with open(GEOLITE_6, "r") as f:
-        reader = csv.reader(f)
-        next(reader)
-        for net in reader:
-            try:
-                country_id = countries[int(net[1])]
-            except ValueError:
-                country_id = countries[int(net[2])]
-            networks[ipa.IPv6Network(net[0])] = country_id
-    print("done")
+    msg = "Geotagging IPv6 Networks"
+    with console.status(msg):
+        with open(GEOLITE_6, "r") as f:
+            reader = csv.reader(f)
+            next(reader)
+            for net in reader:
+                try:
+                    country_id = countries[int(net[1])]
+                except ValueError:
+                    country_id = countries[int(net[2])]
+                networks[ipa.IPv6Network(net[0])] = country_id
+    print(f"{msg:.<{PAD}}done")
 
-    print(f"{"Generating build products":.<{PAD}}", end="", flush=True)
-    keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
-    with open(COUNTRY_NETS, "w") as f:
-        for key in keys:
-            f.write(f"{format(key)} {networks[key]}\n")
-    print("done")
+    msg = "Generating build products"
+    with console.status(msg):
+        keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
+        with open(COUNTRY_NETS, "w") as f:
+            for key in keys:
+                f.write(f"{format(key)} {networks[key]}\n")
+    print(f"{msg:.<{PAD}}done")
 
     return networks
 

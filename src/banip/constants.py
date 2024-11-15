@@ -23,7 +23,7 @@ GEOLITE_LOC = HOME / "data" / "geolite" / "GeoLite2-Country-Locations-en.csv"
 IPSUM = HOME / "data" / "ipsum.txt"
 RENDERED_BLACKLIST = HOME / "data" / "ip_blacklist.txt"
 TARGETS = HOME / "data" / "targets.txt"
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 # Padding for pretty printing
 PAD = 30

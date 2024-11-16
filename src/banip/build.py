@@ -9,6 +9,7 @@ from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
 
+from rich import box
 from rich.console import Console
 from rich.table import Table
 
@@ -48,7 +49,7 @@ def task_runner(args: Namespace) -> None:
     # copy of it after computations are complete.
     print()
     console = Console()
-    table = Table(title="Blacklist Stats")
+    table = Table(title="Blacklist Stats", box=box.SQUARE)
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
         f = open(CUSTOM_BLACKLIST, "w")

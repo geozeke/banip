@@ -218,7 +218,7 @@ def task_runner(args: Namespace) -> None:
     # General table to display metrics
     total_size = ipsum_size + custom_nets_size + custom_ips_size
     table = Table(
-        title="Blacklist Stats", box=box.SQUARE, header_style=Style(bold=False)
+        title="Blacklist Stats", box=box.ASCII, header_style=Style(bold=False)
     )
 
     table.add_column(header="Metric", justify="right")

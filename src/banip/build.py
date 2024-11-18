@@ -11,6 +11,7 @@ from pathlib import Path
 
 from rich import box
 from rich.console import Console
+from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_WHITELIST
@@ -48,8 +49,6 @@ def task_runner(args: Namespace) -> None:
     # same name as the default? If so, there's no need to make a local
     # copy of it after computations are complete.
     print()
-    console = Console()
-    table = Table(title="Blacklist Stats", box=box.SQUARE)
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
         f = open(CUSTOM_BLACKLIST, "w")
@@ -86,6 +85,7 @@ def task_runner(args: Namespace) -> None:
 
     # Load custom blacklist and split it into separate lists of networks
     # and addresses. Remove any duplicates using sets.
+    console = Console()
     msg = "Pruning custom blacklist"
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
@@ -217,6 +217,9 @@ def task_runner(args: Namespace) -> None:
 
     # General table to display metrics
     total_size = ipsum_size + custom_nets_size + custom_ips_size
+    table = Table(
+        title="Blacklist Stats", box=box.SQUARE, header_style=Style(bold=False)
+    )
 
     table.add_column(header="Metric", justify="right")
     table.add_column(header="Value", justify="right")

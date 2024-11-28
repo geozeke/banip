@@ -83,8 +83,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Load custom blacklist and split it into separate lists of networks
-    # and addresses. Remove any duplicates using sets.
+    # Load the custom blacklist and split it into separate lists of
+    # networks and addresses. Remove any duplicates using sets.
     console = Console()
     msg = "Pruning custom blacklist"
     with console.status(msg):
@@ -101,7 +101,8 @@ def task_runner(args: Namespace) -> None:
             list({token for token in custom if isinstance(token, AddressType)}),
             key=lambda x: int(x),
         )
-        # Remove any custom ips that are covered by existing custom subnets
+        # Remove any custom ips that are covered by existing custom
+        # subnets
         custom_ips = [
             ip
             for ip in custom_ips
@@ -174,7 +175,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune any custom ips that are covered by ipsum.txt.
+    # Prune any custom ips that are covered by ipsum.txt
     msg = "De-duplicating custom ips"
     with console.status(msg):
         custom_ips = [ip for ip in custom_ips if ip not in ipsum]

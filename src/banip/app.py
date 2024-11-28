@@ -8,7 +8,6 @@ import sys
 import textwrap
 from pathlib import Path
 from types import ModuleType
-from typing import Optional
 
 from banip.constants import APP_NAME
 from banip.constants import ARG_PARSERS_BASE
@@ -76,7 +75,7 @@ def main() -> None:
     # arguments.
 
     parser_names: list[str] = []
-    mod: Optional[ModuleType] = None
+    mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
     for p_name in parser_names:

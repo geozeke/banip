@@ -28,7 +28,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
 
     Returns
     -------
-    Optional[AddressType | NetworkType]
+    AddressType | NetworkType | None
         The formated ipaddress object.
     """
     to_ip: AddressType | NetworkType | None = None

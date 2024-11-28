@@ -18,7 +18,7 @@ def task_runner(args: argparse.Namespace) -> None:
     Parameters
     ----------
     args : argparse.Namespace
-        args.ip will be either IPv4 or IPv address of interest.
+        args.ip will be either IPv4 or IPv6 address of interest.
     """
     print()
     try:
@@ -29,7 +29,7 @@ def task_runner(args: argparse.Namespace) -> None:
 
     # ----------------------------------------------------------------------
 
-    # Load ipsum file into a dictionary.
+    # Load ipsum file into a dictionary
     ipsum = load_ipsum()
 
     # ------------------------------------------------------------------
@@ -51,7 +51,7 @@ def task_runner(args: argparse.Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Check for membership.
+    # Check for membership
     source = RENDERED_BLACKLIST.name
     found = False
     in_subnet = ip_in_network(

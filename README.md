@@ -7,7 +7,7 @@ alt = "Dinobox logo" width="120"/>
 This tool will create a customized list of IP addresses that are
 cross-referenced between two sources:
 
-1. A global (worldwide) list of identified blacklisted IPs.
+1. [This list][def10] of worldwide identified blacklisted IPs.
 2. A list of the IP subnets associated with each country.
 
 The result is a customized blacklist of IP addresses based on
@@ -19,12 +19,11 @@ You could, but where's the fun in that?
 
 You may want to create a list of bad actors for specific countries. The
 global list contains several hundred thousand entries, and you may need
-more targeted list for testing or deployment in production.
-
-For example, I've configured my HAProxy server to drop IP connections
-from all countries except those that I've whitelisted. I also want the
-ability to create a customized IP list to block any bad actors from
-those whitelisted countries. This tool accomplishes that.
+more targeted list for testing or deployment in production. For example,
+I've configured my HAProxy server to drop IP connections from all
+countries except those that I've whitelisted. I also want the ability to
+create a customized IP list to block any bad actors from those
+whitelisted countries. This tool accomplishes that.
 
 ## Contents
 
@@ -64,7 +63,7 @@ GeoLite2 Country: CSV format
 ### uv
 
 *banip* requires [uv][def2] for dependency management. It is well
-behaved and extremely fast. If you're a Python developer you should
+behaved and extremely fast, and if you're a Python developer you should
 check it out. Visit the [uv site][def2] and install it using the
 instructions for your operating system.
 
@@ -92,7 +91,17 @@ curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ips
 ### make
 
 You'll need the [make][def6] utility installed (*it probably
-already is*).
+already is*). If not, install it with:
+
+```shell
+sudo apt install make
+```
+
+On macOS:
+
+```shell
+brew install make
+```
 
 [top](#top)
 
@@ -129,7 +138,7 @@ make setup
 cp <wherever you put them>/* ./data/geolite/
 ```
 
-#### Blacklisted IPs
+#### ipsum Data
 
 ```shell
 cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
@@ -152,11 +161,9 @@ cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
 
 There may be IP addresses that *banip* will flag as malicious, but you
 still want to whitelist them (for example to use for testing). This file
-will contain specific IP addresses, one per line, that you want to
-allow.
-
-This file is optional. If you choose not to use it, *banip* will create
-a blank one when you run it.
+should contain specific IP addresses, one per line, that you want to
+allow. This file is optional and if you choose not to use it, *banip*
+will create a blank one for you.
 
 #### Custom Blacklist (Optional)
 
@@ -164,19 +171,17 @@ a blank one when you run it.
 cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt
 ```
 
-The source database of banned IPs isn't perfect. You may determine that
-there's an IP address you want to ban this is not found in `ipsum.txt`.
-Also, the `ipsum.txt` file only contains IP addresses, and you may want
-to ban an entire subnet. The custom blacklist allows you to capture
-specific IP addresses or subnets (in [CIDR][def] format), one per line,
-that you want to block. Some of your custom blacklist IPs may be found
-when you run the *banip*, so this file (`custom_blacklist.txt`) will be
+The ipsum database isn't perfect. You may determine that there's an IP
+address you want to ban this is not found in `ipsum.txt`. Also, the
+`ipsum.txt` file only contains IP addresses and you may want to ban an
+entire subnet. The custom blacklist allows you to capture specific IP
+addresses or subnets (in [CIDR][def] format), one per line, that you
+want to block. Some of your custom blacklist IPs may be found when you
+run the *banip*, so this file (`custom_blacklist.txt`) will be
 overwritten to remove the duplicates. The contents of the de-duplicated
 file will then be appended to the list generated when you run the
-program.
-
-This file is optional. If you choose not to use it, *banip* will create
-a blank one when you run it.
+program. Like the whitelist, this file is optional. If you choose not to
+use it *banip* will create a blank one when you run it.
 
 *Note: If you're concerned about keeping your original list of custom
 blacklisted IPs, save a copy of it somewhere outside the repository.*
@@ -225,20 +230,22 @@ banip -h
 
 ## <a id="updating"></a> Updating
 
-MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
+MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays
 and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
 updated copies of both and put them in `banip/data/geolite` (for the
 GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run *banip*
 again to generate an updated blacklist.
 
+*I recommend you automate all this using cron to keep your lists fresh.*
+
 [top](#top)
 
 ## <a id="plugins"></a> Plugins
 
-*banip* generates some data that you may want to use for other purposes.
-For example, everytime you build a new blacklist *banip* also creates
-and saves a textfile of all worldwide subnets, each tagged with a
-two-letter country code. The file is saved in:
+*banip* generates some useful build products that you may want to use
+for other purposes. For example, everytime you build a new blacklist
+*banip* also creates and saves a textfile of all worldwide subnets, each
+tagged with a two-letter country code. The file is saved in:
 
 ```'text
 ./banip/data/haproxy_geo_ip.txt
@@ -255,10 +262,8 @@ A *banip* plugin consists of two required files:
 2. Code that implements the functionality of your new command.
 
 All your plugins go into the `./src/plugins` directory in the
-appropriate subdirectory (either `parsers` or `code`). Your
-plugins are not under version control, so they will only reside on your
-machine.
-
+appropriate subdirectory (either `parsers` or `code`). Your plugins are
+not under version control, so they will only reside on your machine.
 Look at the comments in these two files for instructions on how to
 create your own plugins:
 
@@ -288,3 +293,4 @@ rm -rf ~/banip
 [def7]: https://docs.microsoft.com/en-us/windows/wsl/install
 [def8]: https://www.maxmind.com/en/home
 [def9]: https://github.com/stamparm/ipsum
+[def10]: https://github.com/stamparm/ipsum

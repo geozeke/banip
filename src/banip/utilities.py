@@ -2,10 +2,12 @@
 
 import csv
 import ipaddress as ipa
+import pickle
 
 from rich.console import Console
 
-from banip.constants import COUNTRY_NETS
+from banip.constants import COUNTRY_NETS_DICT
+from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
@@ -121,9 +123,11 @@ def tag_networks() -> dict[NetworkType, str]:
     msg = "Generating build products"
     with console.status(msg):
         keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
-        with open(COUNTRY_NETS, "w") as f:
+        with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
                 f.write(f"{format(key)} {networks[key]}\n")
+        with open(COUNTRY_NETS_DICT, "wb") as f:
+            pickle.dump(networks, f)
     print(f"{msg:.<{PAD}}done")
 
     return networks

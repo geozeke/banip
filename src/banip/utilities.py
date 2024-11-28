@@ -134,21 +134,19 @@ def tag_networks() -> dict[NetworkType, str]:
 
 def ip_in_network(
     ip: AddressType, networks: list[NetworkType], first: int, last: int
-) -> bool:
+) -> NetworkType | None:
     """Check if a single IP is in a list of networks.
 
-    This is a recursive binary search across a list of heterogeneous
-    networks (IPv4, IPv6 or both) to see if a single IP address is
-    contained in any of the networks.
+    This is a recursive binary search across a sorted list of
+    heterogeneous networks (IPv4, IPv6 or both) to see if a single IP
+    address is contained in any of the networks.
 
     Parameters
     ----------
     ip : AddressType
-        This will be either an IPv4 or IPv6 address, in ip_address()
-        format.
+        Either an IPv4 or IPv6 address.
     networks : list[NetworkType]
-        This is a heterogeneous list of networks. The type of items in
-        the list with be NetworkType.
+        A sorted heterogeneous list of networks.
     first : int
         The starting index in the binary search.
     last : int
@@ -156,18 +154,18 @@ def ip_in_network(
 
     Returns
     -------
-    bool
-        True if ip is in any of the networks in the list; False
-        otherwise.
+    NetworkType | None
+        If ip is in one of the networks in the list, then return the
+        network containing it; if not, return None.
     """
     if first > last:
-        return False
+        return None
     mid = (first + last) // 2
     ip_int = int(ip)
     network_address = int(networks[mid].network_address)
     broadcast_address = int(networks[mid].broadcast_address)
     if ip_int >= network_address and ip_int <= broadcast_address:
-        return True
+        return networks[mid]
     if ip_int < network_address:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)

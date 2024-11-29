@@ -5,7 +5,6 @@ import ipaddress as ipa
 import pickle
 import textwrap
 
-from rich import box
 from rich.console import Console
 from rich.style import Style
 from rich.table import Table
@@ -52,7 +51,8 @@ def task_runner(args: argparse.Namespace) -> None:
         ipsum = load_ipsum()
     print(f"{msg:.<{PAD}}done")
 
-    # Load rendered blacklist and split into networks and ip addresses
+    # Load rendered blacklist and split it into separate lists of
+    # networks and ip addresses
     msg = "Loading rendered blacklist"
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "r") as f:
@@ -70,8 +70,13 @@ def task_runner(args: argparse.Namespace) -> None:
             )
     print(f"{msg:.<{PAD}}done")
 
+    # Start building the table
+    table = Table(title=f"Stats for {target}", show_lines=True)
+    table.add_column(header="Attribute", justify="right")
+    table.add_column(header="Result", justify="right")
+
     # Load the HAProxy countries dictionary, arrange sorted keys, and
-    # locate two-letter country code for target ip.
+    # locate the two-letter country code for target ip.
     msg = "Finding country of origin"
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
@@ -80,22 +85,12 @@ def task_runner(args: argparse.Namespace) -> None:
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):
-            country_code = nets_D[located_net]
+            table.add_row(
+                "Country Code", nets_D[located_net], style=Style(color="green")
+            )
         else:
-            country_code = "--"
+            table.add_row("Country Code", "--", style=Style(color="red"))
     print(f"{msg:.<{PAD}}done")
-
-    # Start building the table
-    table = Table(
-        title=f"Stats for {target}",
-        box=box.HEAVY_HEAD,
-        header_style=Style(bold=False),
-        show_lines=True,
-    )
-    table.add_column(header="Metric", justify="right")
-    table.add_column(header="Value", justify="right")
-
-    table.add_row("Country Code", country_code)
 
     # Check for membership in the rendered blacklist
     in_subnet = ip_in_network(

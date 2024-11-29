@@ -63,7 +63,6 @@ def task_runner(args: argparse.Namespace) -> None:
                 [token for token in rendered if isinstance(token, NetworkType)],
                 key=lambda x: int(x.network_address),
             )
-            rendered_nets_size = len(rendered_nets)
             rendered_ips = sorted(
                 [token for token in rendered if isinstance(token, AddressType)],
                 key=lambda x: int(x),
@@ -82,53 +81,35 @@ def task_runner(args: argparse.Namespace) -> None:
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
         nets_L = sorted(nets_D.keys(), key=lambda x: int(x.network_address))
+        metric = "Country Code"
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):
-            table.add_row(
-                "Country Code", nets_D[located_net], style=Style(color="green")
-            )
+            status = nets_D[located_net], "green"
         else:
-            table.add_row("Country Code", "--", style=Style(color="red"))
+            status = "--", "red"
+    table.add_row(metric, status[0], style=Style(color=status[1]))
     print(f"{msg:.<{PAD}}done")
 
     # Check for membership in the rendered blacklist
-    in_subnet = ip_in_network(
-        ip=target, networks=rendered_nets, first=0, last=rendered_nets_size - 1
-    )
-    if target in rendered_ips or in_subnet:
-        if in_subnet:
-            table.add_row(
-                "Rendered Blacklist",
-                "found in subnet",
-                style=Style(color="green"),
-            )
-        else:
-            table.add_row(
-                "Rendered Blacklist",
-                "found",
-                style=Style(color="green"),
-            )
+    metric = "Rendered Blacklist"
+    if ip_in_network(
+        ip=target, networks=rendered_nets, first=0, last=len(rendered_nets) - 1
+    ):
+        status = "found in subnet", "green"
+    elif target in rendered_ips:
+        status = "found", "green"
     else:
-        table.add_row(
-            "Rendered Blacklist",
-            "not found",
-            style=Style(color="red"),
-        )
+        status = "not found", "red"
+    table.add_row(metric, status[0], style=Style(color=status[1]))
 
     # Check for membership in ipsum.txt
+    metric = "ipsum.txt"
     if target in ipsum:
-        table.add_row(
-            "ipsum.txt",
-            f"found ({ipsum[target]})",
-            style=Style(color="green"),
-        )
+        status = f"found ({ipsum[target]})", "green"
     else:
-        table.add_row(
-            "ipsum.txt",
-            "not found",
-            style=Style(color="red"),
-        )
+        status = "not found", "red"
+    table.add_row(metric, status[0], style=Style(color=status[1]))
 
     print()
     console.print(table)

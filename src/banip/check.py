@@ -61,14 +61,14 @@ def task_runner(args: argparse.Namespace) -> None:
             rendered: list[AddressType | NetworkType] = [
                 token for line in f if (token := extract_ip(line.strip()))
             ]
-            rendered_nets = sorted(
-                [token for token in rendered if isinstance(token, NetworkType)],
-                key=lambda x: int(x.network_address),
-            )
-            rendered_ips = sorted(
-                [token for token in rendered if isinstance(token, AddressType)],
-                key=lambda x: int(x),
-            )
+        rendered_nets = sorted(
+            [token for token in rendered if isinstance(token, NetworkType)],
+            key=lambda x: int(x.network_address),
+        )
+        rendered_ips = sorted(
+            [token for token in rendered if isinstance(token, AddressType)],
+            key=lambda x: int(x),
+        )
     print(f"{msg:.<{PAD}}done")
 
     # Start building the table

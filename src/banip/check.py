@@ -44,6 +44,8 @@ def task_runner(args: argparse.Namespace) -> None:
         return
 
     console = Console()
+    text_green = Style(color="green")
+    text_red = Style(color="red")
 
     # Load ipsum file into a dictionary
     msg = "Loading ipsum data"
@@ -77,39 +79,39 @@ def task_runner(args: argparse.Namespace) -> None:
     # Load the HAProxy countries dictionary, arrange sorted keys, and
     # locate the two-letter country code for target ip.
     msg = "Finding country of origin"
+    attribute = "Country Code"
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
         nets_L = sorted(nets_D.keys(), key=lambda x: int(x.network_address))
-        metric = "Country Code"
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):
-            status = nets_D[located_net], "green"
+            status = nets_D[located_net], text_green
         else:
-            status = "--", "red"
-    table.add_row(metric, status[0], style=Style(color=status[1]))
+            status = "--", text_red
+    table.add_row(attribute, status[0], style=status[1])
     print(f"{msg:.<{PAD}}done")
 
     # Check for membership in the rendered blacklist
-    metric = "Rendered Blacklist"
+    attribute = "Rendered Blacklist"
     if ip_in_network(
         ip=target, networks=rendered_nets, first=0, last=len(rendered_nets) - 1
     ):
-        status = "found in subnet", "green"
+        status = "found in subnet", text_green
     elif target in rendered_ips:
-        status = "found", "green"
+        status = "found", text_green
     else:
-        status = "not found", "red"
-    table.add_row(metric, status[0], style=Style(color=status[1]))
+        status = "not found", text_red
+    table.add_row(attribute, status[0], style=status[1])
 
     # Check for membership in ipsum.txt
-    metric = "ipsum.txt"
+    attribute = "ipsum.txt"
     if target in ipsum:
-        status = f"found ({ipsum[target]})", "green"
+        status = f"found ({ipsum[target]})", text_green
     else:
-        status = "not found", "red"
-    table.add_row(metric, status[0], style=Style(color=status[1]))
+        status = "not found", text_red
+    table.add_row(attribute, status[0], style=status[1])
 
     print()
     console.print(table)

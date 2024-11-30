@@ -11,12 +11,9 @@ from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
 from banip.constants import PAD
-from banip.constants import RENDERED_BLACKLIST
-from banip.constants import AddressType
-from banip.constants import NetworkType
-from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
+from banip.utilities import load_rendered_blacklist
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -53,22 +50,10 @@ def task_runner(args: argparse.Namespace) -> None:
         ipsum = load_ipsum()
     print(f"{msg:.<{PAD}}done")
 
-    # Load rendered blacklist and split it into separate lists of
-    # networks and ip addresses
+    # Load rendered blacklist
     msg = "Loading rendered blacklist"
     with console.status(msg):
-        with open(RENDERED_BLACKLIST, "r") as f:
-            rendered: list[AddressType | NetworkType] = [
-                token for line in f if (token := extract_ip(line.strip()))
-            ]
-        rendered_nets = sorted(
-            [token for token in rendered if isinstance(token, NetworkType)],
-            key=lambda x: int(x.network_address),
-        )
-        rendered_ips = sorted(
-            [token for token in rendered if isinstance(token, AddressType)],
-            key=lambda x: int(x),
-        )
+        rendered_nets, rendered_ips = load_rendered_blacklist()
     print(f"{msg:.<{PAD}}done")
 
     # Start building the table

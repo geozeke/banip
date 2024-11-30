@@ -96,6 +96,7 @@ def main() -> None:
         else:
             prefix = "plugins.code"
         try:
+            print(prefix, args.cmd)
             mod = importlib.import_module(f"{prefix}.{args.cmd}")
         except ModuleNotFoundError:
             msg = f"""

@@ -13,6 +13,7 @@ from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import PAD
+from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
 from banip.constants import NetworkType
 
@@ -197,3 +198,28 @@ def load_ipsum() -> dict[AddressType, int]:
                 continue
             ipsum[ip] = hits
     return ipsum
+
+
+def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
+    """Load the contents of the rendered blacklist
+
+    Separate it into separate, sorted lists of Networks and IPs
+
+    Returns
+    -------
+    tuple[list[NetworkType], list[AddressType]]
+        The rendered blacklist split into Networks and IPs
+    """
+    with open(RENDERED_BLACKLIST, "r") as f:
+        rendered: list[AddressType | NetworkType] = [
+            token for line in f if (token := extract_ip(line.strip()))
+        ]
+    rendered_nets = sorted(
+        [token for token in rendered if isinstance(token, NetworkType)],
+        key=lambda x: int(x.network_address),
+    )
+    rendered_ips = sorted(
+        [token for token in rendered if isinstance(token, AddressType)],
+        key=lambda x: int(x),
+    )
+    return (rendered_nets, rendered_ips)

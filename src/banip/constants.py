@@ -12,7 +12,8 @@ HOME = Path(__file__).parents[2]
 APP_NAME = "banip"
 ARG_PARSERS_BASE = HOME / "src" / "parsers"
 ARG_PARSERS_CUSTOM = HOME / "src" / "plugins" / "parsers"
-COUNTRY_NETS = HOME / "data" / "haproxy_geo_ip.txt"
+COUNTRY_NETS_TXT = HOME / "data" / "haproxy_geo_ip.txt"
+COUNTRY_NETS_DICT = HOME / "data" / "haproxy_geo_ip_dict.bin"
 COUNTRY_WHITELIST = HOME / "data" / "country_whitelist.txt"
 CUSTOM_BLACKLIST = HOME / "data" / "custom_blacklist.txt"
 CUSTOM_CODE = HOME / "src" / "plugins" / "code"
@@ -23,7 +24,7 @@ GEOLITE_LOC = HOME / "data" / "geolite" / "GeoLite2-Country-Locations-en.csv"
 IPSUM = HOME / "data" / "ipsum.txt"
 RENDERED_BLACKLIST = HOME / "data" / "ip_blacklist.txt"
 TARGETS = HOME / "data" / "targets.txt"
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 # Padding for pretty printing
 PAD = 30

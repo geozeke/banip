@@ -2,15 +2,18 @@
 
 import csv
 import ipaddress as ipa
+import pickle
 
 from rich.console import Console
 
-from banip.constants import COUNTRY_NETS
+from banip.constants import COUNTRY_NETS_DICT
+from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import PAD
+from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
 from banip.constants import NetworkType
 
@@ -28,7 +31,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
 
     Returns
     -------
-    Optional[AddressType | NetworkType]
+    AddressType | NetworkType | None
         The formated ipaddress object.
     """
     to_ip: AddressType | NetworkType | None = None
@@ -121,9 +124,11 @@ def tag_networks() -> dict[NetworkType, str]:
     msg = "Generating build products"
     with console.status(msg):
         keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
-        with open(COUNTRY_NETS, "w") as f:
+        with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
                 f.write(f"{format(key)} {networks[key]}\n")
+        with open(COUNTRY_NETS_DICT, "wb") as f:
+            pickle.dump(networks, f)
     print(f"{msg:.<{PAD}}done")
 
     return networks
@@ -134,21 +139,19 @@ def tag_networks() -> dict[NetworkType, str]:
 
 def ip_in_network(
     ip: AddressType, networks: list[NetworkType], first: int, last: int
-) -> bool:
+) -> NetworkType | None:
     """Check if a single IP is in a list of networks.
 
-    This is a recursive binary search across a list of heterogeneous
-    networks (IPv4, IPv6 or both) to see if a single IP address is
-    contained in any of the networks.
+    This is a recursive binary search across a sorted list of
+    heterogeneous networks (IPv4, IPv6 or both) to see if a single IP
+    address is contained in any of the networks.
 
     Parameters
     ----------
     ip : AddressType
-        This will be either an IPv4 or IPv6 address, in ip_address()
-        format.
+        Either an IPv4 or IPv6 address.
     networks : list[NetworkType]
-        This is a heterogeneous list of networks. The type of items in
-        the list with be NetworkType.
+        A sorted heterogeneous list of networks.
     first : int
         The starting index in the binary search.
     last : int
@@ -156,18 +159,18 @@ def ip_in_network(
 
     Returns
     -------
-    bool
-        True if ip is in any of the networks in the list; False
-        otherwise.
+    NetworkType | None
+        If ip is in one of the networks in the list, then return the
+        network containing it; if not, return None.
     """
     if first > last:
-        return False
+        return None
     mid = (first + last) // 2
     ip_int = int(ip)
     network_address = int(networks[mid].network_address)
     broadcast_address = int(networks[mid].broadcast_address)
     if ip_int >= network_address and ip_int <= broadcast_address:
-        return True
+        return networks[mid]
     if ip_int < network_address:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
@@ -195,3 +198,28 @@ def load_ipsum() -> dict[AddressType, int]:
                 continue
             ipsum[ip] = hits
     return ipsum
+
+
+def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
+    """Load the contents of the rendered blacklist
+
+    Separate it into separate, sorted lists of Networks and IPs
+
+    Returns
+    -------
+    tuple[list[NetworkType], list[AddressType]]
+        The rendered blacklist split into Networks and IPs
+    """
+    with open(RENDERED_BLACKLIST, "r") as f:
+        rendered: list[AddressType | NetworkType] = [
+            token for line in f if (token := extract_ip(line.strip()))
+        ]
+    rendered_nets = sorted(
+        [token for token in rendered if isinstance(token, NetworkType)],
+        key=lambda x: int(x.network_address),
+    )
+    rendered_ips = sorted(
+        [token for token in rendered if isinstance(token, AddressType)],
+        key=lambda x: int(x),
+    )
+    return (rendered_nets, rendered_ips)

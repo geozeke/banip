@@ -175,22 +175,25 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune the list of custom IPs so that what's left are not covered
-    # by ipsum.txt, and are IPs from countries that are included in the
-    # country whitelist.
+    # Prune the list of custom IPs again so that what's left are not
+    # covered by ipsum.txt, and are IPs from countries that are included
+    # in the country whitelist. Account for custom IPs that might not
+    # have a country association (e.g. an IP on a local network)
     msg = "Removing redundant IPs"
     with console.status(msg):
-        custom_ips = [
-            ip
-            for ip in custom_ips
-            if ip not in ipsum_L
-            and (
-                country_net := ip_in_network(
-                    ip=ip, networks=geolite_L, first=0, last=geolite_size - 1
+        temp_L: list[AddressType] = []
+        for ip in custom_ips:
+            if ip in ipsum_L or (
+                (
+                    country_net := ip_in_network(
+                        ip=ip, networks=geolite_L, first=0, last=geolite_size - 1
+                    )
                 )
-            )
-            and geolite_D[country_net] in countries
-        ]
+                and geolite_D[country_net] not in countries
+            ):
+                continue
+            temp_L.append(ip)
+        custom_ips = temp_L.copy()
         custom_ips_size = len(custom_ips)
     print(f"{msg:.<{PAD}}done")
 

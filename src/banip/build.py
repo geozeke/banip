@@ -177,7 +177,7 @@ def task_runner(args: Namespace) -> None:
 
     # Prune the list of custom IPs again so that what's left are not
     # covered by ipsum.txt, and are IPs from countries that are included
-    # in the country whitelist. Account for custom IPs that might not
+    # in the country whitelist. Do not remove custom IPs that might not
     # have a country association (e.g. an IP on a local network)
     msg = "Removing redundant IPs"
     with console.status(msg):

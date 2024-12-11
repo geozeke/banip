@@ -183,13 +183,13 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         temp_L: list[AddressType] = []
         for ip in custom_ips:
-            if ip in ipsum_L or (
-                (
-                    country_net := ip_in_network(
-                        ip=ip, networks=geolite_L, first=0, last=geolite_size - 1
-                    )
+            if ip in ipsum_L or not (
+                ip_in_network(
+                    ip=ip,
+                    networks=geolite_L,
+                    first=0,
+                    last=geolite_size - 1,
                 )
-                and geolite_D[country_net] not in countries
             ):
                 continue
             temp_L.append(ip)

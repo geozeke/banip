@@ -124,11 +124,11 @@ def task_runner(args: Namespace) -> None:
                 for line in f
                 if (token := line.strip()) and token[0] != "#"
             ]
-        geolite_L = sorted(
+        target_geolite = sorted(
             [net for net in geolite_D if geolite_D[net] in countries],
             key=lambda x: int(x.network_address),
         )
-        geolite_size = len(geolite_L)
+        target_geolite_size = len(target_geolite)
     print(f"{msg:.<{PAD}}done")
 
     # Save the cleaned-up country codes for later use in HAProxy
@@ -161,7 +161,12 @@ def task_runner(args: Namespace) -> None:
             ip
             for ip in ipsum_D
             if (
-                ip_in_network(ip=ip, networks=geolite_L, first=0, last=geolite_size - 1)
+                ip_in_network(
+                    ip=ip,
+                    networks=target_geolite,
+                    first=0,
+                    last=target_geolite_size - 1,
+                )
                 and not ip_in_network(
                     ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
                 )
@@ -184,7 +189,12 @@ def task_runner(args: Namespace) -> None:
         temp_L: list[AddressType] = []
         for ip in custom_ips:
             if ip in ipsum_L or not (
-                ip_in_network(ip=ip, networks=geolite_L, first=0, last=geolite_size - 1)
+                ip_in_network(
+                    ip=ip,
+                    networks=target_geolite,
+                    first=0,
+                    last=target_geolite_size - 1,
+                )
             ):
                 continue
             temp_L.append(ip)
@@ -228,9 +238,7 @@ def task_runner(args: Namespace) -> None:
 
     # Generate table to display metrics
     total_size = ipsum_size + custom_nets_size + custom_ips_size
-    table = Table(
-        title="Blacklist Stats", box=box.SQUARE, header_style=Style(bold=False)
-    )
+    table = Table(title="Stats", box=box.SQUARE, header_style=Style(bold=False))
 
     table.add_column(header="Metric", justify="right")
     table.add_column(header="Value", justify="right")

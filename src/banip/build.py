@@ -186,19 +186,14 @@ def task_runner(args: Namespace) -> None:
     # have a country association (e.g. an IP on a local network)
     msg = "Removing redundant IPs"
     with console.status(msg):
-        temp_L: list[AddressType] = []
-        for ip in custom_ips:
-            if ip in ipsum_L or not (
-                ip_in_network(
-                    ip=ip,
-                    networks=target_geolite,
-                    first=0,
-                    last=target_geolite_size - 1,
-                )
-            ):
-                continue
-            temp_L.append(ip)
-        custom_ips = temp_L.copy()
+        custom_ips = [
+            ip
+            for ip in custom_ips
+            if ip not in ipsum_L
+            and ip_in_network(
+                ip=ip, networks=target_geolite, first=0, last=target_geolite_size - 1
+            )
+        ]
         custom_ips_size = len(custom_ips)
     print(f"{msg:.<{PAD}}done")
 

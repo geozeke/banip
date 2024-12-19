@@ -119,6 +119,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
         The formated ipaddress object.
     """
     to_ip: AddressType | NetworkType | None = None
+
     try:
         if "/" in from_str:
             to_ip = ipa.ip_network(from_str)
@@ -126,6 +127,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
             to_ip = ipa.ip_address(from_str)
     except ValueError:
         return None
+
     return to_ip
 
 
@@ -244,7 +246,7 @@ def ip_in_network(
     Returns
     -------
     NetworkType | None
-        If ip is in one of the networks in the list, then return the
+        If IP is in one of the networks in the list, then return the
         network containing it; if not, return None.
     """
     if first > last:
@@ -281,10 +283,11 @@ def load_ipsum() -> dict[AddressType, int]:
             except (ValueError, NameError):
                 continue
             ipsum[ip] = hits
+
     return ipsum
 
 
-def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
+def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     """Load the contents of the rendered blacklist
 
     Separate it into separate, sorted lists of Networks and IPs
@@ -298,12 +301,4 @@ def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
         rendered: list[AddressType | NetworkType] = [
             token for line in f if (token := extract_ip(line.strip()))
         ]
-    rendered_nets = sorted(
-        [token for token in rendered if isinstance(token, NetworkType)],
-        key=lambda x: int(x.network_address),
-    )
-    rendered_ips = sorted(
-        [token for token in rendered if isinstance(token, AddressType)],
-        key=lambda x: int(x),
-    )
-    return (rendered_nets, rendered_ips)
+    return split_hybrid(hybrid_list=rendered)

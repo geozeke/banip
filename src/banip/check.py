@@ -54,7 +54,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # Load rendered blacklist
     msg = "Loading rendered blacklist"
     with console.status(msg):
-        rendered_nets, rendered_ips = load_rendered_blacklist()
+        rendered_ips, rendered_nets = load_rendered_blacklist()
     print(f"{msg:.<{PAD}}done")
 
     # Start building the table

@@ -25,7 +25,6 @@ from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import TARGETS
 from banip.constants import AddressType
-from banip.constants import NetworkType
 from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
@@ -86,15 +85,13 @@ def task_runner(args: Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Load the custom blacklist and split it into separate lists of
-    # networks and addresses. Remove any duplicates using sets.
+    # addresses and networks. Remove any duplicates using sets.
     console = Console()
     msg = "Pruning custom blacklist"
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
-            custom: list[AddressType | NetworkType] = [
-                ip for line in f if (ip := extract_ip(line.strip()))
-            ]
-        custom_ips, custom_nets = split_hybrid(hybrid_list=custom)
+            custom = {item for line in f if (item := extract_ip(line.strip()))}
+        custom_ips, custom_nets = split_hybrid(hybrid_list=list(custom))
         custom_nets_size = len(custom_nets)
         # Remove any custom IPs that are covered by existing custom
         # subnets
@@ -151,7 +148,7 @@ def task_runner(args: Namespace) -> None:
                     continue
 
         ipsum_D = load_ipsum()
-        ipsum_L: list[AddressType] = [
+        ipsum_L = [
             ip
             for ip in ipsum_D
             if (

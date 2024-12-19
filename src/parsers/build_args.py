@@ -1,6 +1,7 @@
 """Argument parser for build command."""
 
-import argparse
+from argparse import ArgumentTypeError
+from argparse import FileType
 from argparse import _SubParsersAction
 from typing import Any
 
@@ -30,9 +31,9 @@ def threshold_type(x: Any) -> int:
     try:
         x_int = int(x)
     except ValueError:
-        raise argparse.ArgumentTypeError("Threshold must be an integer")
+        raise ArgumentTypeError("Threshold must be an integer")
     if x_int not in range(1, 11):
-        raise argparse.ArgumentTypeError("Threshold must be between 1 and 10")
+        raise ArgumentTypeError("Threshold must be between 1 and 10")
     return x_int
 
 
@@ -62,9 +63,9 @@ def compact_type(x: Any) -> int:
     try:
         x_int = int(x)
     except ValueError:
-        raise argparse.ArgumentTypeError("Compact must be an integer")
+        raise ArgumentTypeError("Compact must be an integer")
     if x_int not in range(1, 256):
-        raise argparse.ArgumentTypeError("Compact must be between 1 and 255")
+        raise ArgumentTypeError("Compact must be between 1 and 255")
     return x_int
 
 
@@ -78,18 +79,14 @@ def load_command_args(sp: _SubParsersAction) -> None:
     with a proxy server (like HAProxy) to block network access from
     those clients.
     """
-    parser = sp.add_parser(
-        name=COMMAND_NAME,
-        help=msg,
-        description=msg,
-    )
+    parser = sp.add_parser(name=COMMAND_NAME, help=msg, description=msg)
 
     msg = """
     Output file that will contain the generated list of blacklisted IP
     addresses. If not provided, results will be saved to
     ./data/ip_blacklist.txt
     """
-    parser.add_argument("-o", "--outfile", type=argparse.FileType("w"), help=msg)
+    parser.add_argument("-o", "--outfile", type=FileType("w"), help=msg)
 
     msg = """
     Each banned IP address in the source database has a factor (from 1

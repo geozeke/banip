@@ -3,7 +3,6 @@
 import csv
 import ipaddress as ipa
 import pickle
-from typing import cast
 
 from rich.console import Console
 
@@ -23,7 +22,7 @@ from banip.constants import NetworkType
 
 def compact(
     ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
-) -> list[AddressType | NetworkType]:
+) -> tuple[list[AddressType], list[NetworkType]]:
     """Compact IP addresses into representative Class-C subnets.
 
     Parameters
@@ -40,8 +39,8 @@ def compact(
 
     Returns
     -------
-    list[AddressType | NetworkType]
-        A list containing a mix of IP addresses and /24 subnets
+    tuple[list[AddressType], list[NetworkType]]
+        Separate lists of IP addresses and /24 subnets.
     """
     compacted: list[AddressType | NetworkType] = []
     D: dict[NetworkType, set[AddressType]] = {}
@@ -49,10 +48,7 @@ def compact(
     # 0 indicates no compaction desired. Return the original list,
     # sorted.
     if min_num == 0:
-        return cast(
-            list[AddressType | NetworkType],
-            sorted(ip_list, key=lambda x: int(x)),
-        )
+        return sorted(ip_list, key=lambda x: int(x)), []
 
     # Build a dictionary of subnets for every group of IPs in the list.
     for ip in ip_list:
@@ -82,7 +78,7 @@ def compact(
         key=lambda x: int(x.network_address),
     )
 
-    return compacted_ips + compacted_nets
+    return compacted_ips, compacted_nets
 
 
 # ======================================================================

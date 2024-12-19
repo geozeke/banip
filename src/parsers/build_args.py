@@ -3,12 +3,11 @@
 from argparse import ArgumentTypeError
 from argparse import FileType
 from argparse import _SubParsersAction
-from typing import Any
 
 COMMAND_NAME = "build"
 
 
-def threshold_type(x: Any) -> int:
+def threshold_type(x: str) -> int:
     """Validate the threshold input.
 
     Parameters
@@ -40,7 +39,7 @@ def threshold_type(x: Any) -> int:
 # ======================================================================
 
 
-def compact_type(x: Any) -> int:
+def compact_type(x: str) -> int:
     """Validate the compact input.
 
     Parameters

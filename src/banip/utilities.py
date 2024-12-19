@@ -24,15 +24,37 @@ from banip.constants import NetworkType
 def compact(
     ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
 ) -> list[AddressType | NetworkType]:
+    """Compact IP addresses into representative Class-C subnets.
+
+    Parameters
+    ----------
+    ip_list : list[AddressType]
+        A list of IP addresses to compact - usually the filtered ipsum
+        data.
+    whitelist : list[AddressType]
+        A list of whitelisted IPs. Need to ensure that a collapsed
+        subnet does not include a whitelisted IP.
+    min_num : int
+        The minimum number of IPs required before the group is collapsed
+        into a /24 subnet.
+
+    Returns
+    -------
+    list[AddressType | NetworkType]
+        A list containing a mix of IP addresses and /24 subnets
+    """
     compacted: list[AddressType | NetworkType] = []
     D: dict[NetworkType, set[AddressType]] = {}
 
+    # 0 indicates no compaction desired. Return the original list,
+    # sorted.
     if min_num == 0:
         return cast(
             list[AddressType | NetworkType],
             sorted(ip_list, key=lambda x: int(x)),
         )
 
+    # Build a dictionary of subnets for every group of IPs in the list.
     for ip in ip_list:
         network = ipa.ip_network(f"{ip}/24", strict=False)
         if network in D:
@@ -40,12 +62,17 @@ def compact(
         else:
             D[network] = {ip}
 
+    # Create a new hybrid list representing IP addresses for groups
+    # containing less than the min_num of members, and /24 subnets for
+    # groups sized >= min_num.
     for net, ips in D.items():
         if len(ips) >= min_num and not any([ip in net for ip in whitelist]):
             compacted.append(net)
         else:
             compacted += list(ips)
 
+    # Create separate lists of IP addresses and subnets so they can be
+    # sorted.
     compacted_ips = sorted(
         [token for token in compacted if isinstance(token, AddressType)],
         key=lambda x: int(x),

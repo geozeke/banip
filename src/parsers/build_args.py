@@ -113,7 +113,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     something like 45.78.4.0/24, you may block some benign IPs within
     the same range that were not explicitly in your blacklist.
     """
-    parser.add_argument("-c", "--compact", type=compact_type, help=msg)
+    parser.add_argument("-c", "--compact", type=compact_type, help=msg, default=0)
 
     return
 

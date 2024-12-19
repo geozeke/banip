@@ -3,6 +3,7 @@
 import csv
 import ipaddress as ipa
 import pickle
+from typing import cast
 
 from rich.console import Console
 
@@ -16,6 +17,46 @@ from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
 from banip.constants import NetworkType
+
+# ======================================================================
+
+
+def compact(
+    ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
+) -> list[AddressType | NetworkType]:
+    compacted: list[AddressType | NetworkType] = []
+    D: dict[NetworkType, set[AddressType]] = {}
+
+    if min_num == 0:
+        return cast(
+            list[AddressType | NetworkType],
+            sorted(ip_list, key=lambda x: int(x)),
+        )
+
+    for ip in ip_list:
+        network = ipa.ip_network(f"{ip}/24", strict=False)
+        if network in D:
+            D[network].add(ip)
+        else:
+            D[network] = {ip}
+
+    for net, ips in D.items():
+        if len(ips) >= min_num and not any([ip in net for ip in whitelist]):
+            compacted.append(net)
+        else:
+            compacted += list(ips)
+
+    compacted_ips = sorted(
+        [token for token in compacted if isinstance(token, AddressType)],
+        key=lambda x: int(x),
+    )
+    compacted_nets = sorted(
+        [token for token in compacted if isinstance(token, NetworkType)],
+        key=lambda x: int(x.network_address),
+    )
+
+    return compacted_ips + compacted_nets
+
 
 # ======================================================================
 

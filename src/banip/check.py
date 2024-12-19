@@ -14,6 +14,7 @@ from banip.constants import PAD
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import load_rendered_blacklist
+from banip.utilities import split_hybrid
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -68,7 +69,7 @@ def task_runner(args: argparse.Namespace) -> None:
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
-        nets_L = sorted(nets_D.keys(), key=lambda x: int(x.network_address))
+        _, nets_L = split_hybrid(hybrid_list=nets_D.keys())
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):

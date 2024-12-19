@@ -30,6 +30,7 @@ from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
+from banip.utilities import split_hybrid
 from banip.utilities import tag_networks
 
 
@@ -93,15 +94,8 @@ def task_runner(args: Namespace) -> None:
             custom: list[AddressType | NetworkType] = [
                 ip for line in f if (ip := extract_ip(line.strip()))
             ]
-        custom_nets = sorted(
-            list({token for token in custom if isinstance(token, NetworkType)}),
-            key=lambda x: int(x.network_address),
-        )
+        custom_ips, custom_nets = split_hybrid(hybrid_list=custom)
         custom_nets_size = len(custom_nets)
-        custom_ips = sorted(
-            list({token for token in custom if isinstance(token, AddressType)}),
-            key=lambda x: int(x),
-        )
         # Remove any custom IPs that are covered by existing custom
         # subnets
         custom_ips = [
@@ -125,9 +119,8 @@ def task_runner(args: Namespace) -> None:
                 for line in f
                 if (token := line.strip()) and token[0] != "#"
             ]
-        target_geolite = sorted(
-            [net for net in geolite_D if geolite_D[net] in countries],
-            key=lambda x: int(x.network_address),
+        _, target_geolite = split_hybrid(
+            hybrid_list=[net for net in geolite_D if geolite_D[net] in countries]
         )
         target_geolite_size = len(target_geolite)
     print(f"{msg:.<{PAD}}done")

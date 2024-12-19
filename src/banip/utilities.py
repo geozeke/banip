@@ -20,6 +20,36 @@ from banip.constants import NetworkType
 # ======================================================================
 
 
+def split_hybrid(
+    hybrid_list: list[AddressType | NetworkType],
+) -> tuple[list[AddressType], list[NetworkType]]:
+    """Split a heterogeneous list of IPs and Networks.
+
+    Parameters
+    ----------
+    hybrid_list : list[AddressType  |  NetworkType]
+        A list containing a mix of both IPs and/or Networks
+
+    Returns
+    -------
+    tuple[list[AddressType], list[NetworkType]]
+        Two separate, sorted lists in a tuple. The first containing only
+        IPs, and the second containing only networks.
+    """
+    ips = sorted(
+        [ip for ip in hybrid_list if isinstance(ip, AddressType)],
+        key=lambda x: int(x),
+    )
+    nets = sorted(
+        [net for net in hybrid_list if isinstance(net, NetworkType)],
+        key=lambda x: int(x.network_address),
+    )
+    return ips, nets
+
+
+# ======================================================================
+
+
 def compact(
     ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
 ) -> tuple[list[AddressType], list[NetworkType]]:
@@ -67,18 +97,8 @@ def compact(
         else:
             compacted += list(ips)
 
-    # Create separate lists of IP addresses and subnets so they can be
-    # sorted.
-    compacted_ips = sorted(
-        [token for token in compacted if isinstance(token, AddressType)],
-        key=lambda x: int(x),
-    )
-    compacted_nets = sorted(
-        [token for token in compacted if isinstance(token, NetworkType)],
-        key=lambda x: int(x.network_address),
-    )
-
-    return compacted_ips, compacted_nets
+    # Return separate lists of IP addresses and subnets.
+    return split_hybrid(hybrid_list=compacted)
 
 
 # ======================================================================

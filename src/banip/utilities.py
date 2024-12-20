@@ -179,9 +179,8 @@ def tag_networks() -> dict[NetworkType, str]:
     # IP address.
     msg = "Geotagging Networks"
     with console.status(msg):
-        network_files = [GEOLITE_4, GEOLITE_6]
-        for network_file in network_files:
-            with open(network_file, "r") as f:
+        for geolite_file in [GEOLITE_4, GEOLITE_6]:
+            with open(geolite_file, "r") as f:
                 reader = csv.reader(f)
                 next(reader)
                 for net in reader:

@@ -97,7 +97,7 @@ def compact(
         else:
             compacted += list(ips)
 
-    # Return separate lists of IP addresses and subnets.
+    # Return separate, sorted lists of IP addresses and subnets.
     return split_hybrid(hybrid_list=compacted)
 
 
@@ -171,11 +171,6 @@ def tag_networks() -> dict[NetworkType, str]:
 
     # Lines in the IPv4 country blocks file look like this:
     # 1.47.160.0/19,1605651,1605651,,0,0,
-    # The variable "net" will hold each line of the file, and the code
-    # we're looking for is normally in index 1 (starting from 0). If
-    # that entry is blank, use the code in index 2. Index 0 contains the
-    # IP address.
-
     # Lines in the IPv6 country blocks file look like this:
     # 2001:67c:299c::/48,2921044,2921044,,0,0,
     # The variable "net" will hold each line of the file, and the code

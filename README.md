@@ -144,7 +144,11 @@ cp <wherever you put them>/* ./data/geolite/
 cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
 ```
 
-#### Target Countries
+#### Targets
+
+The global list of blacklisted IPs is massive. When you build a custom
+blacklist with *banip*, it's carefully tailored to just the countries
+you specify using a list of targets.
 
 ```shell
 cp ./samples/targets.txt ./data/targets.txt

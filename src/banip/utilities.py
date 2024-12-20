@@ -175,18 +175,6 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    msg = "Geotagging IPv4 Networks"
-    with console.status(msg):
-        with open(GEOLITE_4, "r") as f:
-            reader = csv.reader(f)
-            next(reader)
-            for net in reader:
-                try:
-                    country_id = countries[int(net[1])]
-                except ValueError:
-                    country_id = countries[int(net[2])]
-                networks[ipa.IPv4Network(net[0])] = country_id
-    print(f"{msg:.<{PAD}}done")
 
     # Lines in the IPv6 country blocks file look like this:
     # 2001:67c:299c::/48,2921044,2921044,,0,0,
@@ -194,17 +182,19 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    msg = "Geotagging IPv6 Networks"
+    msg = "Geotagging Networks"
     with console.status(msg):
-        with open(GEOLITE_6, "r") as f:
-            reader = csv.reader(f)
-            next(reader)
-            for net in reader:
-                try:
-                    country_id = countries[int(net[1])]
-                except ValueError:
-                    country_id = countries[int(net[2])]
-                networks[ipa.IPv6Network(net[0])] = country_id
+        network_files = [GEOLITE_4, GEOLITE_6]
+        for network_file in network_files:
+            with open(network_file, "r") as f:
+                reader = csv.reader(f)
+                next(reader)
+                for net in reader:
+                    try:
+                        country_id = countries[int(net[1])]
+                    except ValueError:
+                        country_id = countries[int(net[2])]
+                    networks[ipa.ip_network(net[0])] = country_id
     print(f"{msg:.<{PAD}}done")
 
     msg = "Generating build products"

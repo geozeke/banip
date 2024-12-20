@@ -209,7 +209,7 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = "Generating build products"
     with console.status(msg):
-        keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
+        _, keys = split_hybrid(hybrid_list=list(networks.keys()))
         with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
                 f.write(f"{format(key)} {networks[key]}\n")
@@ -251,13 +251,15 @@ def ip_in_network(
     """
     if first > last:
         return None
+
     mid = (first + last) // 2
     ip_int = int(ip)
-    network_address = int(networks[mid].network_address)
-    broadcast_address = int(networks[mid].broadcast_address)
-    if ip_int >= network_address and ip_int <= broadcast_address:
+    inner = int(networks[mid].network_address)
+    outer = int(networks[mid].broadcast_address)
+
+    if ip_int >= inner and ip_int <= outer:
         return networks[mid]
-    if ip_int < network_address:
+    if ip_int < inner:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
 
@@ -298,7 +300,5 @@ def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
         The rendered blacklist split into Networks and IPs
     """
     with open(RENDERED_BLACKLIST, "r") as f:
-        rendered: list[AddressType | NetworkType] = [
-            token for line in f if (token := extract_ip(line.strip()))
-        ]
+        rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(hybrid_list=rendered)

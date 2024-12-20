@@ -2,12 +2,12 @@
 
 """Build a custom list of banned IPs."""
 
-import ipaddress as ipa
 import shutil
 import sys
 from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
+from typing import cast
 
 from rich import box
 from rich.console import Console
@@ -138,15 +138,10 @@ def task_runner(args: Namespace) -> None:
     # are not in the custom whitelist.
     msg = "Pruning ipsum.txt"
     with console.status(msg):
-        whitelist: list[AddressType] = []
         with open(CUSTOM_WHITELIST, "r") as f:
-            for line in f:
-                try:
-                    ip = ipa.ip_address(line.strip())
-                    whitelist.append(ip)
-                except ValueError:
-                    continue
-
+            whitelist = [
+                cast(AddressType, ip) for line in f if (ip := extract_ip(line.strip()))
+            ]
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip

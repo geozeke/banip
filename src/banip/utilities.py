@@ -98,7 +98,7 @@ def compact(
             compacted += list(ips)
 
     # Return separate, sorted lists of IP addresses and subnets.
-    return split_hybrid(hybrid_list=compacted)
+    return split_hybrid(compacted)
 
 
 # ======================================================================
@@ -193,7 +193,7 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = "Generating build products"
     with console.status(msg):
-        _, keys = split_hybrid(hybrid_list=list(networks.keys()))
+        _, keys = split_hybrid(list(networks.keys()))
         with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
                 f.write(f"{format(key)} {networks[key]}\n")
@@ -285,4 +285,4 @@ def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     """
     with open(RENDERED_BLACKLIST, "r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
-    return split_hybrid(hybrid_list=rendered)
+    return split_hybrid(rendered)

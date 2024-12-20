@@ -91,7 +91,7 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
-        custom_ips, custom_nets = split_hybrid(hybrid_list=list(custom))
+        custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
         # Remove any custom IPs that are covered by existing custom
         # subnets
@@ -117,7 +117,7 @@ def task_runner(args: Namespace) -> None:
                 if (token := line.strip()) and token[0] != "#"
             ]
         _, target_geolite = split_hybrid(
-            hybrid_list=[net for net in geolite_D if geolite_D[net] in countries]
+            [net for net in geolite_D if geolite_D[net] in countries]
         )
         target_geolite_size = len(target_geolite)
     print(f"{msg:.<{PAD}}done")

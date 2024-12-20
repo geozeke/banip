@@ -69,7 +69,7 @@ def task_runner(args: argparse.Namespace) -> None:
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
-        _, nets_L = split_hybrid(hybrid_list=nets_D.keys())
+        _, nets_L = split_hybrid(nets_D.keys())
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):

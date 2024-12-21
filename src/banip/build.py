@@ -2,12 +2,12 @@
 
 """Build a custom list of banned IPs."""
 
-import ipaddress as ipa
 import shutil
 import sys
 from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
+from typing import cast
 
 from rich import box
 from rich.console import Console
@@ -25,10 +25,11 @@ from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import TARGETS
 from banip.constants import AddressType
-from banip.constants import NetworkType
+from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
+from banip.utilities import split_hybrid
 from banip.utilities import tag_networks
 
 
@@ -84,23 +85,14 @@ def task_runner(args: Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Load the custom blacklist and split it into separate lists of
-    # networks and addresses. Remove any duplicates using sets.
+    # addresses and networks. Remove any duplicates using sets.
     console = Console()
     msg = "Pruning custom blacklist"
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
-            custom: list[AddressType | NetworkType] = [
-                ip for line in f if (ip := extract_ip(line.strip()))
-            ]
-        custom_nets = sorted(
-            list({token for token in custom if isinstance(token, NetworkType)}),
-            key=lambda x: int(x.network_address),
-        )
+            custom = {item for line in f if (item := extract_ip(line.strip()))}
+        custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
-        custom_ips = sorted(
-            list({token for token in custom if isinstance(token, AddressType)}),
-            key=lambda x: int(x),
-        )
         # Remove any custom IPs that are covered by existing custom
         # subnets
         custom_ips = [
@@ -124,9 +116,8 @@ def task_runner(args: Namespace) -> None:
                 for line in f
                 if (token := line.strip()) and token[0] != "#"
             ]
-        target_geolite = sorted(
-            [net for net in geolite_D if geolite_D[net] in countries],
-            key=lambda x: int(x.network_address),
+        _, target_geolite = split_hybrid(
+            [net for net in geolite_D if geolite_D[net] in countries]
         )
         target_geolite_size = len(target_geolite)
     print(f"{msg:.<{PAD}}done")
@@ -147,17 +138,12 @@ def task_runner(args: Namespace) -> None:
     # are not in the custom whitelist.
     msg = "Pruning ipsum.txt"
     with console.status(msg):
-        whitelist: list[AddressType] = []
         with open(CUSTOM_WHITELIST, "r") as f:
-            for line in f:
-                try:
-                    ip = ipa.ip_address(line.strip())
-                    whitelist.append(ip)
-                except ValueError:
-                    continue
-
+            whitelist = [
+                cast(AddressType, ip) for line in f if (ip := extract_ip(line.strip()))
+            ]
         ipsum_D = load_ipsum()
-        ipsum_L: list[AddressType] = [
+        ipsum_L = [
             ip
             for ip in ipsum_D
             if (
@@ -174,8 +160,19 @@ def task_runner(args: Namespace) -> None:
                 and ipsum_D[ip] >= args.threshold
             )
         ]
-        ipsum_L = sorted(ipsum_L, key=lambda x: int(x))
-        ipsum_size = len(ipsum_L)
+    print(f"{msg:.<{PAD}}done")
+
+    # ------------------------------------------------------------------
+
+    # Compact ipsum. A compact factor of 0 indicates no compaction.
+    msg = f"Compacting ipsum ({args.compact})"
+    with console.status(msg):
+        ipsum_ips, ipsum_nets = compact(
+            ip_list=ipsum_L, whitelist=whitelist, min_num=args.compact
+        )
+        ipsum_ips_size = len(ipsum_ips)
+        ipsum_nets_size = len(ipsum_nets)
+        ipsum_size = ipsum_ips_size + ipsum_nets_size
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -189,7 +186,10 @@ def task_runner(args: Namespace) -> None:
         custom_ips = [
             ip
             for ip in custom_ips
-            if ip not in ipsum_L
+            if ip not in ipsum_ips
+            and not ip_in_network(
+                ip=ip, networks=ipsum_nets, first=0, last=ipsum_nets_size - 1
+            )
             and ip_in_network(
                 ip=ip, networks=target_geolite, first=0, last=target_geolite_size - 1
             )
@@ -215,8 +215,10 @@ def task_runner(args: Namespace) -> None:
     msg = "Rendering blacklist"
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
-            for ip in ipsum_L:
+            for ip in ipsum_ips:
                 f.write(f"{ip}\n")
+            for net in ipsum_nets:
+                f.write(f"{net}\n")
             now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
             f.write("\n# ------------custom entries -------------\n")
             f.write(f"# Added on: {now}\n")
@@ -239,7 +241,7 @@ def task_runner(args: Namespace) -> None:
     table.add_column(header="Value", justify="right")
 
     table.add_row("Target Countries", f"{",".join(countries)}")
-    table.add_row("Blacklist IPs from ipsum.txt", f"{(ipsum_size):,d}")
+    table.add_row("Blacklist entries from ipsum.txt", f"{(ipsum_size):,d}")
     table.add_row("Custom blacklist IPs", f"{(custom_ips_size):,d}")
     table.add_row("Custom blacklist subnets", f"{(custom_nets_size):,d}")
     table.add_row("Total entries saved", f"{(total_size):,d}")

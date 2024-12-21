@@ -20,6 +20,90 @@ from banip.constants import NetworkType
 # ======================================================================
 
 
+def split_hybrid(
+    hybrid_list: list[AddressType | NetworkType],
+) -> tuple[list[AddressType], list[NetworkType]]:
+    """Split a heterogeneous list of IPs and Networks.
+
+    Parameters
+    ----------
+    hybrid_list : list[AddressType  |  NetworkType]
+        A list containing a mix of both IPs and/or Networks
+
+    Returns
+    -------
+    tuple[list[AddressType], list[NetworkType]]
+        Two separate, sorted lists in a tuple. The first containing only
+        IPs, and the second containing only networks.
+    """
+    ips = sorted(
+        [ip for ip in hybrid_list if isinstance(ip, AddressType)],
+        key=lambda x: int(x),
+    )
+    nets = sorted(
+        [net for net in hybrid_list if isinstance(net, NetworkType)],
+        key=lambda x: int(x.network_address),
+    )
+    return ips, nets
+
+
+# ======================================================================
+
+
+def compact(
+    ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
+) -> tuple[list[AddressType], list[NetworkType]]:
+    """Compact IP addresses into representative Class-C subnets.
+
+    Parameters
+    ----------
+    ip_list : list[AddressType]
+        A list of IP addresses to compact - usually the filtered ipsum
+        data.
+    whitelist : list[AddressType]
+        A list of whitelisted IPs. Need to ensure that a collapsed
+        subnet does not include a whitelisted IP.
+    min_num : int
+        The minimum number of IPs required before the group is collapsed
+        into a /24 subnet.
+
+    Returns
+    -------
+    tuple[list[AddressType], list[NetworkType]]
+        Separate lists of IP addresses and /24 subnets.
+    """
+    compacted: list[AddressType | NetworkType] = []
+    D: dict[NetworkType, set[AddressType]] = {}
+
+    # 0 indicates no compaction desired. Return the original list,
+    # sorted.
+    if min_num == 0:
+        return sorted(ip_list, key=lambda x: int(x)), []
+
+    # Build a dictionary of subnets for every group of IPs in the list.
+    for ip in ip_list:
+        network = ipa.ip_network(f"{ip}/24", strict=False)
+        if network in D:
+            D[network].add(ip)
+        else:
+            D[network] = {ip}
+
+    # Create a new hybrid list representing IP addresses for groups
+    # containing less than the min_num of members, and /24 subnets for
+    # groups sized >= min_num.
+    for net, ips in D.items():
+        if len(ips) >= min_num and not any([ip in net for ip in whitelist]):
+            compacted.append(net)
+        else:
+            compacted += list(ips)
+
+    # Return separate, sorted lists of IP addresses and subnets.
+    return split_hybrid(compacted)
+
+
+# ======================================================================
+
+
 def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     """Convert a string to either an IP address or IP subnet.
 
@@ -35,6 +119,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
         The formated ipaddress object.
     """
     to_ip: AddressType | NetworkType | None = None
+
     try:
         if "/" in from_str:
             to_ip = ipa.ip_network(from_str)
@@ -42,6 +127,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
             to_ip = ipa.ip_address(from_str)
     except ValueError:
         return None
+
     return to_ip
 
 
@@ -85,45 +171,29 @@ def tag_networks() -> dict[NetworkType, str]:
 
     # Lines in the IPv4 country blocks file look like this:
     # 1.47.160.0/19,1605651,1605651,,0,0,
-    # The variable "net" will hold each line of the file, and the code
-    # we're looking for is normally in index 1 (starting from 0). If
-    # that entry is blank, use the code in index 2. Index 0 contains the
-    # IP address.
-    msg = "Geotagging IPv4 Networks"
-    with console.status(msg):
-        with open(GEOLITE_4, "r") as f:
-            reader = csv.reader(f)
-            next(reader)
-            for net in reader:
-                try:
-                    country_id = countries[int(net[1])]
-                except ValueError:
-                    country_id = countries[int(net[2])]
-                networks[ipa.IPv4Network(net[0])] = country_id
-    print(f"{msg:.<{PAD}}done")
-
     # Lines in the IPv6 country blocks file look like this:
     # 2001:67c:299c::/48,2921044,2921044,,0,0,
     # The variable "net" will hold each line of the file, and the code
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    msg = "Geotagging IPv6 Networks"
+    msg = "Geotagging Networks"
     with console.status(msg):
-        with open(GEOLITE_6, "r") as f:
-            reader = csv.reader(f)
-            next(reader)
-            for net in reader:
-                try:
-                    country_id = countries[int(net[1])]
-                except ValueError:
-                    country_id = countries[int(net[2])]
-                networks[ipa.IPv6Network(net[0])] = country_id
+        for geolite_file in [GEOLITE_4, GEOLITE_6]:
+            with open(geolite_file, "r") as f:
+                reader = csv.reader(f)
+                next(reader)
+                for net in reader:
+                    try:
+                        country_id = countries[int(net[1])]
+                    except ValueError:
+                        country_id = countries[int(net[2])]
+                    networks[ipa.ip_network(net[0])] = country_id
     print(f"{msg:.<{PAD}}done")
 
     msg = "Generating build products"
     with console.status(msg):
-        keys = sorted(list(networks.keys()), key=lambda x: int(x.network_address))
+        _, keys = split_hybrid(list(networks.keys()))
         with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
                 f.write(f"{format(key)} {networks[key]}\n")
@@ -160,18 +230,20 @@ def ip_in_network(
     Returns
     -------
     NetworkType | None
-        If ip is in one of the networks in the list, then return the
+        If IP is in one of the networks in the list, then return the
         network containing it; if not, return None.
     """
     if first > last:
         return None
+
     mid = (first + last) // 2
     ip_int = int(ip)
-    network_address = int(networks[mid].network_address)
-    broadcast_address = int(networks[mid].broadcast_address)
-    if ip_int >= network_address and ip_int <= broadcast_address:
+    inner = int(networks[mid].network_address)
+    outer = int(networks[mid].broadcast_address)
+
+    if ip_int >= inner and ip_int <= outer:
         return networks[mid]
-    if ip_int < network_address:
+    if ip_int < inner:
         return ip_in_network(ip, networks, first, mid - 1)
     return ip_in_network(ip, networks, mid + 1, last)
 
@@ -197,10 +269,11 @@ def load_ipsum() -> dict[AddressType, int]:
             except (ValueError, NameError):
                 continue
             ipsum[ip] = hits
+
     return ipsum
 
 
-def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
+def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     """Load the contents of the rendered blacklist
 
     Separate it into separate, sorted lists of Networks and IPs
@@ -211,15 +284,5 @@ def load_rendered_blacklist() -> tuple[list[NetworkType], list[AddressType]]:
         The rendered blacklist split into Networks and IPs
     """
     with open(RENDERED_BLACKLIST, "r") as f:
-        rendered: list[AddressType | NetworkType] = [
-            token for line in f if (token := extract_ip(line.strip()))
-        ]
-    rendered_nets = sorted(
-        [token for token in rendered if isinstance(token, NetworkType)],
-        key=lambda x: int(x.network_address),
-    )
-    rendered_ips = sorted(
-        [token for token in rendered if isinstance(token, AddressType)],
-        key=lambda x: int(x),
-    )
-    return (rendered_nets, rendered_ips)
+        rendered = [token for line in f if (token := extract_ip(line.strip()))]
+    return split_hybrid(rendered)

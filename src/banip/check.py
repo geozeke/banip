@@ -14,6 +14,7 @@ from banip.constants import PAD
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import load_rendered_blacklist
+from banip.utilities import split_hybrid
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -34,7 +35,7 @@ def task_runner(args: argparse.Namespace) -> None:
     if not COUNTRY_NETS_DICT.exists():
         msg = """
         Some required files are missing. Make sure to build the
-        databases before checking for a particular ip address. Run
+        databases before checking for a particular IP address. Run
         \'banip build -h\' for more information.
         """
         print(textwrap.fill(text=" ".join(msg.split())))
@@ -53,7 +54,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # Load rendered blacklist
     msg = "Loading rendered blacklist"
     with console.status(msg):
-        rendered_nets, rendered_ips = load_rendered_blacklist()
+        rendered_ips, rendered_nets = load_rendered_blacklist()
     print(f"{msg:.<{PAD}}done")
 
     # Start building the table
@@ -62,13 +63,13 @@ def task_runner(args: argparse.Namespace) -> None:
     table.add_column(header="Result", justify="right")
 
     # Load the HAProxy countries dictionary, arrange sorted keys, and
-    # locate the two-letter country code for target ip.
+    # locate the two-letter country code for target IP.
     msg = "Finding country of origin"
     attribute = "Country Code"
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
-        nets_L = sorted(nets_D.keys(), key=lambda x: int(x.network_address))
+        _, nets_L = split_hybrid(nets_D.keys())
         if located_net := ip_in_network(
             ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
         ):

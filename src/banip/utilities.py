@@ -73,6 +73,7 @@ def compact(
         Separate lists of IP addresses and /24 subnets.
     """
     compacted: list[AddressType | NetworkType] = []
+    leftovers: list[AddressType | NetworkType] = []
     D: dict[NetworkType, set[AddressType]] = {}
 
     # 0 indicates no compaction desired. Return the original list,
@@ -82,6 +83,9 @@ def compact(
 
     # Build a dictionary of subnets for every group of IPs in the list.
     for ip in ip_list:
+        if not isinstance(ip, ipa.IPv4Address):
+            leftovers.append(ip)
+            continue
         network = ipa.ip_network(f"{ip}/24", strict=False)
         if network in D:
             D[network].add(ip)
@@ -98,7 +102,7 @@ def compact(
             compacted += list(ips)
 
     # Return separate, sorted lists of IP addresses and subnets.
-    return split_hybrid(compacted)
+    return split_hybrid(compacted + leftovers)
 
 
 # ======================================================================

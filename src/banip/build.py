@@ -120,13 +120,14 @@ def task_runner(args: Namespace) -> None:
             [net for net in geolite_D if geolite_D[net] in countries]
         )
         target_geolite_size = len(target_geolite)
-    print(f"{msg:.<{PAD}}done")
 
     # Save the cleaned-up country codes for later use in HAProxy
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             f.write(f"{"\n".join(countries)}\n")
+
+    print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
 

@@ -10,7 +10,7 @@ dependencies = [
     "rich>=13.9.4",
 ]
 authors = [
-    {name = "Peter Nardi", email = "pete@nardi.com"},
+    {name = "Peter Nardi", email = "geozeke@gmail.com"},
 ]
 
 [tool.ruff.lint.isort]

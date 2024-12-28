@@ -120,14 +120,13 @@ def task_runner(args: Namespace) -> None:
             [net for net in geolite_D if geolite_D[net] in countries]
         )
         target_geolite_size = len(target_geolite)
-    print(f"{msg:.<{PAD}}done")
 
     # Save the cleaned-up country codes for later use in HAProxy
-    msg = "Saving country targets"
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             f.write(f"{"\n".join(countries)}\n")
+
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -173,7 +172,8 @@ def task_runner(args: Namespace) -> None:
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
-    print(f"{msg:.<{PAD}}done")
+    compact_factor = 1 - (ipsum_size / len(ipsum_L))
+    print(f"{msg:.<{PAD}}{compact_factor:<.2%}")
 
     # ------------------------------------------------------------------
 
@@ -233,18 +233,39 @@ def task_runner(args: Namespace) -> None:
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
-    # Generate table to display metrics
-    total_size = ipsum_size + custom_nets_size + custom_ips_size
-    table = Table(title="Stats", box=box.SQUARE, header_style=Style(bold=False))
+    # Generate a table to display metrics. Do not include the network
+    # and broadcast addresses when calculating total_ips, and only
+    # calculate the total number of blocked IPv4 addresses.
+    total_entries = ipsum_size + custom_nets_size + custom_ips_size
+    table = Table(title="Final Stats", box=box.SQUARE, header_style=Style(bold=False))
+    total_ipv4s = 0
+    total_ipv6s = 0
+    for ips in [ipsum_ips, custom_ips]:
+        total_ipv4s += sum([1 for ip in ips if ip.version == 4])
+        total_ipv6s += sum([1 for ip in ips if ip.version == 6])
+    for nets in [ipsum_nets, custom_nets]:
+        total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
+        total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
 
-    table.add_column(header="Metric", justify="right")
+    table.add_column(header="Benchmark", justify="right")
     table.add_column(header="Value", justify="right")
 
-    table.add_row("Target Countries", f"{",".join(countries)}")
-    table.add_row("Blacklist entries from ipsum.txt", f"{(ipsum_size):,d}")
-    table.add_row("Custom blacklist IPs", f"{(custom_ips_size):,d}")
-    table.add_row("Custom blacklist subnets", f"{(custom_nets_size):,d}")
-    table.add_row("Total entries saved", f"{(total_size):,d}")
+    div_length = max(
+        ipsum_ips_size,
+        ipsum_nets_size,
+        custom_ips_size,
+        custom_nets_size,
+    )
+    div_pad = len(f"{div_length:,d}")
+    table.add_row("Target Countries", f"{",".join(countries)}", end_section=True)
+    table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
+    table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
+    table.add_row("IPs - custom", f"{(custom_ips_size):,d}")
+    table.add_row("Subnets - custom", f"{(custom_nets_size):,d}")
+    table.add_row("-" * 19, "-" * div_pad)
+    table.add_row("Total entries saved", f"{(total_entries):,d}", end_section=True)
+    table.add_row("Individual IPv4s blocked", f"{(total_ipv4s):,d}")
+    table.add_row("Individual IPv6s blocked", f"{(total_ipv6s):.2e}")
 
     print()
     console.print(table)

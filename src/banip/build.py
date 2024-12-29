@@ -125,7 +125,6 @@ def task_runner(args: Namespace) -> None:
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             f.write(f"{"\n".join(countries)}\n")
-
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -176,7 +175,7 @@ def task_runner(args: Namespace) -> None:
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
-    compact_factor = 1 - (ipsum_size / len(ipsum_L))
+        compact_factor = 1 - (ipsum_size / len(ipsum_L))
     print(f"{msg:.<{PAD}}{compact_factor:<.2%}")
 
     # ------------------------------------------------------------------
@@ -255,10 +254,6 @@ def task_runner(args: Namespace) -> None:
     for nets in [ipsum_nets, custom_nets]:
         total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
         total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
-
-    table.add_column(header="Benchmark", justify="right")
-    table.add_column(header="Value", justify="right")
-
     div_length = max(
         ipsum_ips_size,
         ipsum_nets_size,
@@ -266,6 +261,10 @@ def task_runner(args: Namespace) -> None:
         custom_nets_size,
     )
     div_pad = len(f"{div_length:,d}")
+
+    table.add_column(header="Benchmark", justify="right")
+    table.add_column(header="Value", justify="right")
+
     table.add_row("Target Countries", f"{",".join(countries)}", end_section=True)
     table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")

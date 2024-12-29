@@ -51,7 +51,9 @@ def split_hybrid(
 
 
 def compact(
-    ip_list: list[AddressType], whitelist: list[AddressType], min_num: int
+    ip_list: list[AddressType],
+    whitelist: list[AddressType | NetworkType],
+    min_num: int,
 ) -> tuple[list[AddressType], list[NetworkType]]:
     """Compact IP addresses into representative Class-C subnets.
 
@@ -60,9 +62,10 @@ def compact(
     ip_list : list[AddressType]
         A list of IP addresses to compact - usually the filtered ipsum
         data.
-    whitelist : list[AddressType]
-        A list of whitelisted IPs. Need to ensure that a collapsed
-        subnet does not include a whitelisted IP.
+    whitelist : list[AddressType | NetworkType]
+        A list of whitelisted IPs and/or subnets. Need to ensure that a
+        collapsed subnet does not include a whitelisted IP and will not
+        overlap a whitelisted subnet.
     min_num : int
         The minimum number of IPs required before the group is collapsed
         into a /24 subnet.
@@ -75,15 +78,17 @@ def compact(
     compacted: list[AddressType | NetworkType] = []
     leftovers: list[AddressType | NetworkType] = []
     D: dict[NetworkType, set[AddressType]] = {}
+    white_ips, white_nets = split_hybrid(whitelist)
 
     # 0 indicates no compaction desired. Return the original list,
     # sorted.
     if min_num == 0:
         return sorted(ip_list, key=lambda x: int(x)), []
 
-    # Build a dictionary of subnets for every group of IPs in the list.
+    # Build a dictionary of subnets for every group of IPs (version 4)
+    # in the list.
     for ip in ip_list:
-        if not isinstance(ip, ipa.IPv4Address):
+        if ip.version != 4:
             leftovers.append(ip)
             continue
         network = ipa.ip_network(f"{ip}/24", strict=False)
@@ -94,9 +99,14 @@ def compact(
 
     # Create a new hybrid list representing IP addresses for groups
     # containing less than the min_num of members, and /24 subnets for
-    # groups sized >= min_num.
+    # groups sized >= min_num. Make sure to check for whitelisted IPs
+    # and networks.
     for net, ips in D.items():
-        if len(ips) >= min_num and not any([ip in net for ip in whitelist]):
+        if (
+            len(ips) >= min_num
+            and not any([ip in net for ip in white_ips])
+            and not any([white_net.overlaps(net) for white_net in white_nets])
+        ):
             compacted.append(net)
         else:
             compacted += list(ips)

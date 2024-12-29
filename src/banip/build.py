@@ -7,7 +7,6 @@ import sys
 from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
-from typing import cast
 
 from rich import box
 from rich.console import Console
@@ -23,8 +22,8 @@ from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
+from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
-from banip.constants import AddressType
 from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
@@ -138,9 +137,9 @@ def task_runner(args: Namespace) -> None:
     msg = "Pruning ipsum.txt"
     with console.status(msg):
         with open(CUSTOM_WHITELIST, "r") as f:
-            whitelist = [
-                cast(AddressType, ip) for line in f if (ip := extract_ip(line.strip()))
-            ]
+            whitelist = [item for line in f if (item := extract_ip(line.strip()))]
+        white_ips, white_nets = split_hybrid(whitelist)
+        white_nets_size = len(white_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip
@@ -156,6 +155,9 @@ def task_runner(args: Namespace) -> None:
                     ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
                 )
                 and ip not in whitelist
+                and not ip_in_network(
+                    ip=ip, networks=white_nets, first=0, last=white_nets_size - 1
+                )
                 and ipsum_D[ip] >= args.threshold
             )
         ]
@@ -167,7 +169,9 @@ def task_runner(args: Namespace) -> None:
     msg = f"Compacting ipsum ({args.compact})"
     with console.status(msg):
         ipsum_ips, ipsum_nets = compact(
-            ip_list=ipsum_L, whitelist=whitelist, min_num=args.compact
+            ip_list=ipsum_L,
+            whitelist=whitelist,
+            min_num=args.compact,
         )
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
@@ -226,6 +230,11 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips:
                 f.write(f"{ip}\n")
             for net in custom_nets:
+                f.write(f"{net}\n")
+        with open(RENDERED_WHITELIST, "w") as f:
+            for ip in white_ips:
+                f.write(f"{ip}\n")
+            for net in white_nets:
                 f.write(f"{net}\n")
     print(f"{msg:.<{PAD}}done")
 

@@ -1,2 +1,9 @@
-192.168.10.1
-192.168.10.2
+# Use IP addresses or subnets, one per line. Blank lines, spaces, and
+# lines starting with '#' are ignored. Invalid addresses are also
+# ignored.
+
+# Whitelist a local network
+192.168.50/24
+
+# Whitelist a single IP address
+151.101.131.5

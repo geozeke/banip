@@ -214,8 +214,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Render and save the complete ip_blacklist.txt
-    msg = "Rendering blacklist"
+    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt
+    msg = "Rendering lists"
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
             for ip in ipsum_ips:

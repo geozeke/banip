@@ -7,7 +7,6 @@ import sys
 from argparse import Namespace
 from datetime import datetime as dt
 from pathlib import Path
-from typing import cast
 
 from rich import box
 from rich.console import Console
@@ -23,8 +22,8 @@ from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
+from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
-from banip.constants import AddressType
 from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import ip_in_network
@@ -126,7 +125,6 @@ def task_runner(args: Namespace) -> None:
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             f.write(f"{"\n".join(countries)}\n")
-
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -138,9 +136,9 @@ def task_runner(args: Namespace) -> None:
     msg = "Pruning ipsum.txt"
     with console.status(msg):
         with open(CUSTOM_WHITELIST, "r") as f:
-            whitelist = [
-                cast(AddressType, ip) for line in f if (ip := extract_ip(line.strip()))
-            ]
+            whitelist = [item for line in f if (item := extract_ip(line.strip()))]
+        white_ips, white_nets = split_hybrid(whitelist)
+        white_nets_size = len(white_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip
@@ -156,6 +154,9 @@ def task_runner(args: Namespace) -> None:
                     ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
                 )
                 and ip not in whitelist
+                and not ip_in_network(
+                    ip=ip, networks=white_nets, first=0, last=white_nets_size - 1
+                )
                 and ipsum_D[ip] >= args.threshold
             )
         ]
@@ -167,12 +168,14 @@ def task_runner(args: Namespace) -> None:
     msg = f"Compacting ipsum ({args.compact})"
     with console.status(msg):
         ipsum_ips, ipsum_nets = compact(
-            ip_list=ipsum_L, whitelist=whitelist, min_num=args.compact
+            ip_list=ipsum_L,
+            whitelist=whitelist,
+            min_num=args.compact,
         )
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
-    compact_factor = 1 - (ipsum_size / len(ipsum_L))
+        compact_factor = 1 - (ipsum_size / len(ipsum_L))
     print(f"{msg:.<{PAD}}{compact_factor:<.2%}")
 
     # ------------------------------------------------------------------
@@ -211,8 +214,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Render and save the complete ip_blacklist.txt
-    msg = "Rendering blacklist"
+    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt
+    msg = "Rendering lists"
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
             for ip in ipsum_ips:
@@ -226,6 +229,11 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips:
                 f.write(f"{ip}\n")
             for net in custom_nets:
+                f.write(f"{net}\n")
+        with open(RENDERED_WHITELIST, "w") as f:
+            for ip in white_ips:
+                f.write(f"{ip}\n")
+            for net in white_nets:
                 f.write(f"{net}\n")
     print(f"{msg:.<{PAD}}done")
 
@@ -246,10 +254,6 @@ def task_runner(args: Namespace) -> None:
     for nets in [ipsum_nets, custom_nets]:
         total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
         total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
-
-    table.add_column(header="Benchmark", justify="right")
-    table.add_column(header="Value", justify="right")
-
     div_length = max(
         ipsum_ips_size,
         ipsum_nets_size,
@@ -257,6 +261,10 @@ def task_runner(args: Namespace) -> None:
         custom_nets_size,
     )
     div_pad = len(f"{div_length:,d}")
+
+    table.add_column(header="Benchmark", justify="right")
+    table.add_column(header="Value", justify="right")
+
     table.add_row("Target Countries", f"{",".join(countries)}", end_section=True)
     table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")

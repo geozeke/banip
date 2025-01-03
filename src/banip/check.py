@@ -58,9 +58,9 @@ def task_runner(args: argparse.Namespace) -> None:
     print(f"{msg:.<{PAD}}done")
 
     # Start building the table
-    table = Table(title=f"Stats for {target}", show_lines=True)
-    table.add_column(header="Attribute", justify="right")
-    table.add_column(header="Result", justify="right")
+    table = Table(title=f"Stats for {target}", show_lines=True, show_header=False)
+    table.add_column(justify="right")
+    table.add_column(justify="right")
 
     # Load the HAProxy countries dictionary, arrange sorted keys, and
     # locate the two-letter country code for target IP.

@@ -10,7 +10,6 @@ from pathlib import Path
 
 from rich import box
 from rich.console import Console
-from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_WHITELIST
@@ -245,7 +244,7 @@ def task_runner(args: Namespace) -> None:
     # and broadcast addresses when calculating total_ips, and only
     # calculate the total number of blocked IPv4 addresses.
     total_entries = ipsum_size + custom_nets_size + custom_ips_size
-    table = Table(title="Final Stats", box=box.SQUARE, header_style=Style(bold=False))
+    table = Table(title="Final Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
     total_ipv6s = 0
     for ips in [ipsum_ips, custom_ips]:
@@ -262,8 +261,8 @@ def task_runner(args: Namespace) -> None:
     )
     div_pad = len(f"{div_length:,d}")
 
-    table.add_column(header="Benchmark", justify="right")
-    table.add_column(header="Value", justify="right")
+    table.add_column(justify="right")
+    table.add_column(justify="right")
 
     table.add_row("Target Countries", f"{",".join(countries)}", end_section=True)
     table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")

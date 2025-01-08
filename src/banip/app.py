@@ -78,6 +78,7 @@ def main() -> None:
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
+    parser_names = sorted(parser_names, key=lambda x: x.split(".")[1])
     for p_name in parser_names:
         parser_code = importlib.import_module(p_name)
         parser_code.load_command_args(subparsers)

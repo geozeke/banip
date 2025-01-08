@@ -34,9 +34,9 @@ def task_runner(args: argparse.Namespace) -> None:
 
     if not COUNTRY_NETS_DICT.exists():
         msg = """
-        Some required files are missing. Make sure to build the
-        databases before checking for a particular IP address. Run
-        \'banip build -h\' for more information.
+        Some required files are missing. Make sure to run the \'build\'
+        command before checking for a particular IP address. Run \'banip
+        build -h\' for more information.
         """
         print(textwrap.fill(text=" ".join(msg.split())))
         return

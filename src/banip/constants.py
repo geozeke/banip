@@ -26,7 +26,6 @@ GEOLITE_6 = DATA / "geolite" / "GeoLite2-Country-Blocks-IPv6.csv"
 GEOLITE_LOC = DATA / "geolite" / "GeoLite2-Country-Locations-en.csv"
 IPSUM = DATA / "ipsum.txt"
 TARGETS = DATA / "targets.txt"
-VERSION = "1.1.3"
 
 # Padding for pretty printing
 PAD = 30

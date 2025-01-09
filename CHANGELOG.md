@@ -2,13 +2,30 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.1.3][1.1.3] - 2024-12-19
+
+### Added
+
+* Add the ability to compact ipsum entries into /24 subnets.
+
+### Fixed
+
+* Improve input validation.
+* Lint documentation.
+* Refactor and optimize code.
+
+<!--------------------------------------------------------------------->
+
 ## [1.1.2][1.1.2] - 2024-12-02
 
 ### Changed
 
 * Tune binary search algorithm.
 * Enhance `banip check` with prettier output using rich.
-Enhanced banip check with prettier output using rich.
+
+### Fixed
+
+* Lint documentation.
 
 <!--------------------------------------------------------------------->
 
@@ -97,3 +114,4 @@ _Initial Release._
 [1.1.1]: https://github.com/geozeke/banip/releases/tag/v1.1.1
 [rich]: https://github.com/Textualize/rich
 [1.1.2]: https://github.com/geozeke/banip/releases/tag/v1.1.2
+[1.1.3]: https://github.com/geozeke/banip/releases/tag/v1.1.3

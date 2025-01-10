@@ -21,7 +21,7 @@
 ### Changed
 
 * Tune binary search algorithm.
-* Enhance `banip check` with prettier output using rich.
+* Enhance `banip check` with prettier output using [rich][rich].
 
 ### Fixed
 

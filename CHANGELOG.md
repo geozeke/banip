@@ -2,6 +2,25 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.2.0][1.2.0] - 2025-01-11
+
+### Changed
+
+* Implement [tomli compatability layer][tomli].
+* Optimize version numbering.
+
+### Added
+
+* Add statistics for a given country. ([#32][issue32])
+* Establish and maintain a proper changelog.
+
+### Fixed
+
+* Lint documentation.
+* Display properly sorted options when getting help.
+
+<!--------------------------------------------------------------------->
+
 ## [1.1.3][1.1.3] - 2024-12-19
 
 ### Added
@@ -115,3 +134,6 @@ _Initial Release._
 [rich]: https://github.com/Textualize/rich
 [1.1.2]: https://github.com/geozeke/banip/releases/tag/v1.1.2
 [1.1.3]: https://github.com/geozeke/banip/releases/tag/v1.1.3
+[tomli]: https://pypi.org/project/tomli/
+[1.2.0]: https://github.com/geozeke/banip/releases/tag/v1.2.0
+[issue32]: https://github.com/geozeke/banip/issues/32

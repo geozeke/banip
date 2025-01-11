@@ -7,7 +7,7 @@ alt = "Dinobox logo" width="120"/>
 This tool will create a customized list of IP addresses that are
 cross-referenced between two sources:
 
-1. [This list][def10] of worldwide identified blacklisted IPs.
+1. [This list][ipsum] of worldwide identified blacklisted IPs.
 2. A list of the IP subnets associated with each country.
 
 The result is a customized blacklist of IP addresses based on
@@ -19,11 +19,11 @@ You could, but where's the fun in that?
 
 You may want to create a list of bad actors for specific countries. The
 global list contains several hundred thousand entries, and you may need
-more targeted list for testing or deployment in production. For example,
-I've configured my HAProxy server to drop IP connections from all
-countries except those that I've whitelisted. I also want the ability to
-create a customized IP list to block any bad actors from those
-whitelisted countries. This tool accomplishes that.
+a more targeted list for testing or deployment in production. For
+example, I've configured my HAProxy server to drop IP connections from
+all countries except those that I've whitelisted. I also want the
+ability to create a customized IP list to block any bad actors from
+those whitelisted countries. This tool accomplishes that.
 
 ## Contents
 
@@ -39,15 +39,15 @@ whitelisted countries. This tool accomplishes that.
 ### Operating System
 
 *banip* runs in Unix-like OSes. Either macOS, a Linux PC, Linux Virtual
-Machine, or [Windows Subsystem for Linux (WSL)][def7] is required.
+Machine, or [Windows Subsystem for Linux (WSL)][wsl] is required.
 
 ### MaxMind Database
 
-You'll need a copy of the [MaxMind][def8] GeoLite2 database for
+You'll need a copy of the [MaxMind][mmh] GeoLite2 database for
 country-level geotagging of IP addresses. If you have a premium or
 corporate MaxMind account, you're all set. If not, the free GeoLite2
-account will work just fine ([sign up here][def5]). Once you login,
-using the menu on the top right select:
+account will work just fine ([sign up here][mmgeo]). Once you log in,
+using the menu on the top right, select:
 
 ```text
 My Account > My Account
@@ -62,9 +62,9 @@ GeoLite2 Country: CSV format
 
 ### uv
 
-*banip* requires [uv][def2] for dependency management. It is well
-behaved and extremely fast, and if you're a Python developer you should
-check it out. Visit the [uv site][def2] and install it using the
+*banip* requires [uv][astral] for dependency management. It is well
+behaved and extremely fast, and if you're a Python developer, you should
+check it out. Visit the [uv site][astral] and install it using the
 instructions for your operating system.
 
 ### gitignore (optional)
@@ -73,15 +73,15 @@ If you want to fork and develop this repo, I've included a file called
 `global-gitignore.txt` which is a copy of the `.gitignore` I placed in
 my home directory and configured globally for all my development
 projects. The `global-gitignore.txt` file reflects my development setup
-(for example using tools like vscode), but yours may be different. Just
-cherrypick any necessary elements from `global-gitignore.txt` for your
+(for example, using tools like vscode), but yours may be different. Just
+cherry-pick any necessary elements from `global-gitignore.txt` for your
 own use.
 
-*Details on gitignore files are available on [GitHub][def3].*
+*Details on gitignore files are available on [GitHub][git-ignore].*
 
 ### Global List of Blacklisted IPs
 
-*banip* uses the [ipsum][def9] threat intelligence blacklist. You can
+*banip* uses the [ipsum][ipsum] threat intelligence blacklist. You can
 direct download it using:
 
 ```shell
@@ -90,8 +90,8 @@ curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ips
 
 ### make
 
-You'll need the [make][def6] utility installed (*it probably
-already is*). If not, install it with:
+You'll need the [make][make] utility installed (it probably already is).
+If not, install it with:
 
 ```shell
 sudo apt install make
@@ -113,7 +113,7 @@ Unpack the GeoLite2-Country zip archive and save the files to a location
 you can easily get to.
 
 *Note: if you're looking for a quick way to download the MaxMind data
-using `curl` and a direct download permalink, [SEE HERE][def4].*
+using `curl` and a direct download permalink, [SEE HERE][mmd].*
 
 ### Clone the Repository
 
@@ -164,10 +164,10 @@ cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
 ```
 
 There may be IP addresses that *banip* will flag as malicious, but you
-still want to whitelist them (for example to use for testing). This file
-should contain specific IP addresses, one per line, that you want to
-allow. This file is optional and if you choose not to use it, *banip*
-will create a blank one for you.
+still want to whitelist them (for example, to use for testing). This
+file should contain specific IP addresses, one per line, that you want
+to allow. This file is optional, and if you choose not to use it,
+*banip* will create a blank one for you.
 
 #### Custom Blacklist (Optional)
 
@@ -176,16 +176,16 @@ cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt
 ```
 
 The ipsum database isn't perfect. You may determine that there's an IP
-address you want to ban this is not found in `ipsum.txt`. Also, the
-`ipsum.txt` file only contains IP addresses and you may want to ban an
+address you want to ban that is not found in `ipsum.txt`. Also, the
+`ipsum.txt` file only contains IP addresses, and you may want to ban an
 entire subnet. The custom blacklist allows you to capture specific IP
-addresses or subnets (in [CIDR][def] format), one per line, that you
+addresses or subnets (in [CIDR][cidr] format), one per line, that you
 want to block. Some of your custom blacklist IPs may be found when you
 run the *banip*, so this file (`custom_blacklist.txt`) will be
 overwritten to remove the duplicates. The contents of the de-duplicated
 file will then be appended to the list generated when you run the
 program. Like the whitelist, this file is optional. If you choose not to
-use it *banip* will create a blank one when you run it.
+use it, *banip* will create a blank one when you run it.
 
 *Note: If you're concerned about keeping your original list of custom
 blacklisted IPs, save a copy of it somewhere outside the repository.*
@@ -218,7 +218,7 @@ data
 ## <a id="running"></a> Running
 
 After copying/tweaking all the required files, start by activating the
-python virtual environment:
+Python virtual environment:
 
 ```shell
 source .venv/bin/activate
@@ -234,7 +234,7 @@ banip -h
 
 ## <a id="updating"></a> Updating
 
-MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays
+MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
 and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
 updated copies of both and put them in `banip/data/geolite` (for the
 GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run *banip*
@@ -247,16 +247,16 @@ again to generate an updated blacklist.
 ## <a id="plugins"></a> Plugins
 
 *banip* generates some useful build products that you may want to use
-for other purposes. For example, everytime you build a new blacklist
-*banip* also creates and saves a textfile of all worldwide subnets, each
-tagged with a two-letter country code. The file is saved in:
+for other purposes. For example, every time you build a new blacklist,
+*banip* also creates and saves a text file of all worldwide subnets,
+each tagged with a two-letter country code. The file is saved in:
 
 ```'text
 ./banip/data/haproxy_geo_ip.txt
 ```
 
 Next time you run *banip*, open that file and take a look at it. Since
-you may have a very specific usecase for that data, you can write a
+you may have a very specific use case for that data, you can write a
 plugin for *banip* which will make use of the build products for your
 purposes.
 
@@ -288,13 +288,12 @@ rm -rf ~/banip
 
 [top](#top)
 
-[def]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
-[def2]: https://docs.astral.sh/uv/
-[def3]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-[def4]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
-[def5]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
-[def6]: https://man7.org/linux/man-pages/man1/make.1p.html
-[def7]: https://docs.microsoft.com/en-us/windows/wsl/install
-[def8]: https://www.maxmind.com/en/home
-[def9]: https://github.com/stamparm/ipsum
-[def10]: https://github.com/stamparm/ipsum
+[cidr]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
+[astral]: https://docs.astral.sh/uv/
+[git-ignore]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+[mmd]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
+[mmgeo]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
+[make]: https://man7.org/linux/man-pages/man1/make.1p.html
+[wsl]: https://docs.microsoft.com/en-us/windows/wsl/install
+[mmh]: https://www.maxmind.com/en/home
+[ipsum]: https://github.com/stamparm/ipsum

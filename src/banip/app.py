@@ -5,7 +5,6 @@
 import argparse
 import importlib
 import sys
-import textwrap
 from pathlib import Path
 from types import ModuleType
 
@@ -13,7 +12,7 @@ from banip.constants import APP_NAME
 from banip.constants import ARG_PARSERS_BASE
 from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
-from banip.constants import VERSION
+from banip.version import get_version
 
 # ======================================================================
 
@@ -53,7 +52,7 @@ def main() -> None:
     https://github.com/geozeke/banip for detailed instructions on
     setting up banip.
     """
-    epi = f"Version: {VERSION}"
+    epi = f"Version: {get_version()}"
     parser = argparse.ArgumentParser(
         description=msg,
         epilog=epi,
@@ -62,7 +61,7 @@ def main() -> None:
         "-v",
         "--version",
         action="version",
-        version=f"{APP_NAME} {VERSION}",
+        version=f"{APP_NAME} {get_version()}",
     )
     msg = "For help on any command below, run: banip {command} -h."
     subparsers = parser.add_subparsers(
@@ -78,6 +77,7 @@ def main() -> None:
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
+    parser_names = sorted(parser_names, key=lambda x: x.split(".")[1])
     for p_name in parser_names:
         parser_code = importlib.import_module(p_name)
         parser_code.load_command_args(subparsers)
@@ -101,9 +101,10 @@ def main() -> None:
             msg = f"""
             Code for a custom command must have the same filename as the
             command itself. Make sure you have a program file called
-            \"{args.cmd}.py\" in {CUSTOM_CODE}/
+            \"{args.cmd}.py\" in:
+            {CUSTOM_CODE.parent}/
             """
-            print(textwrap.fill(text=" ".join(msg.split())))
+            print("\n".join([line.strip() for line in msg.split("\n")]))
             sys.exit(1)
     else:
         mod = importlib.import_module(f"{APP_NAME}.null")

@@ -1,6 +1,6 @@
 [project]
 name = "banip"
-version = "1.1.3"
+version = "1.2.0"
 description = "Create a list of banned IPs for specific countries"
 license = {file = "LICENSE"}
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -8,9 +8,16 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "banip",
     "rich>=13.9.4",
+    "tomli>=1.1.0 ; python_full_version < '3.11'",
 ]
 authors = [
     {name = "Peter Nardi", email = "geozeke@gmail.com"},
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "ruff>=0.7.1",
 ]
 
 [tool.ruff.lint.isort]
@@ -26,12 +33,6 @@ banip = "banip.app:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[dependency-groups]
-dev = [
-    "mypy>=1.13.0",
-    "ruff>=0.7.1",
-]
-
 [tool.hatch.build]
 exclude = [
     ".gitignore",
@@ -40,3 +41,6 @@ exclude = [
     "samples/**",
     "uv.lock",
 ]
+
+[tool.hatch.build.targets.wheel.force-include]
+"./pyproject.toml" = "banip/pyproject.toml"

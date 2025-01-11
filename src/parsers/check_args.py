@@ -15,11 +15,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     rendered blacklist only reflects those countries that are in
     targets.txt
     """
-    parser = sp.add_parser(
-        name=COMMAND_NAME,
-        help=msg,
-        description=msg,
-    )
+    parser = sp.add_parser(name=COMMAND_NAME, help=msg, description=msg)
 
     msg = """
     This is the IPv4 or IPv6 address you're interested in. After you run
@@ -28,10 +24,6 @@ def load_command_args(sp: _SubParsersAction) -> None:
     to generate new data will use the updated information for future IP
     checking.
     """
-    parser.add_argument(
-        "ip",
-        type=str,
-        help=msg,
-    )
+    parser.add_argument("ip", type=str, help=msg)
 
     return

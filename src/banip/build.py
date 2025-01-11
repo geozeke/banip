@@ -123,7 +123,7 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
-            f.write(f"{"\n".join(countries)}\n")
+            f.write(f"{'\n'.join(countries)}\n")
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -264,7 +264,7 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
     table.add_column(justify="right")
 
-    table.add_row("Target Countries", f"{",".join(countries)}", end_section=True)
+    table.add_row("Target Countries", f"{','.join(countries)}", end_section=True)
     table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
     table.add_row("IPs - custom", f"{(custom_ips_size):,d}")

@@ -3,7 +3,6 @@
 import argparse
 import ipaddress as ipa
 import pickle
-import textwrap
 
 from rich.console import Console
 from rich.style import Style
@@ -34,11 +33,13 @@ def task_runner(args: argparse.Namespace) -> None:
 
     if not COUNTRY_NETS_DICT.exists():
         msg = """
-        Some required files are missing. Make sure to build the
-        databases before checking for a particular IP address. Run
-        \'banip build -h\' for more information.
+        Some required files are missing. Make sure to run the \'build\'
+        command before generating statistics for a given IP. Run this
+        command for more information:
+        
+        \'banip build -h\'
         """
-        print(textwrap.fill(text=" ".join(msg.split())))
+        print("\n".join([line.strip() for line in msg.split("\n")]))
         return
 
     console = Console()

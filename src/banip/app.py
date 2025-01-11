@@ -5,7 +5,6 @@
 import argparse
 import importlib
 import sys
-import textwrap
 from pathlib import Path
 from types import ModuleType
 
@@ -102,9 +101,10 @@ def main() -> None:
             msg = f"""
             Code for a custom command must have the same filename as the
             command itself. Make sure you have a program file called
-            \"{args.cmd}.py\" in {CUSTOM_CODE}/
+            \"{args.cmd}.py\" in:
+            {CUSTOM_CODE.parent}/
             """
-            print(textwrap.fill(text=" ".join(msg.split())))
+            print("\n".join([line.strip() for line in msg.split("\n")]))
             sys.exit(1)
     else:
         mod = importlib.import_module(f"{APP_NAME}.null")

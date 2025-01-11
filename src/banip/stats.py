@@ -2,7 +2,6 @@
 
 import argparse
 import pickle
-import textwrap
 
 from rich import box
 from rich.console import Console
@@ -26,10 +25,12 @@ def task_runner(args: argparse.Namespace) -> None:
     if not COUNTRY_NETS_DICT.exists():
         msg = """
         Some required files are missing. Make sure to run the \'build\'
-        command before producing statistics for a particular country.
-        Run \'banip build -h\' for more information.
+        command before generating statistics for a given country. Run
+        this command for more information:
+        
+        \'banip build -h\'
         """
-        print(textwrap.fill(text=" ".join(msg.split())))
+        print("\n".join([line.strip() for line in msg.split("\n")]))
         return
 
     target_country = args.country_code.upper()

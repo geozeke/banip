@@ -2,6 +2,18 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.3.0][1.3.0] - 2025-01-xx
+
+### Changed
+
+### Added
+
+### Removed
+
+### Fixed
+
+<!--------------------------------------------------------------------->
+
 ## [1.2.0][1.2.0] - 2025-01-11
 
 ### Changed
@@ -137,3 +149,4 @@ _Initial Release._
 [tomli]: https://pypi.org/project/tomli/
 [1.2.0]: https://github.com/geozeke/banip/releases/tag/v1.2.0
 [issue32]: https://github.com/geozeke/banip/issues/32
+[1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0

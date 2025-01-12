@@ -4,11 +4,10 @@ version = "1.2.0"
 description = "Create a list of banned IPs for specific countries"
 license = {file = "LICENSE"}
 readme = {file = "README.md", content-type = "text/markdown"}
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.12"
 dependencies = [
-    "banip",
     "rich>=13.9.4",
-    "tomli>=1.1.0 ; python_full_version < '3.11'",
+    "tomli>=2.2.1",
 ]
 authors = [
     {name = "Peter Nardi", email = "geozeke@gmail.com"},

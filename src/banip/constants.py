@@ -12,7 +12,7 @@ BASE = Path(__file__).parents[1]
 DATA = HOME / ".banip"
 
 APP_NAME = "banip"
-ARG_PARSERS_BASE = BASE / "src" / "parsers"
+ARG_PARSERS_BASE = BASE / "parsers"
 ARG_PARSERS_CUSTOM = DATA / "plugins" / "parsers"
 CUSTOM_CODE = DATA / "plugins" / "code"
 COUNTRY_NETS_TXT = DATA / "haproxy_geo_ip.txt"

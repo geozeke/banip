@@ -99,8 +99,7 @@ def main() -> None:
             msg = f"""
             Code for a custom command must have the same filename as the
             command itself. Make sure you have a program file called
-            \"{args.cmd}.py\" in:
-            {CUSTOM_CODE.parent}/
+            \"{args.cmd}.py\" in: {CUSTOM_CODE}
             """
             print("\n".join([line.strip() for line in msg.split("\n")]))
             sys.exit(1)

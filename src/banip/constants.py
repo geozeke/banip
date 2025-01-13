@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TypeAlias
 
 HOME = Path.home()
-BASE = Path(__file__).parents[1]
+BASE = Path(__file__).parents[0]
 DATA = HOME / ".banip"
 
 APP_NAME = "banip"

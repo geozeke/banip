@@ -11,8 +11,8 @@ from types import ModuleType
 
 from banip.constants import APP_NAME
 from banip.constants import ARG_PARSERS_BASE
-from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
+from banip.constants import CUSTOM_PARSERS
 from banip.version import get_version
 
 # ======================================================================
@@ -92,14 +92,14 @@ def main() -> None:
     parser_names: list[str] = []
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
-    parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
+    parser_names += collect_parsers(CUSTOM_PARSERS)
     parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
     for p_name in parser_names:
         if "plugins" not in p_name:
             parser_code = importlib.import_module(f"banip.{p_name}")
         else:
             parser_code = load_custom_module(
-                p_name.split(".")[-1], location=ARG_PARSERS_CUSTOM
+                p_name.split(".")[-1], location=CUSTOM_PARSERS
             )
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()

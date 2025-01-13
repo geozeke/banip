@@ -4,6 +4,9 @@
 
 ## [1.3.0][1.3.0] - 2025-01-xx
 
+**This is a breaking change. banip is now installed via `uv`, and your
+data files need to move. Please see [README.md][banip] for more.**
+
 ### Changed
 
 ### Added
@@ -153,3 +156,4 @@ _Initial Release._
 [issue32]: https://github.com/geozeke/banip/issues/32
 [1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0
 [issue35]: https://github.com/geozeke/banip/issues/35
+[banip]: https://github.com/geozeke/banip

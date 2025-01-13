@@ -4,6 +4,7 @@
 
 import argparse
 import importlib
+import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -32,7 +33,7 @@ def collect_parsers(start: Path) -> list[str]:
     """
     parser_names: list[str] = []
     for p in start.iterdir():
-        if p.is_file() and p.name != "__init__.py":
+        if p.is_file() and p.name.endswith(".py") and p.name != "__init__.py":
             if "plugins" in str(p):
                 prefix = "plugins.parsers"
             else:
@@ -53,33 +54,29 @@ def main() -> None:
     setting up banip.
     """
     epi = f"Version: {get_version()}"
-    parser = argparse.ArgumentParser(
-        description=msg,
-        epilog=epi,
-    )
+    parser = argparse.ArgumentParser(description=msg, epilog=epi)
     parser.add_argument(
-        "-v",
-        "--version",
-        action="version",
-        version=f"{APP_NAME} {get_version()}",
+        "-v", "--version", action="version", version=f"{APP_NAME} {get_version()}"
     )
     msg = "For help on any command below, run: banip {command} -h."
-    subparsers = parser.add_subparsers(
-        title="commands",
-        dest="cmd",
-        description=msg,
-    )
+    subparsers = parser.add_subparsers(title="commands", dest="cmd", description=msg)
 
     # Dynamically load argument subparsers and process command line
     # arguments.
 
+    sys.path.append(str(ARG_PARSERS_CUSTOM))
     parser_names: list[str] = []
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
-    parser_names = sorted(parser_names, key=lambda x: x.split(".")[1])
+    parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
+    print(parser_names)
     for p_name in parser_names:
-        parser_code = importlib.import_module(p_name)
+        print(f"HERE -> {p_name}")
+        if "plugins" not in p_name:
+            parser_code = importlib.import_module(f"banip.{p_name}")
+        else:
+            parser_code = importlib.import_module(p_name)
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()
 

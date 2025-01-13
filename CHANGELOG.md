@@ -5,7 +5,8 @@
 ## [1.3.0][1.3.0] - 2025-01-xx
 
 **This is a breaking change. banip is now installed via `uv`, and your
-data files need to move. Please see [README.md][banip] for more.**
+existing data files need to move. Please see [README.md][banip] for
+more.**
 
 ### Changed
 

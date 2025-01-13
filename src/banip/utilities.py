@@ -20,6 +20,40 @@ from banip.constants import NetworkType
 # ======================================================================
 
 
+def print_docstring(msg: str) -> None:
+    """Print a formatted docstring.
+
+    This function assumes the docstring is in a very specific format:
+
+    msg = <three quotes>
+    First line (docstring must contain at least one, non-blank)
+    Subsequent lines
+
+    Can include empty lines after the first.
+    <three quotes>
+
+    Parameters
+    ----------
+    msg : str
+        The docstring to be printed.
+    """
+    # Remove delete the first '\n', remove any leading padding from the
+    # string, then print.
+    lines = msg.split("\n")[1:]
+    spaces = 0
+    for c in lines[0]:
+        if c in ["\n", " "]:
+            spaces += 1
+        else:
+            break
+    formatted_docstring = "\n".join([line[spaces:] for line in lines])
+    print(formatted_docstring)
+    return
+
+
+# ======================================================================
+
+
 def split_hybrid(
     hybrid_list: list[AddressType | NetworkType],
 ) -> tuple[list[AddressType], list[NetworkType]]:

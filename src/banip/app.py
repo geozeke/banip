@@ -13,7 +13,41 @@ from banip.constants import APP_NAME
 from banip.constants import ARG_PARSERS_BASE
 from banip.constants import CUSTOM_CODE
 from banip.constants import CUSTOM_PARSERS
+from banip.constants import DATA
+from banip.utilities import print_docstring
 from banip.version import get_version
+
+# ======================================================================
+
+
+def check_setup() -> bool:
+    """Make sure the environment was propert set up.
+
+    Returns
+    -------
+    bool:
+        True if everything is in place; False otherwise.
+    """
+    proper_setup = (
+        CUSTOM_PARSERS.exists()
+        and CUSTOM_CODE.exists()
+        and (DATA / "geolite").exists()
+    )  # fmt: off
+    if not proper_setup:
+        msg = """
+        It looks like the environment was not set properly. Please
+        ensure the following structure exists in your home directory:
+
+        .banip
+        ├── geolite
+        └── plugins
+            ├── code
+            └── parsers
+        """
+        print_docstring(msg=msg)
+        return False
+    return True
+
 
 # ======================================================================
 
@@ -72,6 +106,10 @@ def collect_parsers(start: Path) -> list[str]:
 
 def main() -> None:
     """Get user input and build the list of banned IP addresses."""
+    # Make sure setup was properly completed.
+    if not check_setup():
+        return
+
     msg = """
     Generate and query IP blacklists for use with proxy servers (like
     HAProxy). Please review the README file at

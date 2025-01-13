@@ -63,6 +63,7 @@ def main() -> None:
     # Dynamically load argument subparsers and process command line
     # arguments.
 
+    # Add the locations of plug-ins to the path
     sys.path.append(str(ARG_PARSERS_CUSTOM))
     sys.path.append(str(CUSTOM_CODE))
 
@@ -91,7 +92,7 @@ def main() -> None:
         if f"parsers.{args.cmd}_args" in parser_names:
             mod_name = f"{APP_NAME}.{args.cmd}"
         else:
-            mod_name = "log"
+            mod_name = args.cmd
         try:
             mod = importlib.import_module(mod_name)
         except ModuleNotFoundError:

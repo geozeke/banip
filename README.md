@@ -32,6 +32,7 @@ those whitelisted countries. This tool accomplishes that.
 * [Running](#running)
 * [Updating](#updating)
 * [Plugins](#plugins)
+* [Upgrading](#upgrade)
 * [Uninstalling](#uninstall)
 
 ## <a id="requirements"></a> Requirements
@@ -84,23 +85,8 @@ _Details on gitignore files are available on [GitHub][git-ignore]._
 _banip_ uses the [ipsum][ipsum] threat intelligence blacklist. You can
 direct download it using:
 
-```shell
+```text
 curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ipsum.txt
-```
-
-### make
-
-You'll need the [make][make] utility installed (it probably already is).
-If not, install it with:
-
-```shell
-sudo apt install make
-```
-
-On macOS:
-
-```shell
-brew install make
 ```
 
 [top](#top)
@@ -115,33 +101,32 @@ you can easily get to.
 _Note: if you're looking for a quick way to download the MaxMind data
 using `curl` and a direct download permalink, [SEE HERE][mmd]._
 
-### Clone the Repository
+### Installing banip
 
-Clone this repository. We'll assume you clone it to your home directory
-(`~`):
-
-```shell
-git clone https://github.com/geozeke/banip.git
+```text
+uv tool install --from git+http://github.com/geozeke/banip.git banip
 ```
 
-Change to `~/banip` and run this command:
+### Create Required Directories
 
-```shell
-make setup
+Copy and paste the code below into a shell:
+
+```text
+mkdir -p ~/.banip/geolite ~/.banip/plugins/code ~/.banip/plugins/parsers
 ```
 
 ### Copy Files
 
 #### GeoLite2 Files
 
-```shell
-cp <wherever you put them>/* ./data/geolite/
+```text
+cp <wherever you put them>/* ~/.banip/geolite/
 ```
 
 #### ipsum Data
 
-```shell
-cp <wherever you put it>/ipsum.txt ./data/ipsum.txt
+```text
+cp <wherever you put it>/ipsum.txt ~/.banip/ipsum.txt
 ```
 
 #### Targets
@@ -150,17 +135,17 @@ The global list of blacklisted IPs is massive. When you build a custom
 blacklist with _banip_, it's carefully tailored to just the countries
 you specify using a list of targets.
 
-```shell
-cp ./samples/targets.txt ./data/targets.txt
+```text
+cp ./samples/targets.txt ~/.banip/targets.txt
 ```
 
-Modify `./data/targets.txt` to select your desired target countries. The
-comments in the file will guide you.
+Modify `~/.banip/targets.txt` to select your desired target countries.
+The comments in the file will guide you.
 
 #### Custom Whitelist (Optional)
 
-```shell
-cp ./samples/custom_whitelist.txt ./data/custom_whitelist.txt
+```text
+cp ./samples/custom_whitelist.txt ~/.banip/custom_whitelist.txt
 ```
 
 There may be IP addresses that _banip_ will flag as malicious, but you
@@ -171,8 +156,8 @@ _banip_ will create a blank one for you.
 
 #### Custom Blacklist (Optional)
 
-```shell
-cp ./samples/custom_blacklist.txt ./data/custom_blacklist.txt
+```text
+cp ./samples/custom_blacklist.txt ~/.banip/custom_blacklist.txt
 ```
 
 The ipsum database isn't perfect. You may determine that there's an IP
@@ -188,15 +173,15 @@ program. Like the whitelist, this file is optional. If you choose not to
 use it, _banip_ will create a blank one when you run it.
 
 _Note: If you're concerned about keeping your original list of custom
-blacklisted IPs, save a copy of it somewhere outside the repository._
+blacklisted IPs, save a copy of it somewhere outside of `~/.banip`._
 
-When you're done, the `~/banip/data` directory should look like this:
+When you're done, the `~/.banip` directory should look like this:
 
 ```text
-data
+.banip
 ├── custom_blacklist.txt (optional)
 ├── custom_whitelist.txt (optional)
-├── geolite (required)
+├── geolite
 │   ├── COPYRIGHT.txt
 │   ├── GeoLite2-Country-Blocks-IPv4.csv
 │   ├── GeoLite2-Country-Blocks-IPv6.csv
@@ -210,6 +195,9 @@ data
 │   ├── GeoLite2-Country-Locations-zh-CN.csv
 │   └── LICENSE.txt
 ├── ipsum.txt (required)
+├── plugins (required)
+│   ├── code (required)
+│   └── parsers (required)
 └── targets.txt (required)
 ```
 
@@ -220,13 +208,9 @@ data
 After copying/tweaking all the required files, start by activating the
 Python virtual environment:
 
-```shell
-source .venv/bin/activate
-```
+Run this command to learn how to build your custom blacklist:
 
-Now run this command to learn how to build your custom blacklist:
-
-```shell
+```text
 banip -h
 ```
 
@@ -252,7 +236,7 @@ _banip_ also creates and saves a text file of all worldwide subnets,
 each tagged with a two-letter country code. The file is saved in:
 
 ```'text
-./banip/data/haproxy_geo_ip.txt
+~/.banip/haproxy_geo_ip.txt
 ```
 
 Next time you run _banip_, open that file and take a look at it. Since
@@ -265,11 +249,10 @@ A _banip_ plugin consists of two required files:
 1. Code that generates an argument parser for your new command.
 2. Code that implements the functionality of your new command.
 
-All your plugins go into the `./src/plugins` directory in the
-appropriate subdirectory (either `parsers` or `code`). Your plugins are
-not under version control, so they will only reside on your machine.
-Look at the comments in these two files for instructions on how to
-create your own plugins:
+All your plugins go into the `~/.banip/plugins` directory in the
+appropriate subdirectory (either `parsers` or `code`). Look at the
+comments in these two files for instructions on how to create your own
+plugins:
 
 ```text
 ./samples/plugins/foo.py
@@ -278,12 +261,23 @@ create your own plugins:
 
 [top](#top)
 
+## <a id="upgrade"></a> Upgrading banip
+
+To upgrade the code for _banip_, run:
+
+```text
+uv tool upgrade banip
+```
+
+[top](#top)
+
 ## <a id="uninstall"></a> Uninstalling banip
 
 If you want out, just do this:
 
-```shell
-rm -rf ~/banip
+```text
+uv tool uninstall banip
+rm -rf ~/.banip
 ```
 
 [top](#top)
@@ -293,7 +287,6 @@ rm -rf ~/banip
 [git-ignore]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 [mmd]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
 [mmgeo]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
-[make]: https://man7.org/linux/man-pages/man1/make.1p.html
 [wsl]: https://docs.microsoft.com/en-us/windows/wsl/install
 [mmh]: https://www.maxmind.com/en/home
 [ipsum]: https://github.com/stamparm/ipsum

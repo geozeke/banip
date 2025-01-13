@@ -2,6 +2,23 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.3.0][1.3.0] - 2025-01-13
+
+**This is a breaking change! banip is now installed via `uv`, and your
+existing data files need to move. Please see [README.md][banip] for
+more.**
+
+### Changed
+
+**breaking**: Migrate banip to an installable package ([#36][issue36]).
+
+### Fixed
+
+* Fix italics in markdown files ([#35][issue35])
+* Lint code and documentation.
+
+<!--------------------------------------------------------------------->
+
 ## [1.2.0][1.2.0] - 2025-01-11
 
 ### Changed
@@ -137,3 +154,7 @@ _Initial Release._
 [tomli]: https://pypi.org/project/tomli/
 [1.2.0]: https://github.com/geozeke/banip/releases/tag/v1.2.0
 [issue32]: https://github.com/geozeke/banip/issues/32
+[1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0
+[issue35]: https://github.com/geozeke/banip/issues/35
+[banip]: https://github.com/geozeke/banip
+[issue36]: https://github.com/geozeke/banip/issues/36

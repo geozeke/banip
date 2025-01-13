@@ -6,6 +6,7 @@ import argparse
 import importlib
 import importlib.util
 import sys
+from ast import Mod
 from pathlib import Path
 from types import ModuleType
 
@@ -76,7 +77,8 @@ def main() -> None:
         if "plugins" not in p_name:
             parser_code = importlib.import_module(f"banip.{p_name}")
         else:
-            mod_name = p_name.split()[-1]
+            mod_name = p_name.split(".")[-1]
+            print(mod_name)
             parser_code = importlib.import_module(mod_name)
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()

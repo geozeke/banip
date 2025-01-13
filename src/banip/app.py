@@ -76,7 +76,8 @@ def main() -> None:
         if "plugins" not in p_name:
             parser_code = importlib.import_module(f"banip.{p_name}")
         else:
-            parser_code = importlib.import_module(p_name)
+            mod_name = p_name.split()[-1]
+            parser_code = importlib.import_module(mod_name)
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()
 

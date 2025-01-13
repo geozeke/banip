@@ -25,20 +25,23 @@ def print_docstring(msg: str) -> None:
 
     This function assumes the docstring is in a very specific format:
 
-    msg = <three quotes>
-    First line (docstring must contain at least one, non-blank)
-    Subsequent lines
-
-    Can include empty lines after the first.
-    <three quotes>
+    >>> msg = <three quotes>
+    >>> First line (non-blank)
+    >>>
+    >>> Subsequent lines
+    >>> Subsequent lines
+    >>> Subsequent lines
+    >>> ...
+    >>> Can include empty lines after the first.
+    >>> <three quotes>
 
     Parameters
     ----------
     msg : str
         The docstring to be printed.
     """
-    # Remove delete the first '\n', remove any leading padding from the
-    # string, then print.
+    # Delete the first line ('\n' by itself), remove any leading padding
+    # from the string, then print.
     lines = msg.split("\n")[1:]
     spaces = 0
     for c in lines[0]:

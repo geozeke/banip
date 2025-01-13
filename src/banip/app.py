@@ -4,9 +4,7 @@
 
 import argparse
 import importlib
-import importlib.util
 import sys
-from ast import Mod
 from pathlib import Path
 from types import ModuleType
 
@@ -66,19 +64,18 @@ def main() -> None:
     # arguments.
 
     sys.path.append(str(ARG_PARSERS_CUSTOM))
+    sys.path.append(str(CUSTOM_CODE))
+
     parser_names: list[str] = []
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
     parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
-    print(ARG_PARSERS_CUSTOM)
     for p_name in parser_names:
-        print(f"HERE -> {p_name}")
         if "plugins" not in p_name:
             parser_code = importlib.import_module(f"banip.{p_name}")
         else:
             mod_name = p_name.split(".")[-1]
-            print(mod_name)
             parser_code = importlib.import_module(mod_name)
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()
@@ -92,11 +89,11 @@ def main() -> None:
 
     if args.cmd:
         if f"parsers.{args.cmd}_args" in parser_names:
-            prefix = f"{APP_NAME}"
+            mod_name = f"{APP_NAME}.{args.cmd}"
         else:
-            prefix = "plugins.code"
+            mod_name = "log"
         try:
-            mod = importlib.import_module(f"{prefix}.{args.cmd}")
+            mod = importlib.import_module(mod_name)
         except ModuleNotFoundError:
             msg = f"""
             Code for a custom command must have the same filename as the

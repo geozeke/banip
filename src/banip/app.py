@@ -70,7 +70,7 @@ def main() -> None:
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(ARG_PARSERS_CUSTOM)
     parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
-    print(parser_names)
+    print(ARG_PARSERS_CUSTOM)
     for p_name in parser_names:
         print(f"HERE -> {p_name}")
         if "plugins" not in p_name:

@@ -7,12 +7,14 @@ from ipaddress import IPv6Network
 from pathlib import Path
 from typing import TypeAlias
 
-HOME = Path(__file__).parents[2]
-DATA = HOME / "data"
+HOME = Path.home()
+BASE = Path(__file__).parents[2]
+DATA = HOME / ".banip"
 
 APP_NAME = "banip"
-ARG_PARSERS_BASE = HOME / "src" / "parsers"
-ARG_PARSERS_CUSTOM = HOME / "src" / "plugins" / "parsers"
+ARG_PARSERS_BASE = BASE / "src" / "parsers"
+ARG_PARSERS_CUSTOM = DATA / "plugins" / "parsers"
+CUSTOM_CODE = DATA / "plugins" / "code"
 COUNTRY_NETS_TXT = DATA / "haproxy_geo_ip.txt"
 COUNTRY_NETS_DICT = DATA / "haproxy_geo_ip_dict.bin"
 COUNTRY_WHITELIST = DATA / "country_whitelist.txt"
@@ -20,7 +22,6 @@ CUSTOM_BLACKLIST = DATA / "custom_blacklist.txt"
 CUSTOM_WHITELIST = DATA / "custom_whitelist.txt"
 RENDERED_BLACKLIST = DATA / "ip_blacklist.txt"
 RENDERED_WHITELIST = DATA / "ip_whitelist.txt"
-CUSTOM_CODE = HOME / "src" / "plugins" / "code"
 GEOLITE_4 = DATA / "geolite" / "GeoLite2-Country-Blocks-IPv4.csv"
 GEOLITE_6 = DATA / "geolite" / "GeoLite2-Country-Blocks-IPv6.csv"
 GEOLITE_LOC = DATA / "geolite" / "GeoLite2-Country-Locations-en.csv"

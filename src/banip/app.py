@@ -4,6 +4,7 @@
 
 import argparse
 import importlib
+import importlib.util
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -13,6 +14,31 @@ from banip.constants import ARG_PARSERS_BASE
 from banip.constants import ARG_PARSERS_CUSTOM
 from banip.constants import CUSTOM_CODE
 from banip.version import get_version
+
+# ======================================================================
+
+
+def load_custom_module(mod_name: str, location: Path) -> ModuleType:
+    """Load a custom module.
+
+    Parameters
+    ----------
+    mod_name : str
+        The name of the module to load.
+    location : Path
+        The absolute path of the python code for the module.
+
+    Returns
+    -------
+    ModuleType
+        A pointer to module that gets loaded.
+    """
+    mod_path = f"{location}/{mod_name}.py"
+    if spec := importlib.util.spec_from_file_location(mod_name, mod_path):
+        if (module := importlib.util.module_from_spec(spec)) and spec.loader:
+            spec.loader.exec_module(module)
+    return module
+
 
 # ======================================================================
 
@@ -63,10 +89,6 @@ def main() -> None:
     # Dynamically load argument subparsers and process command line
     # arguments.
 
-    # Add the locations of plug-ins to the path
-    sys.path.append(str(ARG_PARSERS_CUSTOM))
-    sys.path.append(str(CUSTOM_CODE))
-
     parser_names: list[str] = []
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
@@ -76,8 +98,9 @@ def main() -> None:
         if "plugins" not in p_name:
             parser_code = importlib.import_module(f"banip.{p_name}")
         else:
-            mod_name = p_name.split(".")[-1]
-            parser_code = importlib.import_module(mod_name)
+            parser_code = load_custom_module(
+                p_name.split(".")[-1], location=ARG_PARSERS_CUSTOM
+            )
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()
 
@@ -89,22 +112,23 @@ def main() -> None:
     # prefix based on that.
 
     if args.cmd:
-        if f"parsers.{args.cmd}_args" in parser_names:
-            mod_name = f"{APP_NAME}.{args.cmd}"
-        else:
-            mod_name = args.cmd
         try:
-            mod = importlib.import_module(mod_name)
-        except ModuleNotFoundError:
+            if f"parsers.{args.cmd}_args" in parser_names:
+                mod_name = f"{APP_NAME}.{args.cmd}"
+                mod = importlib.import_module(mod_name)
+            else:
+                mod = load_custom_module(args.cmd, location=CUSTOM_CODE)
+        except (ModuleNotFoundError, FileNotFoundError):
             msg = f"""
             Code for a custom command must have the same filename as the
-            command itself. Make sure you have a program file called
+            command itself. Make sure you have a python file called
             \"{args.cmd}.py\" in: {CUSTOM_CODE}
             """
             print("\n".join([line.strip() for line in msg.split("\n")]))
             sys.exit(1)
     else:
         mod = importlib.import_module(f"{APP_NAME}.null")
+
     mod.task_runner(args)
 
     return

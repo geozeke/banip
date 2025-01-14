@@ -25,7 +25,7 @@ def print_docstring(msg: str) -> None:
 
     This function assumes the docstring is in a very specific format:
 
-    >>> msg = <three quotes>
+    >>> msg = \"\"\"
     >>> First line (non-blank)
     >>>
     >>> Subsequent lines
@@ -33,7 +33,7 @@ def print_docstring(msg: str) -> None:
     >>> Subsequent lines
     >>> ...
     >>> Can include empty lines after the first.
-    >>> <three quotes>
+    >>> \"\"\"
 
     Parameters
     ----------
@@ -45,7 +45,7 @@ def print_docstring(msg: str) -> None:
     lines = msg.split("\n")[1:]
     spaces = 0
     for c in lines[0]:
-        if c in ["\n", " "]:
+        if c in ["\n", " ", "\t"]:
             spaces += 1
         else:
             break

@@ -104,7 +104,7 @@ using `curl` and a direct download permalink, [SEE HERE][mmd]._
 ### Installing banip
 
 ```text
-uv tool install --from git+http://github.com/geozeke/banip.git banip
+uv tool install --from git+https://github.com/geozeke/banip.git banip
 ```
 
 ### Create Required Directories

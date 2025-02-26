@@ -7,12 +7,8 @@ setup: ## setup project with runtime dependencies
 ifeq (,$(wildcard .init/setup))
 	@(which uv > /dev/null 2>&1) || \
 	(echo "banip requires uv. See README for instructions."; exit 1)
-	@if [ ! -d "./scratch" ]; then \
-		mkdir -p scratch; \
-	fi
-	@if [ ! -d "./data" ]; then \
-		mkdir -p data/geolite; \
-	fi
+	mkdir -p scratch data/geolite .init
+	touch .init/setup
 	@if [ ! -d "./src/plugins/parsers" ]; then \
 		mkdir -p src/plugins/parsers; \
 		touch src/plugins/parsers/__init__.py; \
@@ -21,8 +17,6 @@ ifeq (,$(wildcard .init/setup))
 		mkdir -p src/plugins/code; \
 		touch src/plugins/code/__init__.py; \
 	fi
-	mkdir .init
-	touch .init/setup
 	uv sync --no-dev --frozen
 else
 	@echo "Initial setup is already complete. If you are having issues, run:"
@@ -72,7 +66,9 @@ clean: ## cleanup python runtime artifacts
 
 .PHONY: help
 help: ## show help
-	@echo Please specify a target. Choices are:
+	@echo ""
+	@echo "🚀 Available Commands 🚀"
+	@echo "========================"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk \
 	'BEGIN {FS = ":.*?## "}; \
-	{printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+	{printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

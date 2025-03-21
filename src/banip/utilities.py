@@ -45,7 +45,7 @@ def print_docstring(msg: str) -> None:
     lines = msg.split("\n")[1:]
     spaces = 0
     for c in lines[0]:
-        if c in ["\n", " ", "\t"]:
+        if c.isspace():
             spaces += 1
         else:
             break

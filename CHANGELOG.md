@@ -6,6 +6,7 @@
 
 ### Fixed
 
+* Cleanup file structure ([#38][issue38])
 * Cleanup Dependencies ([#39][issue39])
 
 <!--------------------------------------------------------------------->
@@ -165,6 +166,7 @@ _Initial Release._
 [issue32]: https://github.com/geozeke/banip/issues/32
 [issue35]: https://github.com/geozeke/banip/issues/35
 [issue36]: https://github.com/geozeke/banip/issues/36
+[issue38]: https://github.com/geozeke/banip/issues/38
 [issue39]: https://github.com/geozeke/banip/issues/39
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

@@ -6,8 +6,9 @@
 
 ### Fixed
 
-* Cleanup file structure ([#38][issue38])
-* Cleanup Dependencies ([#39][issue39])
+* [BUG] Host Public IP should not be in blacklist. ([#40][issue40])
+* Cleanup file structure. ([#38][issue38])
+* Cleanup Dependencies. ([#39][issue39])
 
 <!--------------------------------------------------------------------->
 
@@ -168,5 +169,6 @@ _Initial Release._
 [issue36]: https://github.com/geozeke/banip/issues/36
 [issue38]: https://github.com/geozeke/banip/issues/38
 [issue39]: https://github.com/geozeke/banip/issues/39
+[issue40]: https://github.com/geozeke/banip/issues/40
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

@@ -1,13 +1,18 @@
-import tomllib
+import sys
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 
 def get_version() -> str:
     """Return the version number of the project.
 
-    Starting at the current directory, search for pyproject.toml,
+    Starting at the current directory, search for `pyproject.toml`,
     working your way up the parents in the directory tree. This allows
-    the version number to be maintained in one place.
+    the version number to be maintained on one place.
 
     IMPORTANT: For this to work properly when you distribute your
     package, you must include the following in your `pyproject.toml`
@@ -36,6 +41,3 @@ def get_version() -> str:
                     return "unknown"
 
     return "unknown"
-
-
-# ======================================================================

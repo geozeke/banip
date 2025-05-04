@@ -6,9 +6,9 @@
 
 ### Fixed
 
-* [BUG] Host Public IP should not be in blacklist. ([#40][issue40])
-* Cleanup file structure. ([#38][issue38])
-* Cleanup Dependencies. ([#39][issue39])
+* [BUG] Host Public IP should not be in blacklist. (#40)
+* Cleanup file structure. (#38)
+* Cleanup Dependencies. (#39)
 
 <!--------------------------------------------------------------------->
 
@@ -20,11 +20,11 @@ more.**
 
 ### Changed
 
-**breaking**: Migrate banip to an installable package ([#36][issue36]).
+**breaking**: Migrate banip to an installable package (#36).
 
 ### Fixed
 
-* Fix italics in markdown files ([#35][issue35])
+* Fix italics in markdown files (#35)
 * Lint code and documentation.
 
 <!--------------------------------------------------------------------->
@@ -38,7 +38,7 @@ more.**
 
 ### Added
 
-* Add statistics for a given country. ([#32][issue32])
+* Add statistics for a given country. (#32)
 * Establish and maintain a proper changelog.
 
 ### Fixed
@@ -99,7 +99,7 @@ more.**
 
 ### Changed
 
-* Optimize binary search. ([#13][issue13])
+* Optimize binary search. (#13)
 * Bumped tqdm library to v4.66.5.
 
 ### Added
@@ -110,8 +110,8 @@ more.**
 ### Fixed
 
 * Fix calculation error in summary metrics.
-* Choose Better Variable Names. ([#14][issue14])
-* Improve IP checking to include membership in subnets. ([#15][issue15])
+* Choose Better Variable Names. (#14)
+* Improve IP checking to include membership in subnets. (#15)
 
 <!--------------------------------------------------------------------->
 
@@ -161,14 +161,5 @@ _Initial Release._
 [1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0
 [1.3.1]: https://github.com/geozeke/banip/releases/tag/v1.3.1
 [banip]: https://github.com/geozeke/banip
-[issue13]: https://github.com/geozeke/banip/issues/13
-[issue14]: https://github.com/geozeke/banip/issues/14
-[issue15]: https://github.com/geozeke/banip/issues/15
-[issue32]: https://github.com/geozeke/banip/issues/32
-[issue35]: https://github.com/geozeke/banip/issues/35
-[issue36]: https://github.com/geozeke/banip/issues/36
-[issue38]: https://github.com/geozeke/banip/issues/38
-[issue39]: https://github.com/geozeke/banip/issues/39
-[issue40]: https://github.com/geozeke/banip/issues/40
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

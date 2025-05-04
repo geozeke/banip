@@ -9,14 +9,6 @@ ifeq (,$(wildcard .init/setup))
 	(echo "banip requires uv. See README for instructions."; exit 1)
 	mkdir -p scratch data/geolite .init
 	touch .init/setup
-	@if [ ! -d "./src/plugins/parsers" ]; then \
-		mkdir -p src/plugins/parsers; \
-		touch src/plugins/parsers/__init__.py; \
-	fi
-	@if [ ! -d "./src/plugins/code" ]; then \
-		mkdir -p src/plugins/code; \
-		touch src/plugins/code/__init__.py; \
-	fi
 	uv sync --no-dev --frozen
 else
 	@echo "Initial setup is already complete. If you are having issues, run:"

@@ -25,6 +25,7 @@ from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
 from banip.utilities import compact
 from banip.utilities import extract_ip
+from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import split_hybrid
@@ -89,6 +90,10 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
+        # Make sure the current host's public-facing IP is not in the
+        # custom blacklist.
+        if (public_ip := get_public_ip()) and (public_ip in custom):
+            custom.remove(public_ip)
         custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
         # Remove any custom IPs that are covered by existing custom
@@ -123,7 +128,8 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
-            f.write(f"{'\n'.join(countries)}\n")
+            country_codes = "\n".join(countries)
+            f.write(f"{country_codes}\n")
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------

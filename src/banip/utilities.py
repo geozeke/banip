@@ -3,7 +3,9 @@
 import csv
 import ipaddress as ipa
 import pickle
+from typing import cast
 
+import requests
 from rich.console import Console
 
 from banip.constants import COUNTRY_NETS_DICT
@@ -324,6 +326,9 @@ def load_ipsum() -> dict[AddressType, int]:
     return ipsum
 
 
+# ======================================================================
+
+
 def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     """Load the contents of the rendered blacklist
 
@@ -337,3 +342,37 @@ def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     with open(RENDERED_BLACKLIST, "r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(rendered)
+
+
+# ======================================================================
+
+
+def get_public_ip() -> AddressType | None:
+    """Return the public IP address of the host.
+
+    Returns
+    -------
+    AddressType | None
+        The IPv4 or IPv6 address of the host, or `None` if an exception
+        is raised.
+
+    Raises
+    ------
+    requests.exceptions.RequestException
+        If the connection to the amazon server fails.
+    """
+    try:
+        response = requests.get("https://checkip.amazonaws.com")
+        response.raise_for_status()
+        return cast(AddressType, extract_ip(from_str=response.text.strip()))
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+# ======================================================================
+
+if __name__ == "__main__":
+    public_ip = get_public_ip()
+    if public_ip:
+        print(f"Your public IP address is: {public_ip}")

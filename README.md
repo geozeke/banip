@@ -63,10 +63,10 @@ GeoLite2 Country: CSV format
 
 ### uv
 
-_banip_ requires [uv][astral] for dependency management. It is well
-behaved and extremely fast, and if you're a Python developer, you should
-check it out. Visit the [uv site][astral] and install it using the
-instructions for your operating system.
+_banip_ requires [uv][astral] for installation and dependency
+management. It is well behaved and extremely fast. Visit the [uv
+site][astral] and install it using the instructions for your operating
+system.
 
 ### gitignore (optional)
 
@@ -76,14 +76,15 @@ my home directory and configured globally for all my development
 projects. The `global-gitignore.txt` file reflects my development setup
 (for example, using tools like vscode), but yours may be different. Just
 cherry-pick any necessary elements from `global-gitignore.txt` for your
-own use.
+own use in your global gitignore configuration (do not modify the
+`.gitignore` file included in this repo).
 
 _Details on gitignore files are available on [GitHub][git-ignore]._
 
 ### Global List of Blacklisted IPs
 
 _banip_ uses the [ipsum][ipsum] threat intelligence blacklist. You can
-direct download it using:
+directly download it using:
 
 ```text
 curl -sL https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt > ipsum.txt
@@ -166,11 +167,11 @@ address you want to ban that is not found in `ipsum.txt`. Also, the
 entire subnet. The custom blacklist allows you to capture specific IP
 addresses or subnets (in [CIDR][cidr] format), one per line, that you
 want to block. Some of your custom blacklist IPs may be found when you
-run the _banip_, so this file (`custom_blacklist.txt`) will be
-overwritten to remove the duplicates. The contents of the de-duplicated
-file will then be appended to the list generated when you run the
-program. Like the whitelist, this file is optional. If you choose not to
-use it, _banip_ will create a blank one when you run it.
+run _banip_, so this file (`custom_blacklist.txt`) will be overwritten
+to remove the duplicates. The contents of the de-duplicated file will
+then be appended to the list generated when you run the program. Like
+the whitelist, this file is optional. If you choose not to use it,
+_banip_ will create a blank one when you run it.
 
 _Note: If you're concerned about keeping your original list of custom
 blacklisted IPs, save a copy of it somewhere outside of `~/.banip`._
@@ -181,19 +182,19 @@ When you're done, the `~/.banip` directory should look like this:
 .banip
 ├── custom_blacklist.txt (optional)
 ├── custom_whitelist.txt (optional)
-├── geolite
+├── geolite (required)
 │   ├── COPYRIGHT.txt
-│   ├── GeoLite2-Country-Blocks-IPv4.csv
-│   ├── GeoLite2-Country-Blocks-IPv6.csv
-│   ├── GeoLite2-Country-Locations-de.csv
-│   ├── GeoLite2-Country-Locations-en.csv
-│   ├── GeoLite2-Country-Locations-es.csv
-│   ├── GeoLite2-Country-Locations-fr.csv
-│   ├── GeoLite2-Country-Locations-ja.csv
-│   ├── GeoLite2-Country-Locations-pt-BR.csv
-│   ├── GeoLite2-Country-Locations-ru.csv
-│   ├── GeoLite2-Country-Locations-zh-CN.csv
-│   └── LICENSE.txt
+│   ├── GeoLite2-Country-Blocks-IPv4.csv (required)
+│   ├── GeoLite2-Country-Blocks-IPv6.csv (required)
+│   ├── GeoLite2-Country-Locations-de.csv (required)
+│   ├── GeoLite2-Country-Locations-en.csv (required)
+│   ├── GeoLite2-Country-Locations-es.csv (required)
+│   ├── GeoLite2-Country-Locations-fr.csv (required)
+│   ├── GeoLite2-Country-Locations-ja.csv (required)
+│   ├── GeoLite2-Country-Locations-pt-BR.csv (required)
+│   ├── GeoLite2-Country-Locations-ru.csv (required)
+│   ├── GeoLite2-Country-Locations-zh-CN.csv (required)
+│   └── LICENSE.txt (required)
 ├── ipsum.txt (required)
 ├── plugins (required)
 │   ├── code (required)
@@ -205,10 +206,8 @@ When you're done, the `~/.banip` directory should look like this:
 
 ## <a id="running"></a> Running
 
-After copying/tweaking all the required files, start by activating the
-Python virtual environment:
-
-Run this command to learn how to build your custom blacklist:
+After copying/tweaking all the required files,run this command to learn
+how to build your custom blacklist:
 
 ```text
 banip -h
@@ -220,9 +219,9 @@ banip -h
 
 MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
 and the list of blacklisted IPs (`ipsum.txt`) is updated daily. Pull
-updated copies of both and put them in `banip/data/geolite` (for the
-GeoLite2 data) and `banip/data` (for the `ipsum.txt` file). Run _banip_
-again to generate an updated blacklist.
+updated copies of both and put them in `~/.banip/data/geolite` (for the
+GeoLite2 data) and `~/.banip/data` (for the `ipsum.txt` file). Run
+_banip_ again to generate an updated blacklist.
 
 _I recommend you automate all this using cron to keep your lists fresh._
 
@@ -263,7 +262,7 @@ plugins:
 
 ## <a id="upgrade"></a> Upgrading banip
 
-To upgrade the code for _banip_, run:
+To upgrade _banip_ itself, run:
 
 ```text
 uv tool upgrade banip

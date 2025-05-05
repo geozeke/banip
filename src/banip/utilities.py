@@ -6,6 +6,7 @@ import pickle
 from typing import cast
 
 import requests
+from requests.exceptions import RequestException
 from rich.console import Console
 
 from banip.constants import COUNTRY_NETS_DICT
@@ -353,14 +354,14 @@ def get_public_ip() -> AddressType | None:
     Returns
     -------
     AddressType | None
-        The IPv4 or IPv6 address of the host. Otherwise `None` if an
-        exception is raised when calling the AWS server, or if the
-        returned IP address cannot be converted from a string into an
-        IPAddress object.
+        The public-facing IPv4 or IPv6 address of the host. Otherwise
+        `None` if an exception is raised when calling the AWS server, or
+        if the returned IP address cannot be converted from a string
+        into an IPAddress object.
 
     Raises
     ------
-    requests.exceptions.RequestException
+    RequestException
         If the connection to the AWS server fails.
     """
     try:
@@ -370,5 +371,5 @@ def get_public_ip() -> AddressType | None:
             return cast(AddressType, public_ip)
         else:
             return None
-    except requests.exceptions.RequestException:
+    except RequestException:
         return None

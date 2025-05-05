@@ -353,26 +353,22 @@ def get_public_ip() -> AddressType | None:
     Returns
     -------
     AddressType | None
-        The IPv4 or IPv6 address of the host, or `None` if an exception
-        is raised.
+        The IPv4 or IPv6 address of the host. Otherwise `None` if an
+        exception is raised when calling the AWS server, or if the
+        returned IP address cannot be converted from a string into an
+        IPAddress object.
 
     Raises
     ------
     requests.exceptions.RequestException
-        If the connection to the amazon server fails.
+        If the connection to the AWS server fails.
     """
     try:
         response = requests.get("https://checkip.amazonaws.com")
         response.raise_for_status()
-        return cast(AddressType, extract_ip(from_str=response.text.strip()))
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+        if public_ip := extract_ip(from_str=response.text.strip()):
+            return cast(AddressType, public_ip)
+        else:
+            return None
+    except requests.exceptions.RequestException:
         return None
-
-
-# ======================================================================
-
-if __name__ == "__main__":
-    public_ip = get_public_ip()
-    if public_ip:
-        print(f"Your public IP address is: {public_ip}")

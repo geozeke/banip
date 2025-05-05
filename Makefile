@@ -7,7 +7,7 @@ setup: ## setup project with runtime dependencies
 ifeq (,$(wildcard .init/setup))
 	@(which uv > /dev/null 2>&1) || \
 	(echo "banip requires uv. See README for instructions."; exit 1)
-	mkdir -p scratch data/geolite .init
+	mkdir -p scratch .init
 	touch .init/setup
 	uv sync --no-dev --frozen
 else

@@ -41,6 +41,20 @@ endif
 
 # --------------------------------------------
 
+.PHONY: sync
+sync: ## sync dependencies with the lock file (use --frozen)
+ifeq (,$(wildcard .init/setup))
+	@echo "Please run \"make setup\" first" ; exit 1
+endif
+
+ifneq (,$(wildcard .init/dev))
+	uv sync --all-groups --frozen
+else
+	uv sync --no-dev --frozen
+endif
+
+# --------------------------------------------
+
 .PHONY: reset
 reset: clean ## remove venv, artifacts, and init directory
 	@echo Resetting project state
@@ -59,7 +73,7 @@ clean: ## cleanup python runtime artifacts
 .PHONY: help
 help: ## show help
 	@echo ""
-	@echo "🚀 Available Commands 🚀"
+	@echo "Available Commands"
 	@echo "========================"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk \
 	'BEGIN {FS = ":.*?## "}; \

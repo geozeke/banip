@@ -2,6 +2,14 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.3.2][1.3.2] - 2025-05-23
+
+### Changed
+
+* Maintenance release to synchronize repository tags.
+
+<!--------------------------------------------------------------------->
+
 ## [1.3.1][1.3.1] - 2025-05-04
 
 ### Fixed
@@ -149,6 +157,8 @@ more.**
 
 _Initial Release._
 
+<!--------------------------------------------------------------------->
+
 [0.1.0]: https://github.com/geozeke/banip/releases/tag/v0.1.0
 [1.0.0]: https://github.com/geozeke/banip/releases/tag/V1.0.0
 [1.0.1]: https://github.com/geozeke/banip/releases/tag/v1.0.1
@@ -160,6 +170,7 @@ _Initial Release._
 [1.2.0]: https://github.com/geozeke/banip/releases/tag/v1.2.0
 [1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0
 [1.3.1]: https://github.com/geozeke/banip/releases/tag/v1.3.1
+[1.3.2]: https://github.com/geozeke/banip/releases/tag/v1.3.2
 [banip]: https://github.com/geozeke/banip
 [issue13]: https://github.com/geozeke/banip/issues/13
 [issue14]: https://github.com/geozeke/banip/issues/14

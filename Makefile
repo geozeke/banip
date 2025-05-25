@@ -7,8 +7,10 @@ setup: ## setup project with runtime dependencies
 ifeq (,$(wildcard .init/setup))
 	@(which uv > /dev/null 2>&1) || \
 	(echo "banip requires uv. See README for instructions."; exit 1)
-	mkdir -p scratch .init
+	mkdir -p scratch .init run
 	touch .init/setup
+	cp ./scripts/* ./run
+	find ./run -name '*.sh' -exec chmod 755 {} \;
 	uv sync --frozen --no-dev
 else
 	@echo "Initial setup is already complete. If you are having issues, run:"
@@ -58,7 +60,7 @@ endif
 .PHONY: reset
 reset: clean ## remove venv, artifacts, and init directory
 	@echo Resetting project state
-	rm -rf .init .mypy_cache .ruff_cache .venv
+	rm -rf .init .mypy_cache .ruff_cache .venv run
 
 # --------------------------------------------
 
@@ -67,6 +69,12 @@ clean: ## cleanup python runtime artifacts
 	@echo Cleaning python runtime artifacts
 	@find . -type d -name __pycache__ -exec rm -rf {} \; -prune
 	rm -rf dist
+
+# --------------------------------------------
+
+.PHONY: tags
+tags: ## Update project tags
+	./run/release_tags.sh
 
 # --------------------------------------------
 

@@ -156,3 +156,4 @@ cython_debug/
 # Custom exclusions
 .init/
 scratch/
+run/

@@ -10,7 +10,7 @@ ifeq (,$(wildcard .init/setup))
 	mkdir -p scratch .init run
 	touch .init/setup
 	cp ./scripts/* ./run
-	find ./run -name '*.sh' -exec chmod 754 {} \;
+	find ./run -name '*.sh' -exec chmod 744 {} \;
 	uv sync --frozen --no-dev
 else
 	@echo "Initial setup is already complete. If you are having issues, run:"
@@ -24,17 +24,21 @@ endif
 
 .PHONY: dev
 dev: ## add development dependencies (run make setup first)
-ifneq (,$(wildcard .init/setup))
-	uv sync --frozen --all-groups
-	@touch .init/dev
-else
-	@echo "Please run \"make setup\" first"
+ifeq (,$(wildcard .init/setup))
+	@echo "Please run \"make setup\" first" ; exit 1
 endif
+	uv sync --all-groups --frozen
+	@touch .init/dev
 
 # --------------------------------------------
 
 .PHONY: upgrade
-upgrade: ## upgrade project dependencies
+upgrade: ## synchronize helper scripts and upgrade project dependencies
+ifeq (,$(wildcard .init/setup))
+	@echo "Please run \"make setup\" first" ; exit 1
+endif
+	cp -f ./scripts/* ./run
+	find ./run -name '*.sh' -exec chmod 744 {} \;
 ifeq (,$(wildcard .init/dev))
 	uv sync --upgrade --no-dev
 else
@@ -57,18 +61,18 @@ endif
 
 # --------------------------------------------
 
-.PHONY: reset
-reset: clean ## remove venv, artifacts, and init directory
-	@echo Resetting project state
-	rm -rf .init .mypy_cache .ruff_cache .venv run
-
-# --------------------------------------------
-
 .PHONY: clean
 clean: ## cleanup python runtime artifacts
 	@echo Cleaning python runtime artifacts
 	@find . -type d -name __pycache__ -exec rm -rf {} \; -prune
 	rm -rf dist
+
+# --------------------------------------------
+
+.PHONY: reset
+reset: clean ## remove venv, artifacts, and init directory
+	@echo Resetting project state
+	rm -rf .init .mypy_cache .ruff_cache .venv run
 
 # --------------------------------------------
 

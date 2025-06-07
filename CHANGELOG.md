@@ -2,6 +2,14 @@
 
 <!--------------------------------------------------------------------->
 
+## [1.3.3][1.3.3] - 2025-06-XX
+
+### Changed
+
+* Swap status colors when checking IP [#42][issue42]
+
+<!--------------------------------------------------------------------->
+
 ## [1.3.2][1.3.2] - 2025-05-23
 
 ### Changed
@@ -171,6 +179,7 @@ _Initial Release._
 [1.3.0]: https://github.com/geozeke/glinkfix/releases/tag/v1.3.0
 [1.3.1]: https://github.com/geozeke/banip/releases/tag/v1.3.1
 [1.3.2]: https://github.com/geozeke/banip/releases/tag/v1.3.2
+[1.3.3]: https://github.com/geozeke/banip/releases/tag/v1.3.3
 [banip]: https://github.com/geozeke/banip
 [issue13]: https://github.com/geozeke/banip/issues/13
 [issue14]: https://github.com/geozeke/banip/issues/14
@@ -181,5 +190,6 @@ _Initial Release._
 [issue38]: https://github.com/geozeke/banip/issues/38
 [issue39]: https://github.com/geozeke/banip/issues/39
 [issue40]: https://github.com/geozeke/banip/issues/40
+[issue42]: https://github.com/geozeke/banip/issues/42
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

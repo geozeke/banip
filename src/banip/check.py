@@ -85,19 +85,19 @@ def task_runner(args: argparse.Namespace) -> None:
     if ip_in_network(
         ip=target, networks=rendered_nets, first=0, last=len(rendered_nets) - 1
     ):
-        status = "found in subnet", text_green
+        status = "found in subnet", text_red
     elif target in rendered_ips:
-        status = "found", text_green
+        status = "found", text_red
     else:
-        status = "not found", text_red
+        status = "not found", text_green
     table.add_row(attribute, status[0], style=status[1])
 
     # Check for membership in ipsum.txt
     attribute = "ipsum.txt"
     if target in ipsum:
-        status = f"found ({ipsum[target]})", text_green
+        status = f"found ({ipsum[target]})", text_red
     else:
-        status = "not found", text_red
+        status = "not found", text_green
     table.add_row(attribute, status[0], style=status[1])
 
     print()

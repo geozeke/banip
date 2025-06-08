@@ -44,7 +44,7 @@ def threshold_type(x: str) -> int:
 def load_command_args(sp: _SubParsersAction) -> None:
     """Assemble the argument parser."""
     msg = """
-    Patch the ipsum.txt file with the contents of another list if IP
+    Patch the ipsum.txt file with the contents of another list of IP
     addresses. Results will be de-duplicated, and only new entries will
     be added to ipsum.txt
     """
@@ -67,7 +67,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     parser.add_argument("-i", "--index", type=int, help=msg, default=-1)
 
     msg = """
-    Each banned IP address in the ipsum.txt has a factor (from 1 to 10)
+    Each banned IP address in ipsum.txt has a factor (from 1 to 10)
     indicating a level of confidence that the IP address is a malicious
     actor (higher is more confident). Use this option to set the
     confidence factor of all the new IPs that you are adding to

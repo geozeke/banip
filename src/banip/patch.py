@@ -75,8 +75,8 @@ def task_runner(args: Namespace) -> None:
 
     print()
     console.print(table)
-
     args.newips.close()
+
     return
 
 

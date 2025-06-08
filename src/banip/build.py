@@ -247,8 +247,7 @@ def task_runner(args: Namespace) -> None:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     # Generate a table to display metrics. Do not include the network
-    # and broadcast addresses when calculating total_ips, and only
-    # calculate the total number of blocked IPv4 addresses.
+    # and broadcast addresses when calculating total_ips.
     total_entries = ipsum_size + custom_nets_size + custom_ips_size
     table = Table(title="Final Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0

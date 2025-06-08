@@ -249,7 +249,7 @@ def task_runner(args: Namespace) -> None:
     # Generate a table to display metrics. Do not include the network
     # and broadcast addresses when calculating total_ips.
     total_entries = ipsum_size + custom_nets_size + custom_ips_size
-    table = Table(title="Final Stats", box=box.SQUARE, show_header=False)
+    table = Table(title="Final Build Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
     total_ipv6s = 0
     for ips in [ipsum_ips, custom_ips]:

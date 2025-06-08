@@ -64,7 +64,7 @@ def task_runner(args: Namespace) -> None:
             f.write(f"{k} {v}" + "\n")
 
     # Generate a table to display metrics.
-    table = Table(title="Final Stats", box=box.SQUARE, show_header=False)
+    table = Table(title="Final Augmentation Stats", box=box.SQUARE, show_header=False)
     table.add_column(justify="right")
     table.add_column(justify="right")
 

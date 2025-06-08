@@ -56,7 +56,7 @@ def task_runner(args: Namespace) -> None:
                 if (ip not in ipsum) or (ipsum[ip] < args.threshold):
                     ipsum[ip] = args.threshold
     print(f"{msg:.<{PAD}}done")
-    ips_added = len(ipsum) - original_ipsum_size
+    new_ips_added = len(ipsum) - original_ipsum_size
 
     # Update file on disk
     with open(IPSUM, "w") as f:
@@ -70,7 +70,7 @@ def task_runner(args: Namespace) -> None:
 
     table.add_row("Original ipsum.txt size", f"{(original_ipsum_size):,d}")
     table.add_row("New IPs analyzed", f"{(new_ips_considered):,d}")
-    table.add_row("New IPs added", f"{(ips_added):,d}")
+    table.add_row("New IPs added", f"{(new_ips_added):,d}")
     table.add_row("New ipsum.txt size", f"{(len(ipsum)):,d}")
 
     print()

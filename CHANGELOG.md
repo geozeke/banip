@@ -8,6 +8,11 @@
 
 * Swap status colors when checking IP [#42][issue42]
 
+### Added
+
+* [FEATURE] Add feature to patch ipsum.txt file with new IP addresses
+  [#43][issue43]
+
 <!--------------------------------------------------------------------->
 
 ## [1.3.2][1.3.2] - 2025-05-23
@@ -191,5 +196,6 @@ _Initial Release._
 [issue39]: https://github.com/geozeke/banip/issues/39
 [issue40]: https://github.com/geozeke/banip/issues/40
 [issue42]: https://github.com/geozeke/banip/issues/42
+[issue43]: https://github.com/geozeke/banip/issues/43
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

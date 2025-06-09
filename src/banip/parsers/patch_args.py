@@ -73,7 +73,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     confidence factor of all the new IPs that you are adding to
     ipsum.txt. The default threshold used is 10.
     """
-    parser.add_argument("-t", "--threshold", type=threshold_type, help=msg, default=10)
+    parser.add_argument("-c", "--confidence", type=threshold_type, help=msg, default=10)
 
     return
 

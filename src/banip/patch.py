@@ -53,8 +53,8 @@ def task_runner(args: Namespace) -> None:
             parts = line.split()
             if ip := cast(AddressType, extract_ip(parts[args.index])):
                 new_ips_considered += 1
-                if (ip not in ipsum) or (ipsum[ip] < args.threshold):
-                    ipsum[ip] = args.threshold
+                if (ip not in ipsum) or (ipsum[ip] < args.confidence):
+                    ipsum[ip] = args.confidence
     print(f"{msg:.<{PAD}}done")
     new_ips_added = len(ipsum) - original_ipsum_size
 

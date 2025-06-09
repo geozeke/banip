@@ -6,11 +6,12 @@
 
 ### Changed
 
-* Swap status colors when checking IP [#42][issue42]
+* Swap status colors when checking IP. [#42][issue42]
+* Refactored argparse argument types for maintainability.
 
 ### Added
 
-* [FEATURE] Add feature to patch ipsum.txt file with new IP addresses
+* [FEATURE] Add feature to patch `ipsum.txt` file with new IP addresses.
   [#43][issue43]
 
 <!--------------------------------------------------------------------->

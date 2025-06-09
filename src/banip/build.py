@@ -129,7 +129,7 @@ def task_runner(args: Namespace) -> None:
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             country_codes = "\n".join(countries)
-            f.write(f"{country_codes}\n")
+            f.write(country_codes + "\n")
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -212,9 +212,9 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "w") as f:
             for ip in custom_ips:
-                f.write(f"{ip}\n")
+                f.write(str(ip) + "\n")
             for net in custom_nets:
-                f.write(f"{net}\n")
+                f.write(str(net) + "\n")
     print(f"{msg:.<{PAD}}done")
 
     # ------------------------------------------------------------------
@@ -224,22 +224,22 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
             for ip in ipsum_ips:
-                f.write(f"{ip}\n")
+                f.write(str(ip) + "\n")
             for net in ipsum_nets:
-                f.write(f"{net}\n")
+                f.write(str(net) + "\n")
             now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
             f.write("\n# ------------custom entries -------------\n")
-            f.write(f"# Added on: {now}\n")
+            f.write(f"# Added on: {now}" + "\n")
             f.write("# ----------------------------------------\n\n")
             for ip in custom_ips:
-                f.write(f"{ip}\n")
+                f.write(str(ip) + "\n")
             for net in custom_nets:
-                f.write(f"{net}\n")
+                f.write(str(net) + "\n")
         with open(RENDERED_WHITELIST, "w") as f:
             for ip in white_ips:
-                f.write(f"{ip}\n")
+                f.write(str(ip) + "\n")
             for net in white_nets:
-                f.write(f"{net}\n")
+                f.write(str(net) + "\n")
     print(f"{msg:.<{PAD}}done")
 
     args.outfile.close()

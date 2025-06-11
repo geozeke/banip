@@ -41,7 +41,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     indicating a level of confidence that the IP address is a malicious
     actor (higher is more confident). Use this option to set the
     confidence factor of all the new IPs that you are adding to
-    ipsum.txt. The default threshold used is 10.
+    ipsum.txt. The default confidence used is 10.
     """
     parser.add_argument("-c", "--confidence", type=threshold_type, help=msg, default=10)
 

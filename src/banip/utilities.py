@@ -250,7 +250,7 @@ def tag_networks() -> dict[NetworkType, str]:
         _, keys = split_hybrid(list(networks.keys()))
         with open(COUNTRY_NETS_TXT, "w") as f:
             for key in keys:
-                f.write(f"{format(key)} {networks[key]}\n")
+                f.write(f"{format(key)} {networks[key]}" + "\n")
         with open(COUNTRY_NETS_DICT, "wb") as f:
             pickle.dump(networks, f)
     print(f"{msg:.<{PAD}}done")

@@ -2,12 +2,13 @@
 
 <!--------------------------------------------------------------------->
 
-## [1.3.3][1.3.3] - 2025-06-XX
+## [1.3.3][1.3.3] - 2025-06-13
 
 ### Changed
 
 * Swap status colors when checking IP. [#42][issue42]
 * Refactored argparse argument types for maintainability.
+* [requests][requests] bumped `2.32.4`.
 
 ### Added
 
@@ -198,5 +199,6 @@ _Initial Release._
 [issue40]: https://github.com/geozeke/banip/issues/40
 [issue42]: https://github.com/geozeke/banip/issues/42
 [issue43]: https://github.com/geozeke/banip/issues/43
+[requests]: https://github.com/psf/requests
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

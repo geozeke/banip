@@ -6,6 +6,7 @@ import argparse
 import importlib
 import importlib.util
 import sys
+from importlib.metadata import version
 from pathlib import Path
 from types import ModuleType
 
@@ -15,7 +16,8 @@ from banip.constants import CUSTOM_CODE
 from banip.constants import CUSTOM_PARSERS
 from banip.constants import DATA
 from banip.utilities import print_docstring
-from banip.version import get_version
+
+__version__ = version("banip")
 
 # ======================================================================
 
@@ -116,10 +118,10 @@ def main() -> None:
     https://github.com/geozeke/banip for detailed instructions on
     setting up banip.
     """
-    epi = f"Version: {get_version()}"
+    epi = f"Version: {__version__}"
     parser = argparse.ArgumentParser(description=msg, epilog=epi)
     parser.add_argument(
-        "-v", "--version", action="version", version=f"{APP_NAME} {get_version()}"
+        "-v", "--version", action="version", version=f"{APP_NAME} {__version__}"
     )
     msg = "For help on any command below, run: banip {command} -h."
     subparsers = parser.add_subparsers(title="commands", dest="cmd", description=msg)

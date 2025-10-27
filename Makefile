@@ -82,6 +82,12 @@ tags: ## Update project tags
 
 # --------------------------------------------
 
+.PHONY: rebase
+rebase: ## re-baseline with the main branch
+	./run/rebaseline.sh
+
+# --------------------------------------------
+
 .PHONY: help
 help: ## show help
 	@echo ""

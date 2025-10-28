@@ -11,3 +11,9 @@ updates:
       - dependency-name: "uv-build"
     allow:
       - dependency-type: "direct"
+    groups:
+      development-dependencies:
+        dependency-type: "development"
+      development-production:
+        dependency-type: "production"
+        

@@ -10,5 +10,5 @@ updates:
     ignore:
       - dependency-name: "uv-build"
     allow:
-      - dependency-type: "all"
+      - dependency-type: "direct"
         

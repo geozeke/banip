@@ -13,7 +13,8 @@ def load_command_args(sp: _SubParsersAction) -> None:
     msg = """
     Produce statistics for a given country code.
     """
-    parser = sp.add_parser(name=COMMAND_NAME, help=msg, description=msg)
+    parser = sp.add_parser(name=COMMAND_NAME, description=msg)
+
     msg = """
     This is the two-letter ISO-3166 ALPHA2 country code, not the
     two-letter Top Level Domain name (which may be different). For

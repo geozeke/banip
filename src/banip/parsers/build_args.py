@@ -19,7 +19,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     with a proxy server (like HAProxy) to block network access from
     those clients.
     """
-    parser = sp.add_parser(name=COMMAND_NAME, help=msg, description=msg)
+    parser = sp.add_parser(name=COMMAND_NAME, description=msg)
 
     msg = """
     Output file that will contain the generated list of blacklisted IP

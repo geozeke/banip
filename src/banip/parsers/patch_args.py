@@ -18,7 +18,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     addresses. Results will be de-duplicated, and only new entries will
     be added to ipsum.txt
     """
-    parser = sp.add_parser(name=COMMAND_NAME, help=msg, description=msg)
+    parser = sp.add_parser(name=COMMAND_NAME, description=msg)
 
     msg = """
     File containing additional IP addresses to augment ipsum.txt.

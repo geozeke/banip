@@ -8,7 +8,7 @@
 
 * Bump ruff from 0.14.2 to 0.14.3 ([#46][pull46])
 
-### Dependency Updates
+### Runtime Dependency Updates
 
 ### Changed
 

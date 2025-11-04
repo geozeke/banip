@@ -158,7 +158,7 @@ more.**
 
 ### Changed
 
-* Optimize binary search. [#13][issue13]
+* Optimize binary search. (#13)
 * Bumped tqdm library to v4.66.5.
 
 ### Added
@@ -226,7 +226,6 @@ _Initial Release._
 [1.3.4]: https://github.com/geozeke/banip/releases/tag/v1.3.4
 [1.3.5]: https://github.com/geozeke/banip/releases/tag/v1.3.5
 [banip]: https://github.com/geozeke/banip
-[issue13]: https://github.com/geozeke/banip/issues/13
 [issue14]: https://github.com/geozeke/banip/issues/14
 [issue15]: https://github.com/geozeke/banip/issues/15
 [issue32]: https://github.com/geozeke/banip/issues/32

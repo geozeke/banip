@@ -6,6 +6,7 @@
 
 ### Development Dependency Updates
 
+* Bump ruff from 0.14.3 to 0.14.4 ([#47][pull47])
 * Bump ruff from 0.14.2 to 0.14.3 ([#46][pull46])
 
 ### Runtime Dependency Updates
@@ -240,6 +241,7 @@ _Initial Release._
 [issue42]: https://github.com/geozeke/banip/issues/42
 [issue43]: https://github.com/geozeke/banip/issues/43
 [pull46]: https://github.com/geozeke/banip/pull/46
+[pull47]: https://github.com/geozeke/banip/pull/47
 [requests]: https://github.com/psf/requests
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

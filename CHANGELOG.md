@@ -2,34 +2,11 @@
 
 <!--------------------------------------------------------------------->
 
-## Next Update
-
-### Development Dependency Updates
-
-* Bump ruff from 0.14.3 to 0.14.4 ([#47][pull47])
-* Bump ruff from 0.14.2 to 0.14.3 ([#46][pull46])
-
-### Runtime Dependency Updates
+## [1.3.5][1.3.5] - 2025-10-30 (latest)
 
 ### Changed
 
-### Added
-
-* Force uv sync to prefer managed python versions.
-
-### Removed
-
-### Fixed
-
-* Remove redundant help parameter in argument parsers.
-
-<!--------------------------------------------------------------------->
-
-## [1.3.5][1.3.5] - 2025-10-30
-
-### Changed
-
-* Bump Python version to 3.12
+* Bump min Python version to 3.12
 * Upgrade build backend from hatchling to uv_build.
 * Refactor version number handling.
 
@@ -242,8 +219,6 @@ _Initial Release._
 [issue40]: https://github.com/geozeke/banip/issues/40
 [issue42]: https://github.com/geozeke/banip/issues/42
 [issue43]: https://github.com/geozeke/banip/issues/43
-[pull46]: https://github.com/geozeke/banip/pull/46
-[pull47]: https://github.com/geozeke/banip/pull/47
 [requests]: https://github.com/psf/requests
 [rich]: https://github.com/Textualize/rich
 [tomli]: https://pypi.org/project/tomli/

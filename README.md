@@ -104,7 +104,7 @@ using `curl` and a direct download permalink, [SEE HERE][mmd]._
 
 ### Installing banip
 
-```text
+```shell
 uv tool install --from git+https://github.com/geozeke/banip.git banip
 ```
 
@@ -281,11 +281,13 @@ rm -rf ~/.banip
 
 [top](#top)
 
-[cidr]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
+<!--------------------------------------------------------------------->
+
 [astral]: https://docs.astral.sh/uv/
+[cidr]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
 [git-ignore]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+[ipsum]: https://github.com/stamparm/ipsum
 [mmd]: https://dev.maxmind.com/geoip/updating-databases#directly-downloading-databases
 [mmgeo]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
-[wsl]: https://docs.microsoft.com/en-us/windows/wsl/install
 [mmh]: https://www.maxmind.com/en/home
-[ipsum]: https://github.com/stamparm/ipsum
+[wsl]: https://docs.microsoft.com/en-us/windows/wsl/install

@@ -146,7 +146,7 @@ more.**
 ### Added
 
 * Add functionality to remove IP addresses captured in a subnets.
-* Add license and acknowledgements for the tqmd library
+* Add license and acknowledgements for the tqdm library
 
 ### Fixed
 

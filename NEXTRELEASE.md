@@ -1,5 +1,7 @@
 ### Development Dependency Updates
 
+* Bump mypy from 1.19.0 to 1.19.1 ([#53][pull53])
+* Bump ruff from 0.14.9 to 0.14.10 ([#54][pull54])
 * Bump ruff from 0.14.8 to 0.14.9 ([#52][pull52])
 * Bump mypy from 1.18.2 to 1.19.0 ([#50][pull50])
 * Bump ruff from 0.14.6 to 0.14.8 ([#51][pull51])
@@ -31,3 +33,5 @@
 [pull50]: https://github.com/geozeke/banip/pull/50
 [pull51]: https://github.com/geozeke/banip/pull/51
 [pull52]: https://github.com/geozeke/banip/pull/52
+[pull53]: https://github.com/geozeke/banip/pull/53
+[pull54]: https://github.com/geozeke/banip/pull/54

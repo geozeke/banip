@@ -2,7 +2,33 @@
 
 <!--------------------------------------------------------------------->
 
-## [1.3.5][1.3.5] - 2025-10-30 (latest)
+## [1.3.6][1.3.6] - 2026-01-09 (latest)
+
+## What's Changed
+
+* Update copyright years on LICENSE.
+* Force uv sync to prefer managed python versions.
+* Remove redundant help parameter in argument parsers.
+* Bump ruff from 0.14.2 to 0.14.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/46>
+* Bump ruff from 0.14.3 to 0.14.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/47>
+* Bump ruff from 0.14.4 to 0.14.5 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/48>
+* Bump ruff from 0.14.5 to 0.14.6 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/49>
+* Bump ruff from 0.14.6 to 0.14.8 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/51>
+* Bump mypy from 1.18.2 to 1.19.0 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/50>
+* Bump ruff from 0.14.8 to 0.14.9 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/52>
+* Bump ruff from 0.14.9 to 0.14.10 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/54>
+* Bump mypy from 1.19.0 to 1.19.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/53>
+* Bump ruff from 0.14.10 to 0.14.11 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/55>
+
+## New Contributors
+
+* @dependabot[bot] made their first contribution in <https://github.com/geozeke/banip/pull/46>
+
+**Full Changelog**: <https://github.com/geozeke/banip/compare/v1.3.5...v1.3.6>
+
+<!--------------------------------------------------------------------->
+
+## [1.3.5][1.3.5] - 2025-10-30
 
 ### Changed
 
@@ -207,6 +233,7 @@ _Initial Release._
 [1.3.3]: https://github.com/geozeke/banip/releases/tag/v1.3.3
 [1.3.4]: https://github.com/geozeke/banip/releases/tag/v1.3.4
 [1.3.5]: https://github.com/geozeke/banip/releases/tag/v1.3.5
+[1.3.6]: https://github.com/geozeke/banip/releases/tag/v1.3.6
 [banip]: https://github.com/geozeke/banip
 [issue13]: https://github.com/geozeke/banip/issues/13
 [issue14]: https://github.com/geozeke/banip/issues/14

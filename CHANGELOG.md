@@ -1,8 +1,14 @@
 # Changelog
 
+## 1.3.7 (2026-01-11) - latest
+
+### 🚀 New Features
+
+* Add release.yml for formatted release messages by @geozeke in <https://github.com/geozeke/banip/pull/56>
+
 <!--------------------------------------------------------------------->
 
-## [1.3.6][1.3.6] - 2026-01-09 (latest)
+## [1.3.6][1.3.6] - 2026-01-09
 
 ## What's Changed
 

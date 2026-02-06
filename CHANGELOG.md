@@ -1,6 +1,22 @@
 # Changelog
 
-## 1.3.7 (2026-01-11) - latest
+<!--------------------------------------------------------------------->
+
+## 1.3.8 (2026-02-06) - latest
+
+### 📦 Dependency Updates
+
+* Bump ruff from 0.14.11 to 0.14.13 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/58>
+* Bump ruff from 0.14.13 to 0.14.14 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/59>
+* Bump urllib3 from 2.5.0 to 2.6.3 in the uv group across 1 directory by @dependabot[bot] in <https://github.com/geozeke/banip/pull/60>
+* Bump rich from 14.2.0 to 14.3.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/61>
+* Bump rich from 14.3.1 to 14.3.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/63>
+* Bump ruff from 0.14.14 to 0.15.0 by @dependabot[bot] in
+  <https://github.com/geozeke/banip/pull/62>
+
+<!--------------------------------------------------------------------->
+
+## 1.3.7 (2026-01-11)
 
 ### 🚀 New Features
 

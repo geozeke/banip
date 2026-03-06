@@ -2,7 +2,28 @@
 
 <!--------------------------------------------------------------------->
 
-## 1.3.8 (2026-02-06) - latest
+## 1.3.9 (2026-03-06) - latest
+
+### 🐛 Bug Fixes
+
+* Pin upper bound for uv-build by @geozeke in <https://github.com/geozeke/banip/pull/69>
+
+### 🛠️ Changes
+
+* Refactor target countries file. by @geozeke in <https://github.com/geozeke/banip/pull/64>
+
+### 📦 Dependency Updates
+
+* Bump ruff from 0.15.0 to 0.15.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/65>
+* Bump rich from 14.3.2 to 14.3.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/67>
+* Bump ruff from 0.15.1 to 0.15.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/66>
+* Bump ruff from 0.15.2 to 0.15.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/68>
+* Bump ruff from 0.15.4 to 0.15.5 by @dependabot[bot] in
+  <https://github.com/geozeke/banip/pull/70>
+
+<!--------------------------------------------------------------------->
+
+## 1.3.8 (2026-02-06)
 
 ### 📦 Dependency Updates
 

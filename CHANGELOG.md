@@ -6,19 +6,19 @@
 
 ### 🐛 Bug Fixes
 
-* Pin upper bound for uv-build by @geozeke in <https://github.com/geozeke/banip/pull/69>
+- Pin upper bound for uv-build by @geozeke in <https://github.com/geozeke/banip/pull/69>
 
 ### 🛠️ Changes
 
-* Refactor target countries file. by @geozeke in <https://github.com/geozeke/banip/pull/64>
+- Refactor target countries file. by @geozeke in <https://github.com/geozeke/banip/pull/64>
 
 ### 📦 Dependency Updates
 
-* Bump ruff from 0.15.0 to 0.15.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/65>
-* Bump rich from 14.3.2 to 14.3.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/67>
-* Bump ruff from 0.15.1 to 0.15.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/66>
-* Bump ruff from 0.15.2 to 0.15.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/68>
-* Bump ruff from 0.15.4 to 0.15.5 by @dependabot[bot] in
+- Bump ruff from 0.15.0 to 0.15.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/65>
+- Bump rich from 14.3.2 to 14.3.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/67>
+- Bump ruff from 0.15.1 to 0.15.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/66>
+- Bump ruff from 0.15.2 to 0.15.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/68>
+- Bump ruff from 0.15.4 to 0.15.5 by @dependabot[bot] in
   <https://github.com/geozeke/banip/pull/70>
 
 <!--------------------------------------------------------------------->
@@ -27,12 +27,12 @@
 
 ### 📦 Dependency Updates
 
-* Bump ruff from 0.14.11 to 0.14.13 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/58>
-* Bump ruff from 0.14.13 to 0.14.14 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/59>
-* Bump urllib3 from 2.5.0 to 2.6.3 in the uv group across 1 directory by @dependabot[bot] in <https://github.com/geozeke/banip/pull/60>
-* Bump rich from 14.2.0 to 14.3.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/61>
-* Bump rich from 14.3.1 to 14.3.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/63>
-* Bump ruff from 0.14.14 to 0.15.0 by @dependabot[bot] in
+- Bump ruff from 0.14.11 to 0.14.13 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/58>
+- Bump ruff from 0.14.13 to 0.14.14 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/59>
+- Bump urllib3 from 2.5.0 to 2.6.3 in the uv group across 1 directory by @dependabot[bot] in <https://github.com/geozeke/banip/pull/60>
+- Bump rich from 14.2.0 to 14.3.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/61>
+- Bump rich from 14.3.1 to 14.3.2 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/63>
+- Bump ruff from 0.14.14 to 0.15.0 by @dependabot[bot] in
   <https://github.com/geozeke/banip/pull/62>
 
 <!--------------------------------------------------------------------->
@@ -41,7 +41,7 @@
 
 ### 🚀 New Features
 
-* Add release.yml for formatted release messages by @geozeke in <https://github.com/geozeke/banip/pull/56>
+- Add release.yml for formatted release messages by @geozeke in <https://github.com/geozeke/banip/pull/56>
 
 <!--------------------------------------------------------------------->
 
@@ -49,23 +49,23 @@
 
 ## What's Changed
 
-* Update copyright years on LICENSE.
-* Force uv sync to prefer managed python versions.
-* Remove redundant help parameter in argument parsers.
-* Bump ruff from 0.14.2 to 0.14.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/46>
-* Bump ruff from 0.14.3 to 0.14.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/47>
-* Bump ruff from 0.14.4 to 0.14.5 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/48>
-* Bump ruff from 0.14.5 to 0.14.6 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/49>
-* Bump ruff from 0.14.6 to 0.14.8 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/51>
-* Bump mypy from 1.18.2 to 1.19.0 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/50>
-* Bump ruff from 0.14.8 to 0.14.9 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/52>
-* Bump ruff from 0.14.9 to 0.14.10 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/54>
-* Bump mypy from 1.19.0 to 1.19.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/53>
-* Bump ruff from 0.14.10 to 0.14.11 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/55>
+- Update copyright years on LICENSE.
+- Force uv sync to prefer managed python versions.
+- Remove redundant help parameter in argument parsers.
+- Bump ruff from 0.14.2 to 0.14.3 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/46>
+- Bump ruff from 0.14.3 to 0.14.4 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/47>
+- Bump ruff from 0.14.4 to 0.14.5 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/48>
+- Bump ruff from 0.14.5 to 0.14.6 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/49>
+- Bump ruff from 0.14.6 to 0.14.8 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/51>
+- Bump mypy from 1.18.2 to 1.19.0 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/50>
+- Bump ruff from 0.14.8 to 0.14.9 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/52>
+- Bump ruff from 0.14.9 to 0.14.10 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/54>
+- Bump mypy from 1.19.0 to 1.19.1 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/53>
+- Bump ruff from 0.14.10 to 0.14.11 by @dependabot[bot] in <https://github.com/geozeke/banip/pull/55>
 
 ## New Contributors
 
-* @dependabot[bot] made their first contribution in <https://github.com/geozeke/banip/pull/46>
+- @dependabot[bot] made their first contribution in <https://github.com/geozeke/banip/pull/46>
 
 **Full Changelog**: <https://github.com/geozeke/banip/compare/v1.3.5...v1.3.6>
 
@@ -75,9 +75,9 @@
 
 ### Changed
 
-* Bump min Python version to 3.12
-* Upgrade build backend from hatchling to uv_build.
-* Refactor version number handling.
+- Bump min Python version to 3.12
+- Upgrade build backend from hatchling to uv_build.
+- Refactor version number handling.
 
 <!--------------------------------------------------------------------->
 
@@ -85,7 +85,7 @@
 
 ### Changed
 
-* [requests][requests] bumped `2.32.5`.
+- [requests][requests] bumped `2.32.5`.
 
 <!--------------------------------------------------------------------->
 
@@ -93,13 +93,13 @@
 
 ### Changed
 
-* Swap status colors when checking IP. [#42][issue42]
-* Refactored argparse argument types for maintainability.
-* [requests][requests] bumped `2.32.4`.
+- Swap status colors when checking IP. [#42][issue42]
+- Refactored argparse argument types for maintainability.
+- [requests][requests] bumped `2.32.4`.
 
 ### Added
 
-* [FEATURE] Add feature to patch `ipsum.txt` file with new IP addresses.
+- [FEATURE] Add feature to patch `ipsum.txt` file with new IP addresses.
   [#43][issue43]
 
 <!--------------------------------------------------------------------->
@@ -108,7 +108,7 @@
 
 ### Changed
 
-* Maintenance release to synchronize repository tags.
+- Maintenance release to synchronize repository tags.
 
 <!--------------------------------------------------------------------->
 
@@ -116,9 +116,9 @@
 
 ### Fixed
 
-* [BUG] Host Public IP should not be in blacklist. [#40][issue40]
-* Cleanup file structure. [#38][issue38]
-* Cleanup Dependencies. [#39][issue39]
+- [BUG] Host Public IP should not be in blacklist. [#40][issue40]
+- Cleanup file structure. [#38][issue38]
+- Cleanup Dependencies. [#39][issue39]
 
 <!--------------------------------------------------------------------->
 
@@ -134,8 +134,8 @@ more.**
 
 ### Fixed
 
-* Fix italics in markdown files [#35][issue35]
-* Lint code and documentation.
+- Fix italics in markdown files [#35][issue35]
+- Lint code and documentation.
 
 <!--------------------------------------------------------------------->
 
@@ -143,18 +143,18 @@ more.**
 
 ### Changed
 
-* Implement [tomli compatability layer][tomli].
-* Optimize version numbering.
+- Implement [tomli compatability layer][tomli].
+- Optimize version numbering.
 
 ### Added
 
-* Add statistics for a given country. [#32][issue32]
-* Establish and maintain a proper changelog.
+- Add statistics for a given country. [#32][issue32]
+- Establish and maintain a proper changelog.
 
 ### Fixed
 
-* Lint documentation.
-* Display properly sorted options when getting help.
+- Lint documentation.
+- Display properly sorted options when getting help.
 
 <!--------------------------------------------------------------------->
 
@@ -162,13 +162,13 @@ more.**
 
 ### Added
 
-* Add the ability to compact ipsum entries into /24 subnets.
+- Add the ability to compact ipsum entries into /24 subnets.
 
 ### Fixed
 
-* Improve input validation.
-* Lint documentation.
-* Refactor and optimize code.
+- Improve input validation.
+- Lint documentation.
+- Refactor and optimize code.
 
 <!--------------------------------------------------------------------->
 
@@ -176,12 +176,12 @@ more.**
 
 ### Changed
 
-* Tune binary search algorithm.
-* Enhance `banip check` with prettier output using [rich][rich].
+- Tune binary search algorithm.
+- Enhance `banip check` with prettier output using [rich][rich].
 
 ### Fixed
 
-* Lint documentation.
+- Lint documentation.
 
 <!--------------------------------------------------------------------->
 
@@ -189,7 +189,7 @@ more.**
 
 ### Changed
 
-* Get better output with the [rich][rich] library.
+- Get better output with the [rich][rich] library.
 
 <!--------------------------------------------------------------------->
 
@@ -197,11 +197,11 @@ more.**
 
 ### Changed
 
-* Refine display of final metrics.
+- Refine display of final metrics.
 
 ### Fixed
 
-* Refactor code for better maintainability.
+- Refactor code for better maintainability.
 
 <!--------------------------------------------------------------------->
 
@@ -209,19 +209,19 @@ more.**
 
 ### Changed
 
-* Optimize binary search. [#13][issue13]
-* Bumped tqdm library to v4.66.5.
+- Optimize binary search. [#13][issue13]
+- Bumped tqdm library to v4.66.5.
 
 ### Added
 
-* Add functionality to remove IP addresses captured in a subnets.
-* Add license and acknowledgements for the tqdm library
+- Add functionality to remove IP addresses captured in a subnets.
+- Add license and acknowledgements for the tqdm library
 
 ### Fixed
 
-* Fix calculation error in summary metrics.
-* Choose Better Variable Names. [#14][issue14]
-* Improve IP checking to include membership in subnets. [#15][issue15]
+- Fix calculation error in summary metrics.
+- Choose Better Variable Names. [#14][issue14]
+- Improve IP checking to include membership in subnets. [#15][issue15]
 
 <!--------------------------------------------------------------------->
 
@@ -229,12 +229,12 @@ more.**
 
 ### Added
 
-* Add separate command line option to display version information.
-* Add additional help indicators to the subcommands.
+- Add separate command line option to display version information.
+- Add additional help indicators to the subcommands.
 
 ### Fixed
 
-* Refactor code for better maintainability.
+- Refactor code for better maintainability.
 
 <!--------------------------------------------------------------------->
 
@@ -242,16 +242,16 @@ more.**
 
 ### Changed
 
-* Update documentation with page anchors.
+- Update documentation with page anchors.
 
 ### Added
 
-* Introduce a plugin architecture.
+- Introduce a plugin architecture.
 
 ### Fixed
 
-* Fixed uncaught exception.
-* Lint documentation.
+- Fixed uncaught exception.
+- Lint documentation.
 
 <!--------------------------------------------------------------------->
 

@@ -2,7 +2,30 @@
 
 <!--------------------------------------------------------------------->
 
-## 1.3.9 (2026-03-06) - latest
+## 1.3.10 (2026-03-14) - latest
+
+### 🛠️ Changes
+
+- Migrate changelog generation to cliff (9e811b5)
+
+### 🛠️ 📦 Development Dependencies
+
+- Bump ruff from 0.15.5 to 0.15.6 (080ba7b)
+
+### 📚 Documentation
+
+- Lint CHANGELOG for markdown errors (5e55af5)
+- Lint config.toml (ec49d98)
+- Standardize changelog header format (41e7e59)
+- Update dinobox log (b17c0c5)
+
+### 🚀 Features
+
+- Add clear screen routine (467afd0)
+
+<!--------------------------------------------------------------------->
+
+## 1.3.9 (2026-03-06)
 
 ### 🐛 Bug Fixes
 

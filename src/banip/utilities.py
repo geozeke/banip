@@ -2,6 +2,7 @@
 
 import csv
 import ipaddress as ipa
+import os
 import pickle
 from typing import cast
 
@@ -373,3 +374,18 @@ def get_public_ip() -> AddressType | None:
             return None
     except RequestException:
         return None
+
+
+# ======================================================================
+
+
+def clear() -> None:
+    """Clear the screen.
+
+    This is an os-agnostic version, which will work with both Windows
+    and Linux.
+    """
+    os.system("clear" if os.name == "posix" else "cls")
+
+
+# ======================================================================

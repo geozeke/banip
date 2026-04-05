@@ -2,7 +2,28 @@
 
 <!--------------------------------------------------------------------->
 
-## 1.3.11 (2026-03-27) - latest
+## 1.3.12 (2026-04-03) - latest
+
+### 📦 Runtime Dependencies
+
+- Bump requests from 2.33.0 to 2.33.1 (420fa05)
+
+### 🛠️ 📦 Development Dependencies
+
+- Bump mypy from 1.19.1 to 1.20.0 (1243ba2)
+- Bump ruff from 0.15.8 to 0.15.9 (9ecf861)
+
+### 🚀 Features
+
+- Allow for selective tagging (d8c4319)
+
+### ⚙️ Miscellaneous Tasks
+
+- Lint justfile (561eec5)
+
+<!--------------------------------------------------------------------->
+
+## 1.3.11 (2026-03-27)
 
 ### 🛠️ 📦 Development Dependencies
 

@@ -57,7 +57,7 @@ def task_runner(args: argparse.Namespace) -> None:
     print(f"{msg:.<{PAD}}done")
 
     # Load geolocation data
-    msg = "Loading geolcation data"
+    msg = "Loading geolocation data"
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)

@@ -17,7 +17,7 @@ authors = [
 [dependency-groups]
 dev = [
     "mypy>=1.20.1",
-    "ruff>=0.7.1",
+    "ruff>=0.15.11",
 ]
 
 [tool.ruff.lint.isort]

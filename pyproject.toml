@@ -1,7 +1,7 @@
 [project]
 name = "banip"
 version = "1.4.1"
-description = "Create a list of banned IPs for specific countries"
+description = "Create a list of banned IP addresses for specific countries"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -13,6 +13,10 @@ dependencies = [
 authors = [
     {name = "Peter Nardi", email = "geozeke@gmail.com"},
 ]
+
+[project.urls]
+Homepage = "https://github.com/geozeke/banip"
+Repository = "https://github.com/geozeke/banip"
 
 [dependency-groups]
 dev = [
@@ -34,10 +38,7 @@ requires = ["uv-build>=0.10,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-exclude = [
-    ".gitignore",
+source-include = [
     "global-gitignore.txt",
-    "Makefile",
     "samples/**",
-    "uv.lock",
 ]

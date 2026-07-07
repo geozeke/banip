@@ -108,7 +108,7 @@ download permalink, [see the MaxMind documentation][mmd]._
 ### Install banip
 
 ```shell
-uv tool install --from git+https://github.com/geozeke/banip.git@latest banip
+uv tool install --managed-python --from git+https://github.com/geozeke/banip.git@latest banip
 ```
 
 ### Create Required Directories
@@ -283,7 +283,7 @@ metadata and the changelog. After committing the release changes, use
 To upgrade _banip_, run:
 
 ```text
-uv tool upgrade banip
+uv tool upgrade --managed-python banip
 ```
 
 [top](#top)

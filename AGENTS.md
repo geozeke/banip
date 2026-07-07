@@ -13,6 +13,8 @@ blacklist data, and optional user-provided plugin commands.
   files.
 - `pyproject.toml`, `uv.lock`, and `justfile` define package metadata,
   dependencies, and common project tasks.
+- `.github/workflows/` contains GitHub Actions for CI and release
+  automation.
 
 ## Working Constraints
 
@@ -44,7 +46,7 @@ blacklist data, and optional user-provided plugin commands.
 
 ## Verification
 
-- Use `uv sync --all-groups` or `just dev` to prepare development
-  dependencies.
-- Use `uv run ruff check src` after Python code changes.
-- Use `uv run mypy src` for type-checking when behavior or types change.
+- Use `just setup` to prepare development dependencies.
+- Use `just lint` after Python code changes.
+- Use `just typecheck` when behavior or types change.
+- Use `just test` when adding or changing behavior.

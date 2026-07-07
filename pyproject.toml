@@ -21,8 +21,14 @@ Repository = "https://github.com/geozeke/banip"
 [dependency-groups]
 dev = [
     "mypy>=2.0.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "ruff>=0.15.12",
 ]
+
+[tool.uv]
+cache-dir = ".uv-cache"
+python-preference = "only-managed"
 
 [tool.ruff.lint.isort]
 force-single-line = true
@@ -41,4 +47,7 @@ build-backend = "uv_build"
 source-include = [
     "global-gitignore.txt",
     "samples/**",
+]
+source-exclude = [
+    ".uv-cache/**",
 ]

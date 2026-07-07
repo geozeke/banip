@@ -93,6 +93,8 @@ def collect_parsers(start: Path) -> list[str]:
         Argument parser module names.
     """
     parser_names: list[str] = []
+    if not start.exists():
+        return parser_names
     for p in start.iterdir():
         if p.is_file() and p.name.endswith(".py") and p.name != "__init__.py":
             if "plugins" in str(p):
@@ -106,19 +108,15 @@ def collect_parsers(start: Path) -> list[str]:
 # ======================================================================
 
 
-def main() -> None:
+def main() -> int:
     """Parse user input and run the requested command."""
-    # Make sure the local setup is complete.
-    if not check_setup():
-        return
-
     msg = """
     Generate and query IP blacklists for use with proxy servers such as
     HAProxy. See the README at https://github.com/geozeke/banip for
     setup instructions.
     """
     epi = f"Version: {__version__}"
-    parser = argparse.ArgumentParser(description=msg, epilog=epi)
+    parser = argparse.ArgumentParser(prog=APP_NAME, description=msg, epilog=epi)
     parser.add_argument(
         "-v", "--version", action="version", version=f"{APP_NAME} {__version__}"
     )
@@ -142,6 +140,11 @@ def main() -> None:
             )
         parser_code.load_command_args(subparsers)
     args = parser.parse_args()
+
+    # Make sure the local setup is complete after parsing so help and
+    # version output work in a fresh environment.
+    if args.cmd and not check_setup():
+        return 1
 
     # Run the selected command. Python's argparse module guarantees that
     # we'll get either: (1) a valid command (base or custom) or (2) no
@@ -169,8 +172,8 @@ def main() -> None:
 
     mod.task_runner(args)
 
-    return
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -33,6 +33,7 @@ workflow by building a focused blacklist from the source data.
 * [Running](#running)
 * [Updating](#updating)
 * [Plugins](#plugins)
+* [Development](#development)
 * [Upgrading](#upgrade)
 * [Uninstalling](#uninstall)
 
@@ -256,6 +257,24 @@ these sample files for plugin implementation details:
 ./samples/plugins/foo.py
 ./samples/plugins/foo_args.py
 ```
+
+[top](#top)
+
+## <a id="development"></a> Development
+
+Use `just` for common maintainer tasks:
+
+```text
+just setup
+just lint
+just typecheck
+just test
+```
+
+Release preparation uses `just bump <version>` to update project
+metadata and the changelog. After committing the release changes, use
+`just tag-release` to push the `vX.Y.Z` tag, or
+`just tag-release-latest` to also update the mutable `latest` tag.
 
 [top](#top)
 

@@ -1,4 +1,4 @@
-"""Taskrunner for stats command."""
+"""Task runner for the stats command."""
 
 import argparse
 import pickle
@@ -19,12 +19,11 @@ def task_runner(args: argparse.Namespace) -> None:
     Parameters
     ----------
     args : argparse.Namespace
-        args.country_code will be the two-letter country code of
-        interest.
+        Parsed command-line arguments.
     """
     if not COUNTRY_NETS_DICT.exists():
         msg = """
-        Some required files are missing. Make sure to run the \'build\'
+        Some required files are missing. Run the \'build\'
         command before generating statistics for a given country. Run
         this command for more information:
         
@@ -71,10 +70,10 @@ def task_runner(args: argparse.Namespace) -> None:
     table.add_column(justify="right")
     table.add_column(justify="right")
 
-    table.add_row("Nets (v4)", f"{results['nets_4']:,d}")
-    table.add_row("Nets (v6)", f"{results['nets_6']:,d}", end_section=True)
-    table.add_row("IPs (v4)", f"{results['ips_4']:,d}")
-    table.add_row("IPs (v6)", f"{results['ips_6']:.2e}")
+    table.add_row("Networks (v4)", f"{results['nets_4']:,d}")
+    table.add_row("Networks (v6)", f"{results['nets_6']:,d}", end_section=True)
+    table.add_row("IP addresses (v4)", f"{results['ips_4']:,d}")
+    table.add_row("IP addresses (v6)", f"{results['ips_6']:.2e}")
     console.print(table)
 
     return

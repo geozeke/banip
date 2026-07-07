@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""Build a custom list of banned IPs."""
+"""Build a custom list of banned IP addresses."""
 
 import shutil
 import sys
@@ -38,7 +38,7 @@ def task_runner(args: Namespace) -> None:
     Parameters
     ----------
     args : Namespace
-        Command line arguments.
+        Command-line arguments.
     """
     # ------------------------------------------------------------------
 
@@ -64,7 +64,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Now make sure everything is in place
+    # Now make sure everything is in place.
     files = [
         CUSTOM_BLACKLIST,
         CUSTOM_WHITELIST,
@@ -78,7 +78,7 @@ def task_runner(args: Namespace) -> None:
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more info.")
+            print("Visit https://github.com/geozeke/banip for more information.")
             sys.exit(1)
 
     # ------------------------------------------------------------------
@@ -96,8 +96,8 @@ def task_runner(args: Namespace) -> None:
             custom.remove(public_ip)
         custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
-        # Remove any custom IPs that are covered by existing custom
-        # subnets
+        # Remove any custom IP addresses that are covered by existing
+        # custom subnets.
         custom_ips = [
             ip
             for ip in custom_ips
@@ -109,7 +109,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Geotag all global networks and save entries for target countries
+    # Geotag all global networks and save entries for target countries.
     geolite_D = tag_networks()
     msg = "Filtering networks"
     with console.status(msg):
@@ -124,7 +124,7 @@ def task_runner(args: Namespace) -> None:
         )
         target_geolite_size = len(target_geolite)
 
-    # Save the cleaned-up country codes for later use in HAProxy
+    # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
@@ -134,10 +134,10 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune ipsum.txt to only keep IPs (1) from target countries, (2)
-    # IPs that are not already covered by a custom subnet, (3) IPs that
-    # meet the minimum threshold for number of hits, and (4) IPs that
-    # are not in the custom whitelist.
+    # Prune ipsum.txt to keep only IP addresses that (1) are from target
+    # countries, (2) are not already covered by a custom subnet, (3)
+    # meet the minimum threshold for number of hits, and (4) are not in
+    # the custom whitelist.
     msg = "Pruning ipsum.txt"
     with console.status(msg):
         with open(CUSTOM_WHITELIST, "r") as f:
@@ -185,11 +185,11 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune the list of custom IPs again so that what's left are not
-    # covered by ipsum.txt, and are IPs from countries that are included
-    # in the country whitelist. Do not remove custom IPs that might not
-    # have a country association (e.g. an IP on a local network)
-    msg = "Removing redundant IPs"
+    # Prune the list of custom IP addresses again so that remaining
+    # entries are not covered by ipsum.txt and are from countries in the
+    # country whitelist. Do not remove custom IP addresses that might
+    # not have a country association, such as local-network addresses.
+    msg = "Removing redundant IP addresses"
     with console.status(msg):
         custom_ips = [
             ip
@@ -207,8 +207,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Re-package and save cleaned-up custom IPs and networks
-    msg = "Repackaging custom IPs"
+    # Repackage and save cleaned-up custom IP addresses and networks.
+    msg = "Repackaging custom IP addresses"
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "w") as f:
             for ip in custom_ips:
@@ -219,7 +219,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt
+    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
     msg = "Rendering lists"
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
@@ -247,7 +247,7 @@ def task_runner(args: Namespace) -> None:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     # Generate a table to display metrics. Do not include the network
-    # and broadcast addresses when calculating total_ips.
+    # and broadcast addresses when calculating total IP addresses.
     total_entries = ipsum_size + custom_nets_size + custom_ips_size
     table = Table(title="Final Build Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
@@ -270,9 +270,9 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
 
     table.add_row("Target Countries", f"{','.join(countries)}", end_section=True)
-    table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
+    table.add_row("IP addresses - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
-    table.add_row("IPs - custom", f"{(custom_ips_size):,d}")
+    table.add_row("IP addresses - custom", f"{(custom_ips_size):,d}")
     table.add_row("Subnets - custom", f"{(custom_nets_size):,d}")
     table.add_row("-" * 19, "-" * div_pad)
     table.add_row("Total entries saved", f"{(total_entries):,d}", end_section=True)

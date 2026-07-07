@@ -23,12 +23,12 @@ __version__ = version("banip")
 
 
 def check_setup() -> bool:
-    """Make sure the environment was propert set up.
+    """Check whether the local environment is configured.
 
     Returns
     -------
-    bool:
-        True if everything is in place; False otherwise.
+    bool
+        True if the required directories exist; otherwise False.
     """
     proper_setup = (
         CUSTOM_PARSERS.exists()
@@ -37,8 +37,8 @@ def check_setup() -> bool:
     )  # fmt: off
     if not proper_setup:
         msg = """
-        It looks like the environment was not set properly. Please
-        ensure the following structure exists in your home directory:
+        The local environment is not configured correctly. Make sure
+        the following structure exists in your home directory:
 
         .banip
         ├── geolite
@@ -62,12 +62,12 @@ def load_custom_module(mod_name: str, location: Path) -> ModuleType:
     mod_name : str
         The name of the module to load.
     location : Path
-        The absolute path of the python code for the module.
+        The absolute path to the Python code for the module.
 
     Returns
     -------
     ModuleType
-        A pointer to module that gets loaded.
+        The loaded module.
     """
     mod_path = f"{location}/{mod_name}.py"
     if spec := importlib.util.spec_from_file_location(mod_name, mod_path):
@@ -85,12 +85,12 @@ def collect_parsers(start: Path) -> list[str]:
     Parameters
     ----------
     start : Path
-        This the starting point (directory) for collection.
+        The directory where parser collection starts.
 
     Returns
     -------
     list[str]
-        A list of argument parser module names.
+        Argument parser module names.
     """
     parser_names: list[str] = []
     for p in start.iterdir():
@@ -107,16 +107,15 @@ def collect_parsers(start: Path) -> list[str]:
 
 
 def main() -> None:
-    """Get user input and build the list of banned IP addresses."""
-    # Make sure setup was properly completed.
+    """Parse user input and run the requested command."""
+    # Make sure the local setup is complete.
     if not check_setup():
         return
 
     msg = """
-    Generate and query IP blacklists for use with proxy servers (like
-    HAProxy). Please review the README file at
-    https://github.com/geozeke/banip for detailed instructions on
-    setting up banip.
+    Generate and query IP blacklists for use with proxy servers such as
+    HAProxy. See the README at https://github.com/geozeke/banip for
+    setup instructions.
     """
     epi = f"Version: {__version__}"
     parser = argparse.ArgumentParser(description=msg, epilog=epi)
@@ -146,10 +145,9 @@ def main() -> None:
 
     # Run the selected command. Python's argparse module guarantees that
     # we'll get either: (1) a valid command (base or custom) or (2) no
-    # command at all (args.cmd == None). Given that, we can easily
-    # determine if the entered command is base or custom, based on its
-    # companion in the list of argument parser names. We then adjust the
-    # prefix based on that.
+    # command at all. Given that, we can determine whether the entered
+    # command is built in or custom based on its companion in the list of
+    # argument parser names. We then adjust the prefix based on that.
 
     if args.cmd:
         try:
@@ -161,7 +159,7 @@ def main() -> None:
         except (ModuleNotFoundError, FileNotFoundError):
             msg = f"""
             Code for a custom command must have the same filename as the
-            command itself. Make sure you have a python file called
+            command itself. Make sure you have a Python file called
             \"{args.cmd}.py\" in: {CUSTOM_CODE}
             """
             print("\n".join([line.strip() for line in msg.split("\n")]))

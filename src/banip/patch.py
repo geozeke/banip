@@ -23,21 +23,21 @@ def task_runner(args: Namespace) -> None:
     Parameters
     ----------
     args : Namespace
-        Command line arguments.
+        Command-line arguments.
     """
     # ------------------------------------------------------------------
 
     console = Console()
 
-    # Make sure everything is in place
+    # Make sure everything is in place.
     files = [IPSUM]
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more info.")
+            print("Visit https://github.com/geozeke/banip for more information.")
             sys.exit(1)
 
-    # Load ipsum.txt
+    # Load ipsum.txt.
     msg = "Loading ipsum.txt"
     with console.status(msg):
         ipsum = load_ipsum()
@@ -47,7 +47,7 @@ def task_runner(args: Namespace) -> None:
     new_ips_considered = 0
 
     # Start patching.
-    msg = "Patching with new IPs"
+    msg = "Patching with new IP addresses"
     with console.status(msg):
         for line in args.newips:
             parts = line.split()
@@ -58,7 +58,7 @@ def task_runner(args: Namespace) -> None:
     print(f"{msg:.<{PAD}}done")
     new_ips_added = len(ipsum) - original_ipsum_size
 
-    # Update file on disk
+    # Update the file on disk.
     with open(IPSUM, "w") as f:
         for k, v in ipsum.items():
             f.write(f"{k} {v}" + "\n")
@@ -69,8 +69,8 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
 
     table.add_row("Original ipsum.txt size", f"{(original_ipsum_size):,d}")
-    table.add_row("New IPs analyzed", f"{(new_ips_considered):,d}")
-    table.add_row("New IPs added", f"{(new_ips_added):,d}")
+    table.add_row("New IP addresses analyzed", f"{(new_ips_considered):,d}")
+    table.add_row("New IP addresses added", f"{(new_ips_added):,d}")
     table.add_row("New ipsum.txt size", f"{(len(ipsum)):,d}")
 
     print()

@@ -19,9 +19,9 @@ def threshold_type(x: str) -> int:
     Raises
     ------
     argparse.ArgumentTypeError
-        If the user input is not an integer type
+        If the user input is not an integer.
     argparse.ArgumentTypeError
-        If the user input is not within the acceptable range [1,10]
+        If the user input is not within the acceptable range [1, 10].
     """
     try:
         x_int = int(x)
@@ -53,9 +53,9 @@ def compact_type(x: str) -> int:
     Raises
     ------
     argparse.ArgumentTypeError
-        If the user input is not an integer type
+        If the user input is not an integer.
     argparse.ArgumentTypeError
-        If the user input is not within the acceptable range [1,255]
+        If the user input is not within the acceptable range [1, 255].
     """
     try:
         x_int = int(x)

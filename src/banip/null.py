@@ -1,13 +1,13 @@
-"""Taskrunner for no command.
+"""Task runner for no command.
 
-This will be the default command, which reminds the user how to use the
-program, then exits.
+This is the default command. It reminds the user how to use the program
+and then exits.
 """
 
 import argparse
 
 
 def task_runner(args: argparse.Namespace) -> None:
-    """Print reminder message and exit."""
-    print("run 'banip -h' for help.")
+    """Print a reminder message and exit."""
+    print("Run 'banip -h' for help.")
     return

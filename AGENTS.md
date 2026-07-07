@@ -48,7 +48,7 @@ blacklist data, and optional user-provided plugin commands.
 
 ## Verification
 
-- Use `just setup` to prepare development dependencies.
+- Use `just setup` to prepare runtime and development dependencies.
 - Use `just lint` after Python code changes.
 - Use `just typecheck` when behavior or types change.
 - Use `just test` when adding or changing behavior.

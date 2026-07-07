@@ -86,7 +86,7 @@ reset: clean
 
 # --------------------------------------------
 
-# Initialize the project environment
+# Initialize the project environment with runtime and development dependencies
 setup:
     #!/usr/bin/env bash
     if [ ! -f .init/setup ]; then
@@ -115,7 +115,7 @@ setup:
 
 # --------------------------------------------
 
-# Sync dependencies with the lockfile
+# Sync runtime and development dependencies with the lockfile
 sync: _require_setup
     uv sync --all-groups
 
@@ -151,6 +151,6 @@ typecheck:
 
 # --------------------------------------------
 
-# Upgrade dependencies
+# Upgrade runtime and development dependencies
 upgrade: _require_setup
     uv sync --upgrade --all-groups

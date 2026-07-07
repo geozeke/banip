@@ -22,6 +22,7 @@ from banip.constants import IPSUM
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
+from banip.utilities import build_network_lookup
 from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import format_status
@@ -97,14 +98,13 @@ def task_runner(args: Namespace) -> None:
             custom.remove(public_ip)
         custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
+        custom_nets_lookup = build_network_lookup(custom_nets)
         # Remove any custom IP addresses that are covered by existing
         # custom subnets.
         custom_ips = [
             ip
             for ip in custom_ips
-            if not ip_in_network(
-                ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
-            )
+            if not ip_in_network(ip=ip, lookup=custom_nets_lookup)
         ]
     print(format_status("custom_prune"))
 
@@ -123,7 +123,7 @@ def task_runner(args: Namespace) -> None:
         _, target_geolite = split_hybrid(
             [net for net in geolite_D if geolite_D[net] in countries]
         )
-        target_geolite_size = len(target_geolite)
+        target_geolite_lookup = build_network_lookup(target_geolite)
 
     # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
@@ -144,25 +144,16 @@ def task_runner(args: Namespace) -> None:
         with open(CUSTOM_WHITELIST, "r") as f:
             whitelist = [item for line in f if (item := extract_ip(line.strip()))]
         white_ips, white_nets = split_hybrid(whitelist)
-        white_nets_size = len(white_nets)
+        white_nets_lookup = build_network_lookup(white_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip
             for ip in ipsum_D
             if (
-                ip_in_network(
-                    ip=ip,
-                    networks=target_geolite,
-                    first=0,
-                    last=target_geolite_size - 1,
-                )
-                and not ip_in_network(
-                    ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
-                )
+                ip_in_network(ip=ip, lookup=target_geolite_lookup)
+                and not ip_in_network(ip=ip, lookup=custom_nets_lookup)
                 and ip not in whitelist
-                and not ip_in_network(
-                    ip=ip, networks=white_nets, first=0, last=white_nets_size - 1
-                )
+                and not ip_in_network(ip=ip, lookup=white_nets_lookup)
                 and ipsum_D[ip] >= args.threshold
             )
         ]
@@ -178,6 +169,7 @@ def task_runner(args: Namespace) -> None:
             whitelist=whitelist,
             min_num=args.compact,
         )
+        ipsum_nets_lookup = build_network_lookup(ipsum_nets)
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
@@ -198,12 +190,8 @@ def task_runner(args: Namespace) -> None:
             ip
             for ip in custom_ips
             if ip not in ipsum_ips
-            and not ip_in_network(
-                ip=ip, networks=ipsum_nets, first=0, last=ipsum_nets_size - 1
-            )
-            and ip_in_network(
-                ip=ip, networks=target_geolite, first=0, last=target_geolite_size - 1
-            )
+            and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
+            and ip_in_network(ip=ip, lookup=target_geolite_lookup)
         ]
         custom_ips_size = len(custom_ips)
     print(format_status("redundant_remove"))

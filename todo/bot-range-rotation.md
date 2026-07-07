@@ -1,16 +1,17 @@
 # Bot Range Rotation
 
-This TODO scopes promoting the private `rotate` plugin to a first-class
-`banip` feature. The goal is to manage bot and crawler IP ranges from
-multiple providers without storing managed ranges in
-`custom_blacklist.txt`.
+This TODO scopes promoting bot and crawler IP range management to a
+first-class `banip build` feature. The goal is to manage bot ranges
+from multiple providers without storing managed ranges in
+`custom_blacklist.txt` and without adding a separate `rotate` command.
 
 ## Summary
 
-Add a future built-in `banip rotate` command that refreshes provider
-range data into a human-readable `~/.banip/botdata.json` file. During
-`banip build`, the stored bot ranges should be loaded into an interim
-in-memory collection and merged into the final rendered blacklist.
+Add bot range handling directly to `banip build`. A helper called by the
+build command should refresh provider range data into a human-readable
+`~/.banip/botdata.json` file, load stored bot ranges when present, and
+return parsed networks for in-memory merge into the final rendered
+blacklist.
 
 Do not create a separate staged `bot_blacklist.txt` file. The only
 persistent managed bot state should be `botdata.json`.
@@ -19,23 +20,36 @@ persistent managed bot state should be `botdata.json`.
 
 Planned user interface:
 
-- `banip rotate PROVIDER` refreshes one provider.
-- `banip rotate --all` refreshes every configured provider.
+- `banip build` loads `botdata.json` when it exists and adds stored bot
+  ranges to the rendered blacklist.
+- `banip build --refresh-bot PROVIDER` refreshes one provider before
+  blacklist generation begins.
+- `banip build --refresh-bot all` refreshes every configured provider
+  before blacklist generation begins.
+- `banip build --no-bots` skips loading `botdata.json` and does not add
+  stored bot ranges to the rendered blacklist.
 
-Rotating one provider must replace only that provider's managed ranges.
-It must not remove ranges for other providers already stored in
+Refreshing one provider must replace only that provider's managed
+ranges. It must not remove ranges for other providers already stored in
 `botdata.json`.
 
-Initial provider candidates:
+If `--refresh-bot` and `--no-bots` are both selected, refresh
+`botdata.json` first, then omit bot ranges from the current rendered
+blacklist.
 
-- Google crawlers and fetchers.
-- Bingbot.
-- OpenAI crawlers, such as GPTBot, OAI-SearchBot, and ChatGPT-User.
-- Meta crawlers, pending source-format research.
+Initial provider keys:
+
+- `google` for Google crawler and fetcher JSON feeds.
+- `bing` for Bingbot published ranges.
+- `openai` for OpenAI crawler and user-triggered fetcher feeds.
+- `all` as a special command value for every known provider.
 
 Provider names should be stable lowercase command values. Aliases can be
 added later, but the first implementation should keep names explicit and
 documented.
+
+Meta crawlers remain a research item and should not be included in the
+first implementation.
 
 ## Storage Design
 
@@ -54,6 +68,10 @@ Each provider entry should include:
 Write `botdata.json` deterministically so diffs are stable. Sort
 providers by key and ranges by IP version plus integer network address.
 
+If `botdata.json` does not exist, plain `banip build` should ignore it
+and proceed without bot ranges. The file should be created only when a
+refresh is requested.
+
 Avoid pickle for first-class state. The existing plugin's `botdata.bin`
 solves stale-entry cleanup, but it is opaque, difficult to review, and
 awkward to migrate.
@@ -61,9 +79,14 @@ awkward to migrate.
 ## Build Integration
 
 Keep `custom_blacklist.txt` user-owned. Do not write bot ranges into it.
+Use a focused helper module for bot provider refresh, JSON storage, and
+CIDR parsing rather than substantially expanding `build.py`.
 
 During `banip build`:
 
+- Refresh the selected provider or providers first when `--refresh-bot`
+  is provided.
+- Skip all bot loading when `--no-bots` is provided.
 - Load `botdata.json` if it exists.
 - Treat a missing file as no managed bot ranges.
 - Parse all stored CIDR ranges into `ipaddress` network objects.
@@ -114,7 +137,7 @@ Reference material for future implementation:
 - Bing published ranges:
   https://www.bing.com/toolbox/bingbot.json
 - OpenAI crawler docs:
-  https://platform.openai.com/docs/bots
+  https://developers.openai.com/api/docs/bots
 
 ## Migration Notes
 
@@ -141,10 +164,11 @@ Future implementation should include tests for:
 - duplicated ranges,
 - IPv4 and IPv6 ranges,
 - empty provider results,
-- rotating one provider while preserving other providers,
-- `--all` refreshing all configured providers,
+- refreshing one provider while preserving other providers,
+- `--refresh-bot all` refreshing all configured providers,
 - missing, empty, and invalid `botdata.json`,
 - build-time in-memory merging of custom and managed ranges,
+- `--no-bots` skipping stored bot ranges,
 - no bot-range writes to `custom_blacklist.txt`.
 
 Run these checks after implementation:
@@ -156,8 +180,8 @@ Run these checks after implementation:
 ## Assumptions
 
 - This is a future-work plan, not an implementation.
-- The multi-provider UX is `banip rotate PROVIDER` plus
-  `banip rotate --all`.
+- The multi-provider UX is integrated into `banip build`.
 - `botdata.json` is the only persistent managed bot range file.
+- Missing `botdata.json` is ignored unless a refresh is requested.
 - Provider feeds may differ in format and may require conversion.
 - Python compatibility remains `>=3.12`.

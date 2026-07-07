@@ -1,4 +1,4 @@
-"""Taskrunner for stats command."""
+"""Task runner for the stats command."""
 
 import argparse
 import pickle
@@ -9,8 +9,9 @@ from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
-from banip.constants import PAD
 from banip.constants import NetworkType
+from banip.utilities import format_status
+from banip.utilities import status_label
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -19,12 +20,11 @@ def task_runner(args: argparse.Namespace) -> None:
     Parameters
     ----------
     args : argparse.Namespace
-        args.country_code will be the two-letter country code of
-        interest.
+        Parsed command-line arguments.
     """
     if not COUNTRY_NETS_DICT.exists():
         msg = """
-        Some required files are missing. Make sure to run the \'build\'
+        Some required files are missing. Run the \'build\'
         command before generating statistics for a given country. Run
         this command for more information:
         
@@ -37,14 +37,14 @@ def task_runner(args: argparse.Namespace) -> None:
     console = Console()
 
     print()
-    msg = "Loading data"
+    msg = status_label("stats_load")
     with console.status(msg):
         D: dict[NetworkType, str] = {}
         with open(COUNTRY_NETS_DICT, "rb") as f:
             D = pickle.load(f)
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("stats_load"))
 
-    msg = "Analyzing"
+    msg = status_label("analyze")
     results = {"nets_4": 0, "ips_4": 0, "nets_6": 0, "ips_6": 0}
     with console.status(msg):
         for net, country in D.items():
@@ -53,10 +53,10 @@ def task_runner(args: argparse.Namespace) -> None:
                 results[f"ips_{net.version}"] += (
                     1 if net.num_addresses == 1 else net.num_addresses - 2
                 )
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("analyze"))
     print()
 
-    if results == [0] * 4:
+    if all(value == 0 for value in results.values()):
         print(f"{target_country} not found")
         return
 
@@ -71,10 +71,10 @@ def task_runner(args: argparse.Namespace) -> None:
     table.add_column(justify="right")
     table.add_column(justify="right")
 
-    table.add_row("Nets (v4)", f"{results['nets_4']:,d}")
-    table.add_row("Nets (v6)", f"{results['nets_6']:,d}", end_section=True)
-    table.add_row("IPs (v4)", f"{results['ips_4']:,d}")
-    table.add_row("IPs (v6)", f"{results['ips_6']:.2e}")
+    table.add_row("Networks (v4)", f"{results['nets_4']:,d}")
+    table.add_row("Networks (v6)", f"{results['nets_6']:,d}", end_section=True)
+    table.add_row("IP addresses (v4)", f"{results['ips_4']:,d}")
+    table.add_row("IP addresses (v6)", f"{results['ips_6']:.2e}")
     console.print(table)
 
     return

@@ -11,10 +11,11 @@ from rich.console import Console
 from rich.table import Table
 
 from banip.constants import IPSUM
-from banip.constants import PAD
 from banip.constants import AddressType
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import load_ipsum
+from banip.utilities import status_label
 
 
 def task_runner(args: Namespace) -> None:
@@ -23,42 +24,46 @@ def task_runner(args: Namespace) -> None:
     Parameters
     ----------
     args : Namespace
-        Command line arguments.
+        Command-line arguments.
     """
     # ------------------------------------------------------------------
 
     console = Console()
 
-    # Make sure everything is in place
+    # Make sure everything is in place.
     files = [IPSUM]
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more info.")
+            print("Visit https://github.com/geozeke/banip for more information.")
             sys.exit(1)
 
-    # Load ipsum.txt
-    msg = "Loading ipsum.txt"
+    # Load ipsum.txt.
+    msg = status_label("ipsum_load")
     with console.status(msg):
         ipsum = load_ipsum()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_load"))
 
     original_ipsum_size = len(ipsum)
     new_ips_considered = 0
 
     # Start patching.
-    msg = "Patching with new IPs"
+    msg = status_label("ipsum_patch")
     with console.status(msg):
         for line in args.newips:
             parts = line.split()
-            if ip := cast(AddressType, extract_ip(parts[args.index])):
+            try:
+                raw_ip = parts[args.index]
+            except IndexError:
+                continue
+            if ip := cast(AddressType, extract_ip(raw_ip)):
                 new_ips_considered += 1
                 if (ip not in ipsum) or (ipsum[ip] < args.confidence):
                     ipsum[ip] = args.confidence
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_patch"))
     new_ips_added = len(ipsum) - original_ipsum_size
 
-    # Update file on disk
+    # Update the file on disk.
     with open(IPSUM, "w") as f:
         for k, v in ipsum.items():
             f.write(f"{k} {v}" + "\n")
@@ -69,8 +74,8 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
 
     table.add_row("Original ipsum.txt size", f"{(original_ipsum_size):,d}")
-    table.add_row("New IPs analyzed", f"{(new_ips_considered):,d}")
-    table.add_row("New IPs added", f"{(new_ips_added):,d}")
+    table.add_row("New IP addresses analyzed", f"{(new_ips_considered):,d}")
+    table.add_row("New IP addresses added", f"{(new_ips_added):,d}")
     table.add_row("New ipsum.txt size", f"{(len(ipsum)):,d}")
 
     print()

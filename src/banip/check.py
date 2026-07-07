@@ -1,4 +1,4 @@
-"""Taskrunner for check command."""
+"""Task runner for the check command."""
 
 import argparse
 import pickle
@@ -9,14 +9,15 @@ from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
-from banip.constants import PAD
 from banip.constants import AddressType
 from banip.utilities import clear
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import load_rendered_blacklist
 from banip.utilities import split_hybrid
+from banip.utilities import status_label
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -25,14 +26,14 @@ def task_runner(args: argparse.Namespace) -> None:
     Parameters
     ----------
     args : argparse.Namespace
-        args.ip will be either IPv4 or IPv6 address of interest.
+        Parsed command-line arguments.
     """
     print()
 
     if not COUNTRY_NETS_DICT.exists():
         msg = """
-        Some required files are missing. Make sure to run the \'build\'
-        command before generating statistics for a given IP. Run this
+        Some required files are missing. Run the \'build\' command
+        before checking an IP address. Run this
         command for more information:
         
         \'banip build -h\'
@@ -44,25 +45,25 @@ def task_runner(args: argparse.Namespace) -> None:
     text_green = Style(color="green")
     text_red = Style(color="red")
 
-    # Load ipsum file into a dictionary
-    msg = "Loading ipsum data"
+    # Load ipsum data into a dictionary.
+    msg = status_label("ipsum_load_data")
     with console.status(msg):
         ipsum = load_ipsum()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_load_data"))
 
-    # Load rendered blacklist
-    msg = "Loading rendered blacklist"
+    # Load the rendered blacklist.
+    msg = status_label("blacklist_rendered_load")
     with console.status(msg):
         rendered_ips, rendered_nets = load_rendered_blacklist()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("blacklist_rendered_load"))
 
-    # Load geolocation data
-    msg = "Loading geolocation data"
+    # Load geolocation data.
+    msg = status_label("geolite_load")
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
         _, nets_L = split_hybrid(nets_D.keys())
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("geolite_load"))
 
     # Respond to requests
     while True:
@@ -73,7 +74,7 @@ def task_runner(args: argparse.Namespace) -> None:
             if ip := extract_ip(user_input):
                 target = cast(AddressType, ip)
                 break
-            print(f"{user_input} is not a valid IP address")
+            print(f"{user_input} is not a valid IP address.")
 
         table = Table(title=f"Stats for {target}", show_lines=True, show_header=False)
         table.add_column(justify="right")

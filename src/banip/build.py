@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""Build a custom list of banned IPs."""
+"""Build a custom list of banned IP addresses."""
 
 import shutil
 import sys
@@ -19,16 +19,17 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
-from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
 from banip.utilities import compact
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import split_hybrid
+from banip.utilities import status_label
 from banip.utilities import tag_networks
 
 
@@ -38,7 +39,7 @@ def task_runner(args: Namespace) -> None:
     Parameters
     ----------
     args : Namespace
-        Command line arguments.
+        Command-line arguments.
     """
     # ------------------------------------------------------------------
 
@@ -64,7 +65,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Now make sure everything is in place
+    # Now make sure everything is in place.
     files = [
         CUSTOM_BLACKLIST,
         CUSTOM_WHITELIST,
@@ -78,7 +79,7 @@ def task_runner(args: Namespace) -> None:
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more info.")
+            print("Visit https://github.com/geozeke/banip for more information.")
             sys.exit(1)
 
     # ------------------------------------------------------------------
@@ -86,7 +87,7 @@ def task_runner(args: Namespace) -> None:
     # Load the custom blacklist and split it into separate lists of
     # addresses and networks. Remove any duplicates using sets.
     console = Console()
-    msg = "Pruning custom blacklist"
+    msg = status_label("custom_prune")
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
@@ -96,8 +97,8 @@ def task_runner(args: Namespace) -> None:
             custom.remove(public_ip)
         custom_ips, custom_nets = split_hybrid(list(custom))
         custom_nets_size = len(custom_nets)
-        # Remove any custom IPs that are covered by existing custom
-        # subnets
+        # Remove any custom IP addresses that are covered by existing
+        # custom subnets.
         custom_ips = [
             ip
             for ip in custom_ips
@@ -105,13 +106,13 @@ def task_runner(args: Namespace) -> None:
                 ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
             )
         ]
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("custom_prune"))
 
     # ------------------------------------------------------------------
 
-    # Geotag all global networks and save entries for target countries
+    # Geotag all global networks and save entries for target countries.
     geolite_D = tag_networks()
-    msg = "Filtering networks"
+    msg = status_label("country_filter")
     with console.status(msg):
         with open(TARGETS, "r") as f:
             countries = [
@@ -124,21 +125,21 @@ def task_runner(args: Namespace) -> None:
         )
         target_geolite_size = len(target_geolite)
 
-    # Save the cleaned-up country codes for later use in HAProxy
+    # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
         countries.sort()
         with open(COUNTRY_WHITELIST, "w") as f:
             country_codes = "\n".join(countries)
             f.write(country_codes + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
 
-    # Prune ipsum.txt to only keep IPs (1) from target countries, (2)
-    # IPs that are not already covered by a custom subnet, (3) IPs that
-    # meet the minimum threshold for number of hits, and (4) IPs that
-    # are not in the custom whitelist.
-    msg = "Pruning ipsum.txt"
+    # Prune ipsum.txt to keep only IP addresses that (1) are from target
+    # countries, (2) are not already covered by a custom subnet, (3)
+    # meet the minimum threshold for number of hits, and (4) are not in
+    # the custom whitelist.
+    msg = status_label("ipsum_prune")
     with console.status(msg):
         with open(CUSTOM_WHITELIST, "r") as f:
             whitelist = [item for line in f if (item := extract_ip(line.strip()))]
@@ -165,12 +166,12 @@ def task_runner(args: Namespace) -> None:
                 and ipsum_D[ip] >= args.threshold
             )
         ]
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_prune"))
 
     # ------------------------------------------------------------------
 
     # Compact ipsum. A compact factor of 0 indicates no compaction.
-    msg = f"Compacting ipsum ({args.compact})"
+    msg = status_label("ipsum_compact", compact=args.compact)
     with console.status(msg):
         ipsum_ips, ipsum_nets = compact(
             ip_list=ipsum_L,
@@ -181,15 +182,17 @@ def task_runner(args: Namespace) -> None:
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
         compact_factor = 1 - (ipsum_size / len(ipsum_L))
-    print(f"{msg:.<{PAD}}{compact_factor:<.2%}")
+    print(
+        format_status("ipsum_compact", f"{compact_factor:<.2%}", compact=args.compact)
+    )
 
     # ------------------------------------------------------------------
 
-    # Prune the list of custom IPs again so that what's left are not
-    # covered by ipsum.txt, and are IPs from countries that are included
-    # in the country whitelist. Do not remove custom IPs that might not
-    # have a country association (e.g. an IP on a local network)
-    msg = "Removing redundant IPs"
+    # Prune the list of custom IP addresses again so that remaining
+    # entries are not covered by ipsum.txt and are from countries in the
+    # country whitelist. Do not remove custom IP addresses that might
+    # not have a country association, such as local-network addresses.
+    msg = status_label("redundant_remove")
     with console.status(msg):
         custom_ips = [
             ip
@@ -203,24 +206,24 @@ def task_runner(args: Namespace) -> None:
             )
         ]
         custom_ips_size = len(custom_ips)
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("redundant_remove"))
 
     # ------------------------------------------------------------------
 
-    # Re-package and save cleaned-up custom IPs and networks
-    msg = "Repackaging custom IPs"
+    # Repackage and save cleaned-up custom IP addresses and networks.
+    msg = status_label("repack")
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "w") as f:
             for ip in custom_ips:
                 f.write(str(ip) + "\n")
             for net in custom_nets:
                 f.write(str(net) + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("repack"))
 
     # ------------------------------------------------------------------
 
-    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt
-    msg = "Rendering lists"
+    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
+    msg = status_label("lists_render")
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
             for ip in ipsum_ips:
@@ -240,14 +243,14 @@ def task_runner(args: Namespace) -> None:
                 f.write(str(ip) + "\n")
             for net in white_nets:
                 f.write(str(net) + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("lists_render"))
 
     args.outfile.close()
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
 
     # Generate a table to display metrics. Do not include the network
-    # and broadcast addresses when calculating total_ips.
+    # and broadcast addresses when calculating total IP addresses.
     total_entries = ipsum_size + custom_nets_size + custom_ips_size
     table = Table(title="Final Build Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
@@ -270,9 +273,9 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
 
     table.add_row("Target Countries", f"{','.join(countries)}", end_section=True)
-    table.add_row("IPs - ipsum.txt", f"{(ipsum_ips_size):,d}")
+    table.add_row("IP addresses - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
-    table.add_row("IPs - custom", f"{(custom_ips_size):,d}")
+    table.add_row("IP addresses - custom", f"{(custom_ips_size):,d}")
     table.add_row("Subnets - custom", f"{(custom_nets_size):,d}")
     table.add_row("-" * 19, "-" * div_pad)
     table.add_row("Total entries saved", f"{(total_entries):,d}", end_section=True)

@@ -1,7 +1,7 @@
 [project]
 name = "banip"
 version = "1.4.1"
-description = "Create a list of banned IPs for specific countries"
+description = "Create a list of banned IP addresses for specific countries"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -14,11 +14,21 @@ authors = [
     {name = "Peter Nardi", email = "geozeke@gmail.com"},
 ]
 
+[project.urls]
+Homepage = "https://github.com/geozeke/banip"
+Repository = "https://github.com/geozeke/banip"
+
 [dependency-groups]
 dev = [
     "mypy>=2.0.0",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
     "ruff>=0.15.12",
 ]
+
+[tool.uv]
+cache-dir = ".uv-cache"
+python-preference = "only-managed"
 
 [tool.ruff.lint.isort]
 force-single-line = true
@@ -34,10 +44,11 @@ requires = ["uv-build>=0.10,<0.12"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-exclude = [
-    ".gitignore",
+source-include = [
+    "changelogs/**",
     "global-gitignore.txt",
-    "Makefile",
     "samples/**",
-    "uv.lock",
+]
+source-exclude = [
+    ".uv-cache/**",
 ]

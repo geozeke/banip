@@ -37,10 +37,26 @@ version=$(grep -E '^version *= *"' "$PYPROJECT" | \
   sed -E 's/version *= *"([^"]+)"/\1/')
 tag="v$version"
 
+if [[ "$TAG_LATEST" == true && "$version" == *-* ]]; then
+  echo "Error: Refusing to move 'latest' for prerelease version '$version'."
+  echo "Use 'just tag-release' for beta and release candidate versions."
+  exit 1
+fi
+
 # Ensure we're on the main branch
 current_branch=$(git -C "$PROJECT_ROOT" rev-parse --abbrev-ref HEAD)
 if [[ "$current_branch" != "main" ]]; then
   echo "Error: You are on branch '$current_branch'. Switch to 'main' to tag."
+  exit 1
+fi
+
+# Ensure main is current before tagging a release
+git -C "$PROJECT_ROOT" fetch origin main --tags
+local_commit=$(git -C "$PROJECT_ROOT" rev-parse main)
+remote_commit=$(git -C "$PROJECT_ROOT" rev-parse origin/main)
+if [[ "$local_commit" != "$remote_commit" ]]; then
+  echo "Error: Local main is not up to date with origin/main."
+  echo "Run 'git pull --ff-only origin main' before tagging."
   exit 1
 fi
 
@@ -57,15 +73,13 @@ if git -C "$PROJECT_ROOT" tag | grep -qx "$tag"; then
   exit 1
 fi
 
-# Create and push version tag
-git -C "$PROJECT_ROOT" tag "$tag"
-git -C "$PROJECT_ROOT" push origin "$tag"
-
-# Optionally create and push "latest"
 if [[ "$TAG_LATEST" == true ]]; then
+  git -C "$PROJECT_ROOT" tag "$tag"
   git -C "$PROJECT_ROOT" tag -f latest
-  git -C "$PROJECT_ROOT" push origin -f latest
+  git -C "$PROJECT_ROOT" push --atomic origin "$tag" "+refs/tags/latest"
   echo "Tags '$tag' and 'latest' pushed successfully."
 else
+  git -C "$PROJECT_ROOT" tag "$tag"
+  git -C "$PROJECT_ROOT" push origin "$tag"
   echo "Tag '$tag' pushed successfully."
 fi

@@ -33,3 +33,5 @@ PAD = 30
 # Type aliases for IP data types
 AddressType: TypeAlias = IPv4Address | IPv6Address
 NetworkType: TypeAlias = IPv4Network | IPv6Network
+AddressTypes = (IPv4Address, IPv6Address)
+NetworkTypes = (IPv4Network, IPv6Network)

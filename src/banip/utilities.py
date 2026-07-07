@@ -19,7 +19,9 @@ from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
+from banip.constants import AddressTypes
 from banip.constants import NetworkType
+from banip.constants import NetworkTypes
 
 # ======================================================================
 
@@ -193,11 +195,11 @@ def split_hybrid(
         and the second list contains networks.
     """
     ips = sorted(
-        [ip for ip in hybrid_list if isinstance(ip, AddressType)],
+        [ip for ip in hybrid_list if isinstance(ip, AddressTypes)],
         key=lambda x: int(x),
     )
     nets = sorted(
-        [net for net in hybrid_list if isinstance(net, NetworkType)],
+        [net for net in hybrid_list if isinstance(net, NetworkTypes)],
         key=lambda x: int(x.network_address),
     )
     return ips, nets

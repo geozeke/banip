@@ -137,10 +137,12 @@ def test_build_network_lookup_splits_and_sorts_network_bounds() -> None:
 
 def test_ip_in_network_finds_ipv4_boundaries_and_misses() -> None:
     """Lookup returns IPv4 networks for range boundaries only."""
-    lookup = utilities.build_network_lookup([
-        ipa.ip_network("192.0.2.0/24"),
-        ipa.ip_network("198.51.100.0/24"),
-    ])
+    lookup = utilities.build_network_lookup(
+        [
+            ipa.ip_network("192.0.2.0/24"),
+            ipa.ip_network("198.51.100.0/24"),
+        ]
+    )
 
     assert utilities.ip_in_network(ipa.ip_address("198.51.100.0"), lookup) == (
         ipa.ip_network("198.51.100.0/24")
@@ -167,10 +169,12 @@ def test_ip_in_network_finds_ipv6_boundaries_and_misses() -> None:
 
 def test_ip_in_network_uses_matching_address_family() -> None:
     """Mixed lookup data only searches the target address family."""
-    lookup = utilities.build_network_lookup([
-        ipa.ip_network("::/0"),
-        ipa.ip_network("192.0.2.0/24"),
-    ])
+    lookup = utilities.build_network_lookup(
+        [
+            ipa.ip_network("::/0"),
+            ipa.ip_network("192.0.2.0/24"),
+        ]
+    )
 
     assert utilities.ip_in_network(ipa.ip_address("192.0.2.1"), lookup) == (
         ipa.ip_network("192.0.2.0/24")

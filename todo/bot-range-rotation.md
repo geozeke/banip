@@ -82,6 +82,10 @@ Keep `custom_blacklist.txt` user-owned. Do not write bot ranges into it.
 Use a focused helper module for bot provider refresh, JSON storage, and
 CIDR parsing rather than substantially expanding `build.py`.
 
+Bot integration should plug parsed bot networks into the refactored
+render and stats path. Provider refresh, JSON storage, and provider
+adapter details should not live inside `build.py`.
+
 During `banip build`:
 
 - Refresh the selected provider or providers first when `--refresh-bot`
@@ -99,6 +103,30 @@ The final rendered blacklist should include bot ranges, but the managed
 bot ranges should remain logically separate from manual custom entries.
 If comment sections are added to the rendered blacklist, they should
 make this separation visible.
+
+## Build Refactor Plan
+
+Before or alongside bot range integration, refactor `banip build` so the
+main task runner remains an orchestration layer instead of a single long
+procedure. This should be a behavior-preserving refactor that keeps
+current file formats, output ordering, status labels, and build side
+effects unchanged except where bot support explicitly requires changes.
+
+Move stable build steps into small helpers for:
+
+- setup and required-file validation,
+- custom blacklist loading and pruning,
+- target country loading and GeoLite filtering,
+- custom whitelist loading,
+- ipsum pruning and compaction,
+- redundant custom entry pruning,
+- rendered blacklist and whitelist writing,
+- final stats table creation.
+
+Keep the refactor modest and local to the build workflow. Do not
+introduce a new command architecture or broad package reorganization.
+The intent is to make the bot feature easy to add without embedding bot
+provider or storage logic in `build.py`.
 
 ## Provider Adapters
 
@@ -166,9 +194,14 @@ Future implementation should include tests for:
 - empty provider results,
 - refreshing one provider while preserving other providers,
 - `--refresh-bot all` refreshing all configured providers,
+- unchanged build output when `botdata.json` is missing,
 - missing, empty, and invalid `botdata.json`,
 - build-time in-memory merging of custom and managed ranges,
 - `--no-bots` skipping stored bot ranges,
+- unchanged `custom_blacklist.txt` pruning behavior,
+- unchanged rendered blacklist and whitelist contents before bot ranges
+  are enabled,
+- existing status output and final stats still appearing,
 - no bot-range writes to `custom_blacklist.txt`.
 
 Run these checks after implementation:

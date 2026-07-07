@@ -6,6 +6,20 @@ default: help
 
 # --------------------------------------------
 
+# Open a generated HTML report in the default browser
+_display_webpage web_path:
+    #!/usr/bin/env python3
+    import webbrowser
+    from pathlib import Path
+    p = Path(".").resolve() / "{{web_path}}"
+    if not p.exists():
+        raise SystemExit(f"File not found: {p}")
+    url = f"file://{p}"
+    print(f"Coverage report: {url}")
+    webbrowser.open(url, new=2)
+
+# --------------------------------------------
+
 # Require initial setup to be complete
 _require_setup:
     #!/usr/bin/env bash
@@ -142,6 +156,12 @@ test:
 # Run tests with coverage reporting
 coverage:
     uv run pytest --tb=short --cov=src --cov-report=term-missing --cov-report=html
+
+# --------------------------------------------
+
+# Run coverage and open HTML report in browser
+coverage-open: coverage
+    just _display_webpage "htmlcov/index.html"
 
 # --------------------------------------------
 

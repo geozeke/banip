@@ -20,6 +20,46 @@ def test_print_docstring_removes_common_indent(capsys) -> None:
     assert capsys.readouterr().out == "First line\n    Second line\n\n"
 
 
+def test_format_status_uses_checkmark_and_aligned_leader() -> None:
+    """Status lines use a check mark and align with registered labels."""
+    assert (
+        utilities.format_status("custom_prune")
+        == "Pruning custom blacklist..........✅"
+    )
+
+
+def test_format_status_uses_minimum_three_dot_leader() -> None:
+    """Long status labels still receive at least three leader dots."""
+    assert utilities.format_status("repack") == "Repackaging custom IP addresses...✅"
+
+
+def test_format_status_aligns_all_registered_statuses() -> None:
+    """Registered status values start in the same output column."""
+    status_index = utilities.format_status("repack").index("✅")
+
+    for key in utilities.STATUS_MESSAGES.labels:
+        kwargs = {"compact": 10} if key == "ipsum_compact" else {}
+        assert utilities.format_status(key, **kwargs).index("✅") == status_index
+
+
+def test_format_status_preserves_custom_status() -> None:
+    """Custom status values are formatted with the same leader rule."""
+    status_line = utilities.format_status("ipsum_compact", "47.26%", compact=10)
+
+    assert status_line == "Compacting ipsum (10).............47.26%"
+    assert status_line.index("47.26%") == utilities.format_status("repack").index("✅")
+
+
+def test_status_label_raises_for_unknown_key() -> None:
+    """Unknown status message keys fail clearly."""
+    try:
+        utilities.status_label("missing")
+    except KeyError as exc:
+        assert exc.args == ("missing",)
+    else:
+        raise AssertionError("Expected KeyError")
+
+
 def test_split_hybrid_sorts_addresses_and_networks() -> None:
     """Mixed IP data is split and sorted deterministically."""
     mixed = [

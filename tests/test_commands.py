@@ -141,7 +141,10 @@ def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
         args = argparse.Namespace(newips=handle, index=1, confidence=5)
         patch.task_runner(args)
 
-    assert "New IP addresses added" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert utilities.format_status("ipsum_load") in output
+    assert utilities.format_status("ipsum_patch") in output
+    assert "New IP addresses added" in output
     assert ipsum.read_text().splitlines() == [
         "192.0.2.1 9",
         "198.51.100.1 2",
@@ -187,6 +190,8 @@ def test_stats_task_runner_reports_country_stats(tmp_path, monkeypatch, capsys) 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
     output = capsys.readouterr().out
+    assert utilities.format_status("stats_load") in output
+    assert utilities.format_status("analyze") in output
     assert "Results for: US" in output
     assert "Networks (v4)" in output
     assert "Networks (v6)" in output
@@ -223,6 +228,9 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
     check.task_runner(argparse.Namespace())
 
     output = capsys.readouterr().out
+    assert utilities.format_status("ipsum_load_data") in output
+    assert utilities.format_status("blacklist_rendered_load") in output
+    assert utilities.format_status("geolite_load") in output
     assert "invalid is not a valid IP address." in output
     assert "Stats for 192.0.2.3" in output
     assert "found in subnet" in output
@@ -289,6 +297,10 @@ def test_build_task_runner_generates_blacklist_outputs(
     build.task_runner(argparse.Namespace(threshold=3, compact=0))
 
     output = capsys.readouterr().out
+    assert utilities.format_status("redundant_remove") in output
+    assert utilities.format_status("repack") in output
+    assert "Compacting ipsum (0)" in output
+    assert "0.00%" in output
     assert "Final Build Stats" in output
     assert paths["COUNTRY_WHITELIST"].read_text() == "US\n"
     assert paths["RENDERED_WHITELIST"].read_text() == "192.0.2.4\n"

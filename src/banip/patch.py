@@ -11,10 +11,11 @@ from rich.console import Console
 from rich.table import Table
 
 from banip.constants import IPSUM
-from banip.constants import PAD
 from banip.constants import AddressType
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import load_ipsum
+from banip.utilities import status_label
 
 
 def task_runner(args: Namespace) -> None:
@@ -38,16 +39,16 @@ def task_runner(args: Namespace) -> None:
             sys.exit(1)
 
     # Load ipsum.txt.
-    msg = "Loading ipsum.txt"
+    msg = status_label("ipsum_load")
     with console.status(msg):
         ipsum = load_ipsum()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_load"))
 
     original_ipsum_size = len(ipsum)
     new_ips_considered = 0
 
     # Start patching.
-    msg = "Patching with new IP addresses"
+    msg = status_label("ipsum_patch")
     with console.status(msg):
         for line in args.newips:
             parts = line.split()
@@ -59,7 +60,7 @@ def task_runner(args: Namespace) -> None:
                 new_ips_considered += 1
                 if (ip not in ipsum) or (ipsum[ip] < args.confidence):
                     ipsum[ip] = args.confidence
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_patch"))
     new_ips_added = len(ipsum) - original_ipsum_size
 
     # Update the file on disk.

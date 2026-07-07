@@ -4,6 +4,7 @@ import csv
 import ipaddress as ipa
 import os
 import pickle
+from dataclasses import dataclass
 from typing import cast
 
 import requests
@@ -16,7 +17,6 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
-from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
 from banip.constants import NetworkType
@@ -56,6 +56,121 @@ def print_docstring(msg: str) -> None:
     formatted_docstring = "\n".join([line[spaces:] for line in lines])
     print(formatted_docstring)
     return
+
+
+# ======================================================================
+
+
+@dataclass(frozen=True)
+class StatusMessages:
+    """Registry for keyed progress messages."""
+
+    labels: dict[str, str]
+
+    @property
+    def max_label_length(self) -> int:
+        """Return the length of the longest registered label."""
+        return max(len(label) for label in self.labels.values())
+
+    def label(self, key: str, **kwargs: object) -> str:
+        """Return a formatted status label.
+
+        Parameters
+        ----------
+        key : str
+            Key for the registered status label.
+        **kwargs : object
+            Values used to format dynamic labels.
+
+        Returns
+        -------
+        str
+            The formatted status label.
+        """
+        return self.labels[key].format(**kwargs)
+
+    def format(self, key: str, status: str = "✅", **kwargs: object) -> str:
+        """Format a status line with aligned status values.
+
+        Parameters
+        ----------
+        key : str
+            Key for the registered status label.
+        status : str, optional
+            The status value. Defaults to a check mark.
+        **kwargs : object
+            Values used to format dynamic labels.
+
+        Returns
+        -------
+        str
+            The formatted status line.
+        """
+        label = self.label(key, **kwargs)
+        target_length = max(self.max_label_length, len(label))
+        leader = "." * max(target_length - len(label) + 3, 3)
+        return f"{label}{leader}{status}"
+
+
+STATUS_MESSAGES = StatusMessages(
+    {
+        "analyze": "Analyzing",
+        "blacklist_rendered_load": "Loading rendered blacklist",
+        "build_products": "Generating build products",
+        "country_filter": "Filtering networks",
+        "custom_prune": "Pruning custom blacklist",
+        "geolite_load": "Loading geolocation data",
+        "geo_pull": "Pulling country IDs",
+        "geo_tag": "Geotagging networks",
+        "ipsum_compact": "Compacting ipsum ({compact})",
+        "ipsum_load": "Loading ipsum.txt",
+        "ipsum_load_data": "Loading ipsum data",
+        "ipsum_patch": "Patching with new IP addresses",
+        "ipsum_prune": "Pruning ipsum.txt",
+        "lists_render": "Rendering lists",
+        "redundant_remove": "Removing redundant IP addresses",
+        "repack": "Repackaging custom IP addresses",
+        "stats_load": "Loading data",
+    }
+)
+
+
+def status_label(key: str, **kwargs: object) -> str:
+    """Return a status label by key.
+
+    Parameters
+    ----------
+    key : str
+        Key for the registered status label.
+    **kwargs : object
+        Values used to format dynamic labels.
+
+    Returns
+    -------
+    str
+        The formatted status label.
+    """
+    return STATUS_MESSAGES.label(key, **kwargs)
+
+
+def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
+    """Format a status line with a minimum dot leader.
+
+    Parameters
+    ----------
+    key : str
+        Key for the registered status label.
+    status : str, optional
+        The status value. Defaults to a check mark.
+    **kwargs : object
+        Values used to format dynamic labels.
+
+    Returns
+    -------
+    str
+        The formatted status line.
+    """
+    return STATUS_MESSAGES.format(key, status, **kwargs)
 
 
 # ======================================================================
@@ -212,7 +327,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # In that case, the two-letter country ISO code (index 4) is blank,
     # so we need to pull the two-letter continent code from index 2 in
     # the CSV file (indices start at 0).
-    msg = "Pulling country IDs"
+    msg = status_label("geo_pull")
     with console.status(msg):
         with open(GEOLITE_LOC, "r") as f:
             reader = csv.reader(f)
@@ -221,7 +336,7 @@ def tag_networks() -> dict[NetworkType, str]:
                 if not (cic := country[4]):
                     cic = country[2]
                 countries[int(country[0])] = cic
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("geo_pull"))
 
     # Lines in the IPv4 country blocks file look like this:
     # 1.47.160.0/19,1605651,1605651,,0,0,
@@ -231,7 +346,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # we're looking for is normally in index 1 (starting from 0). If
     # that entry is blank, use the code in index 2. Index 0 contains the
     # IP address.
-    msg = "Geotagging networks"
+    msg = status_label("geo_tag")
     with console.status(msg):
         for geolite_file in [GEOLITE_4, GEOLITE_6]:
             with open(geolite_file, "r") as f:
@@ -243,9 +358,9 @@ def tag_networks() -> dict[NetworkType, str]:
                     except ValueError:
                         country_id = countries[int(net[2])]
                     networks[ipa.ip_network(net[0])] = country_id
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("geo_tag"))
 
-    msg = "Generating build products"
+    msg = status_label("build_products")
     with console.status(msg):
         _, keys = split_hybrid(list(networks.keys()))
         with open(COUNTRY_NETS_TXT, "w") as f:
@@ -253,7 +368,7 @@ def tag_networks() -> dict[NetworkType, str]:
                 f.write(f"{format(key)} {networks[key]}" + "\n")
         with open(COUNTRY_NETS_DICT, "wb") as f:
             pickle.dump(networks, f)
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("build_products"))
 
     return networks
 

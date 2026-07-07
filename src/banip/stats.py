@@ -9,8 +9,9 @@ from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
-from banip.constants import PAD
 from banip.constants import NetworkType
+from banip.utilities import format_status
+from banip.utilities import status_label
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -36,14 +37,14 @@ def task_runner(args: argparse.Namespace) -> None:
     console = Console()
 
     print()
-    msg = "Loading data"
+    msg = status_label("stats_load")
     with console.status(msg):
         D: dict[NetworkType, str] = {}
         with open(COUNTRY_NETS_DICT, "rb") as f:
             D = pickle.load(f)
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("stats_load"))
 
-    msg = "Analyzing"
+    msg = status_label("analyze")
     results = {"nets_4": 0, "ips_4": 0, "nets_6": 0, "ips_6": 0}
     with console.status(msg):
         for net, country in D.items():
@@ -52,7 +53,7 @@ def task_runner(args: argparse.Namespace) -> None:
                 results[f"ips_{net.version}"] += (
                     1 if net.num_addresses == 1 else net.num_addresses - 2
                 )
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("analyze"))
     print()
 
     if all(value == 0 for value in results.values()):

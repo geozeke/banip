@@ -9,14 +9,15 @@ from rich.style import Style
 from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
-from banip.constants import PAD
 from banip.constants import AddressType
 from banip.utilities import clear
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import load_rendered_blacklist
 from banip.utilities import split_hybrid
+from banip.utilities import status_label
 
 
 def task_runner(args: argparse.Namespace) -> None:
@@ -45,24 +46,24 @@ def task_runner(args: argparse.Namespace) -> None:
     text_red = Style(color="red")
 
     # Load ipsum data into a dictionary.
-    msg = "Loading ipsum data"
+    msg = status_label("ipsum_load_data")
     with console.status(msg):
         ipsum = load_ipsum()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_load_data"))
 
     # Load the rendered blacklist.
-    msg = "Loading rendered blacklist"
+    msg = status_label("blacklist_rendered_load")
     with console.status(msg):
         rendered_ips, rendered_nets = load_rendered_blacklist()
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("blacklist_rendered_load"))
 
     # Load geolocation data.
-    msg = "Loading geolocation data"
+    msg = status_label("geolite_load")
     with console.status(msg):
         with open(COUNTRY_NETS_DICT, "rb") as f:
             nets_D = pickle.load(f)
         _, nets_L = split_hybrid(nets_D.keys())
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("geolite_load"))
 
     # Respond to requests
     while True:

@@ -19,16 +19,17 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
-from banip.constants import PAD
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
 from banip.utilities import compact
 from banip.utilities import extract_ip
+from banip.utilities import format_status
 from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import split_hybrid
+from banip.utilities import status_label
 from banip.utilities import tag_networks
 
 
@@ -86,7 +87,7 @@ def task_runner(args: Namespace) -> None:
     # Load the custom blacklist and split it into separate lists of
     # addresses and networks. Remove any duplicates using sets.
     console = Console()
-    msg = "Pruning custom blacklist"
+    msg = status_label("custom_prune")
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
@@ -105,13 +106,13 @@ def task_runner(args: Namespace) -> None:
                 ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
             )
         ]
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("custom_prune"))
 
     # ------------------------------------------------------------------
 
     # Geotag all global networks and save entries for target countries.
     geolite_D = tag_networks()
-    msg = "Filtering networks"
+    msg = status_label("country_filter")
     with console.status(msg):
         with open(TARGETS, "r") as f:
             countries = [
@@ -130,7 +131,7 @@ def task_runner(args: Namespace) -> None:
         with open(COUNTRY_WHITELIST, "w") as f:
             country_codes = "\n".join(countries)
             f.write(country_codes + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
 
@@ -138,7 +139,7 @@ def task_runner(args: Namespace) -> None:
     # countries, (2) are not already covered by a custom subnet, (3)
     # meet the minimum threshold for number of hits, and (4) are not in
     # the custom whitelist.
-    msg = "Pruning ipsum.txt"
+    msg = status_label("ipsum_prune")
     with console.status(msg):
         with open(CUSTOM_WHITELIST, "r") as f:
             whitelist = [item for line in f if (item := extract_ip(line.strip()))]
@@ -165,12 +166,12 @@ def task_runner(args: Namespace) -> None:
                 and ipsum_D[ip] >= args.threshold
             )
         ]
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("ipsum_prune"))
 
     # ------------------------------------------------------------------
 
     # Compact ipsum. A compact factor of 0 indicates no compaction.
-    msg = f"Compacting ipsum ({args.compact})"
+    msg = status_label("ipsum_compact", compact=args.compact)
     with console.status(msg):
         ipsum_ips, ipsum_nets = compact(
             ip_list=ipsum_L,
@@ -181,7 +182,9 @@ def task_runner(args: Namespace) -> None:
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
         compact_factor = 1 - (ipsum_size / len(ipsum_L))
-    print(f"{msg:.<{PAD}}{compact_factor:<.2%}")
+    print(
+        format_status("ipsum_compact", f"{compact_factor:<.2%}", compact=args.compact)
+    )
 
     # ------------------------------------------------------------------
 
@@ -189,7 +192,7 @@ def task_runner(args: Namespace) -> None:
     # entries are not covered by ipsum.txt and are from countries in the
     # country whitelist. Do not remove custom IP addresses that might
     # not have a country association, such as local-network addresses.
-    msg = "Removing redundant IP addresses"
+    msg = status_label("redundant_remove")
     with console.status(msg):
         custom_ips = [
             ip
@@ -203,24 +206,24 @@ def task_runner(args: Namespace) -> None:
             )
         ]
         custom_ips_size = len(custom_ips)
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("redundant_remove"))
 
     # ------------------------------------------------------------------
 
     # Repackage and save cleaned-up custom IP addresses and networks.
-    msg = "Repackaging custom IP addresses"
+    msg = status_label("repack")
     with console.status(msg):
         with open(CUSTOM_BLACKLIST, "w") as f:
             for ip in custom_ips:
                 f.write(str(ip) + "\n")
             for net in custom_nets:
                 f.write(str(net) + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("repack"))
 
     # ------------------------------------------------------------------
 
     # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
-    msg = "Rendering lists"
+    msg = status_label("lists_render")
     with console.status(msg):
         with open(RENDERED_BLACKLIST, "w") as f:
             for ip in ipsum_ips:
@@ -240,7 +243,7 @@ def task_runner(args: Namespace) -> None:
                 f.write(str(ip) + "\n")
             for net in white_nets:
                 f.write(str(net) + "\n")
-    print(f"{msg:.<{PAD}}done")
+    print(format_status("lists_render"))
 
     args.outfile.close()
     if make_local_copy:

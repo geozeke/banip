@@ -4,6 +4,7 @@ import csv
 import ipaddress as ipa
 import os
 import pickle
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
 
@@ -19,7 +20,9 @@ from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import AddressType
+from banip.constants import AddressTypes
 from banip.constants import NetworkType
+from banip.constants import NetworkTypes
 
 # ======================================================================
 
@@ -177,14 +180,14 @@ def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
 
 
 def split_hybrid(
-    hybrid_list: list[AddressType | NetworkType],
+    hybrid_list: Iterable[AddressType | NetworkType],
 ) -> tuple[list[AddressType], list[NetworkType]]:
     """Split a mixed list of IP addresses and networks.
 
     Parameters
     ----------
-    hybrid_list : list[AddressType  |  NetworkType]
-        A list containing IP addresses, networks, or both.
+    hybrid_list : Iterable[AddressType  |  NetworkType]
+        IP addresses, networks, or both.
 
     Returns
     -------
@@ -193,11 +196,11 @@ def split_hybrid(
         and the second list contains networks.
     """
     ips = sorted(
-        [ip for ip in hybrid_list if isinstance(ip, AddressType)],
+        [ip for ip in hybrid_list if isinstance(ip, AddressTypes)],
         key=lambda x: int(x),
     )
     nets = sorted(
-        [net for net in hybrid_list if isinstance(net, NetworkType)],
+        [net for net in hybrid_list if isinstance(net, NetworkTypes)],
         key=lambda x: int(x.network_address),
     )
     return ips, nets
@@ -206,9 +209,101 @@ def split_hybrid(
 # ======================================================================
 
 
+def render_lines(items: Iterable[object]) -> str:
+    """Render items as newline-terminated text lines.
+
+    Parameters
+    ----------
+    items : Iterable[object]
+        Items to convert to text.
+
+    Returns
+    -------
+    str
+        One newline-terminated line per item, or an empty string for an
+        empty iterable.
+    """
+    return "".join(f"{item}\n" for item in items)
+
+
+# ======================================================================
+
+
+@dataclass(frozen=True)
+class NetworkBounds:
+    """Precomputed integer bounds for one IP network.
+
+    Parameters
+    ----------
+    first : int
+        The first address in the network as an integer.
+    last : int
+        The last address in the network as an integer.
+    network : NetworkType
+        The original network object.
+    """
+
+    first: int
+    last: int
+    network: NetworkType
+
+
+@dataclass(frozen=True)
+class NetworkLookup:
+    """Lookup-ready network bounds split by address family.
+
+    Parameters
+    ----------
+    ipv4 : tuple[NetworkBounds, ...]
+        IPv4 network bounds sorted by starting address.
+    ipv6 : tuple[NetworkBounds, ...]
+        IPv6 network bounds sorted by starting address.
+    """
+
+    ipv4: tuple[NetworkBounds, ...]
+    ipv6: tuple[NetworkBounds, ...]
+
+
+def build_network_lookup(networks: Iterable[NetworkType]) -> NetworkLookup:
+    """Precompute integer bounds for network membership checks.
+
+    Parameters
+    ----------
+    networks : Iterable[NetworkType]
+        Networks to include in the lookup.
+
+    Returns
+    -------
+    NetworkLookup
+        Network bounds split by address family and sorted by starting
+        address.
+    """
+    ipv4: list[NetworkBounds] = []
+    ipv6: list[NetworkBounds] = []
+
+    for network in networks:
+        bounds = NetworkBounds(
+            first=int(network.network_address),
+            last=int(network.broadcast_address),
+            network=network,
+        )
+        if network.version == 4:
+            ipv4.append(bounds)
+        else:
+            ipv6.append(bounds)
+
+    return NetworkLookup(
+        ipv4=tuple(sorted(ipv4, key=lambda x: x.first)),
+        ipv6=tuple(sorted(ipv6, key=lambda x: x.first)),
+    )
+
+
+# ======================================================================
+
+
 def compact(
     ip_list: list[AddressType],
-    whitelist: list[AddressType | NetworkType],
+    whitelist: Iterable[AddressType | NetworkType],
     min_num: int,
 ) -> tuple[list[AddressType], list[NetworkType]]:
     """Compact IP addresses into representative /24 subnets.
@@ -218,10 +313,10 @@ def compact(
     ip_list : list[AddressType]
         A list of IP addresses to compact, usually the filtered ipsum
         data.
-    whitelist : list[AddressType | NetworkType]
-        A list of whitelisted IP addresses, networks, or both. A
-        compacted subnet must not include a whitelisted IP address or
-        overlap a whitelisted network.
+    whitelist : Iterable[AddressType | NetworkType]
+        Whitelisted IP addresses, networks, or both. A compacted subnet
+        must not include a whitelisted IP address or overlap a
+        whitelisted network.
     min_num : int
         The minimum number of IP addresses required before the group is
         collapsed into a /24 subnet.
@@ -329,7 +424,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # the CSV file (indices start at 0).
     msg = status_label("geo_pull")
     with console.status(msg):
-        with open(GEOLITE_LOC, "r") as f:
+        with GEOLITE_LOC.open("r") as f:
             reader = csv.reader(f)
             next(reader)
             for country in reader:
@@ -349,7 +444,7 @@ def tag_networks() -> dict[NetworkType, str]:
     msg = status_label("geo_tag")
     with console.status(msg):
         for geolite_file in [GEOLITE_4, GEOLITE_6]:
-            with open(geolite_file, "r") as f:
+            with geolite_file.open("r") as f:
                 reader = csv.reader(f)
                 next(reader)
                 for net in reader:
@@ -362,11 +457,11 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = status_label("build_products")
     with console.status(msg):
-        _, keys = split_hybrid(list(networks.keys()))
-        with open(COUNTRY_NETS_TXT, "w") as f:
-            for key in keys:
-                f.write(f"{format(key)} {networks[key]}" + "\n")
-        with open(COUNTRY_NETS_DICT, "wb") as f:
+        _, keys = split_hybrid(networks.keys())
+        COUNTRY_NETS_TXT.write_text(
+            render_lines(f"{format(key)} {networks[key]}" for key in keys)
+        )
+        with COUNTRY_NETS_DICT.open("wb") as f:
             pickle.dump(networks, f)
     print(format_status("build_products"))
 
@@ -376,25 +471,18 @@ def tag_networks() -> dict[NetworkType, str]:
 # ======================================================================
 
 
-def ip_in_network(
-    ip: AddressType, networks: list[NetworkType], first: int, last: int
-) -> NetworkType | None:
-    """Check whether a single IP address is in a list of networks.
+def ip_in_network(ip: AddressType, lookup: NetworkLookup) -> NetworkType | None:
+    """Check whether a single IP address is in a network lookup.
 
-    This is a recursive binary search across a sorted list of
-    heterogeneous networks (IPv4, IPv6, or both) to see if a single IP
-    address is contained in any of the networks.
+    This is an iterative binary search across precomputed integer
+    network bounds for the address family of the target IP address.
 
     Parameters
     ----------
     ip : AddressType
         Either an IPv4 or IPv6 address.
-    networks : list[NetworkType]
-        A sorted heterogeneous list of networks.
-    first : int
-        The starting index in the binary search.
-    last : int
-        The ending index in the binary search.
+    lookup : NetworkLookup
+        Lookup-ready network bounds.
 
     Returns
     -------
@@ -402,19 +490,23 @@ def ip_in_network(
         The network containing the IP address, or None if no network
         contains it.
     """
-    if first > last:
-        return None
-
-    mid = (first + last) // 2
+    networks = lookup.ipv4 if ip.version == 4 else lookup.ipv6
+    first = 0
+    last = len(networks) - 1
     ip_int = int(ip)
-    inner = int(networks[mid].network_address)
-    outer = int(networks[mid].broadcast_address)
 
-    if ip_int >= inner and ip_int <= outer:
-        return networks[mid]
-    if ip_int < inner:
-        return ip_in_network(ip, networks, first, mid - 1)
-    return ip_in_network(ip, networks, mid + 1, last)
+    while first <= last:
+        mid = (first + last) // 2
+        bounds = networks[mid]
+
+        if ip_int >= bounds.first and ip_int <= bounds.last:
+            return bounds.network
+        if ip_int < bounds.first:
+            last = mid - 1
+        else:
+            first = mid + 1
+
+    return None
 
 
 # ======================================================================
@@ -428,7 +520,7 @@ def load_ipsum() -> dict[AddressType, int]:
     dict[AddressType, int]
         The contents of ipsum.txt as a dictionary.
     """
-    with open(IPSUM, "r") as f:
+    with IPSUM.open("r") as f:
         ipsum: dict[AddressType, int] = {}
         for line in f:
             parts = line.strip().split()
@@ -455,7 +547,7 @@ def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     tuple[list[AddressType], list[NetworkType]]
         The rendered blacklist split into IP addresses and networks.
     """
-    with open(RENDERED_BLACKLIST, "r") as f:
+    with RENDERED_BLACKLIST.open("r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(rendered)
 

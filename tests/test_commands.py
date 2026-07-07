@@ -267,7 +267,7 @@ def test_build_task_runner_generates_blacklist_outputs(
         "COUNTRY_NETS_DICT": data / "haproxy_geo_ip_dict.bin",
     }
     paths["CUSTOM_BLACKLIST"].write_text("192.0.2.5\n192.0.2.0/30\n")
-    paths["CUSTOM_WHITELIST"].write_text("192.0.2.4\n")
+    paths["CUSTOM_WHITELIST"].write_text("192.0.2.4\n192.0.2.4\n")
     paths["GEOLITE_LOC"].write_text(
         "geoname_id,locale_code,continent_code,continent_name,country_iso_code,"
         "country_name,is_in_european_union\n"
@@ -286,7 +286,7 @@ def test_build_task_runner_generates_blacklist_outputs(
         "2001:db8::/126,1,1,,0,0,\n"
     )
     paths["IPSUM"].write_text("192.0.2.4 9\n192.0.2.9 8\n198.51.100.9 8\n")
-    paths["TARGETS"].write_text("# comment\nus\n")
+    paths["TARGETS"].write_text("# comment\nus\nUS\n")
     for name, path in paths.items():
         if hasattr(build, name):
             monkeypatch.setattr(build, name, path)
@@ -303,8 +303,21 @@ def test_build_task_runner_generates_blacklist_outputs(
     assert "0.00%" in output
     assert "Final Build Stats" in output
     assert paths["COUNTRY_WHITELIST"].read_text() == "US\n"
+    assert paths["CUSTOM_BLACKLIST"].read_text() == "192.0.2.5\n192.0.2.0/30\n"
+    assert (
+        paths["COUNTRY_NETS_TXT"].read_text()
+        == "192.0.2.0/24 US\n198.51.100.0/24 CA\n2001:db8::/126 US\n"
+    )
     assert paths["RENDERED_WHITELIST"].read_text() == "192.0.2.4\n"
-    blacklist = paths["RENDERED_BLACKLIST"].read_text()
-    assert "192.0.2.9" in blacklist
-    assert "198.51.100.9" not in blacklist
-    assert "192.0.2.0/30" in blacklist
+    blacklist_lines = paths["RENDERED_BLACKLIST"].read_text().splitlines()
+    assert blacklist_lines[0] == "192.0.2.9"
+    assert blacklist_lines[1] == ""
+    assert blacklist_lines[2] == "# ------------custom entries -------------"
+    assert blacklist_lines[3].startswith("# Added on: ")
+    assert blacklist_lines[4:] == [
+        "# ----------------------------------------",
+        "",
+        "192.0.2.5",
+        "192.0.2.0/30",
+    ]
+    assert "198.51.100.9" not in blacklist_lines

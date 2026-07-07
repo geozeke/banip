@@ -38,8 +38,8 @@ def test_format_status_aligns_all_registered_statuses() -> None:
     status_index = utilities.format_status("repack").index("✅")
 
     for key in utilities.STATUS_MESSAGES.labels:
-        kwargs = {"compact": 10} if key == "ipsum_compact" else {}
-        assert utilities.format_status(key, **kwargs).index("✅") == status_index
+        kwargs: dict[str, object] = {"compact": 10} if key == "ipsum_compact" else {}
+        assert utilities.format_status(key, **kwargs).index("✅") == status_index  # type: ignore
 
 
 def test_format_status_preserves_custom_status() -> None:
@@ -114,16 +114,81 @@ def test_compact_respects_whitelisted_networks() -> None:
     assert compact_nets == []
 
 
-def test_ip_in_network_finds_containing_range() -> None:
-    """Binary lookup returns the containing network when present."""
-    networks = [ipa.ip_network("192.0.2.0/24"), ipa.ip_network("198.51.100.0/24")]
+def test_build_network_lookup_splits_and_sorts_network_bounds() -> None:
+    """Lookup data is sorted and split by IP address family."""
+    networks = [
+        ipa.ip_network("2001:db8:1::/48"),
+        ipa.ip_network("198.51.100.0/24"),
+        ipa.ip_network("192.0.2.0/24"),
+        ipa.ip_network("2001:db8::/48"),
+    ]
 
-    assert utilities.ip_in_network(ipa.ip_address("198.51.100.3"), networks, 0, 1) == (
+    lookup = utilities.build_network_lookup(networks)
+
+    assert [bounds.network for bounds in lookup.ipv4] == [
+        ipa.ip_network("192.0.2.0/24"),
+        ipa.ip_network("198.51.100.0/24"),
+    ]
+    assert [bounds.network for bounds in lookup.ipv6] == [
+        ipa.ip_network("2001:db8::/48"),
+        ipa.ip_network("2001:db8:1::/48"),
+    ]
+
+
+def test_ip_in_network_finds_ipv4_boundaries_and_misses() -> None:
+    """Lookup returns IPv4 networks for range boundaries only."""
+    lookup = utilities.build_network_lookup(
+        [
+            ipa.ip_network("192.0.2.0/24"),
+            ipa.ip_network("198.51.100.0/24"),
+        ]
+    )
+
+    assert utilities.ip_in_network(ipa.ip_address("198.51.100.0"), lookup) == (
         ipa.ip_network("198.51.100.0/24")
     )
-    assert (
-        utilities.ip_in_network(ipa.ip_address("203.0.113.3"), networks, 0, 1) is None
+    assert utilities.ip_in_network(ipa.ip_address("198.51.100.255"), lookup) == (
+        ipa.ip_network("198.51.100.0/24")
     )
+    assert utilities.ip_in_network(ipa.ip_address("198.51.99.255"), lookup) is None
+    assert utilities.ip_in_network(ipa.ip_address("198.51.101.0"), lookup) is None
+
+
+def test_ip_in_network_finds_ipv6_boundaries_and_misses() -> None:
+    """Lookup returns IPv6 networks for range boundaries only."""
+    lookup = utilities.build_network_lookup([ipa.ip_network("2001:db8::/126")])
+
+    assert utilities.ip_in_network(ipa.ip_address("2001:db8::"), lookup) == (
+        ipa.ip_network("2001:db8::/126")
+    )
+    assert utilities.ip_in_network(ipa.ip_address("2001:db8::3"), lookup) == (
+        ipa.ip_network("2001:db8::/126")
+    )
+    assert utilities.ip_in_network(ipa.ip_address("2001:db8::4"), lookup) is None
+
+
+def test_ip_in_network_uses_matching_address_family() -> None:
+    """Mixed lookup data only searches the target address family."""
+    lookup = utilities.build_network_lookup(
+        [
+            ipa.ip_network("::/0"),
+            ipa.ip_network("192.0.2.0/24"),
+        ]
+    )
+
+    assert utilities.ip_in_network(ipa.ip_address("192.0.2.1"), lookup) == (
+        ipa.ip_network("192.0.2.0/24")
+    )
+    assert utilities.ip_in_network(ipa.ip_address("2001:db8::1"), lookup) == (
+        ipa.ip_network("::/0")
+    )
+
+
+def test_ip_in_network_handles_empty_lookup() -> None:
+    """Empty lookup data never returns a containing network."""
+    lookup = utilities.build_network_lookup([])
+
+    assert utilities.ip_in_network(ipa.ip_address("192.0.2.1"), lookup) is None
 
 
 def test_load_ipsum_skips_malformed_lines(tmp_path, monkeypatch) -> None:

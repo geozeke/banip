@@ -40,7 +40,7 @@ def task_runner(args: argparse.Namespace) -> None:
     msg = status_label("stats_load")
     with console.status(msg):
         D: dict[NetworkType, str] = {}
-        with open(COUNTRY_NETS_DICT, "rb") as f:
+        with COUNTRY_NETS_DICT.open("rb") as f:
             D = pickle.load(f)
     print(format_status("stats_load"))
 

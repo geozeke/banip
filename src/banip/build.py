@@ -22,12 +22,14 @@ from banip.constants import IPSUM
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import RENDERED_WHITELIST
 from banip.constants import TARGETS
+from banip.utilities import build_network_lookup
 from banip.utilities import compact
 from banip.utilities import extract_ip
 from banip.utilities import format_status
 from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
+from banip.utilities import render_lines
 from banip.utilities import split_hybrid
 from banip.utilities import status_label
 from banip.utilities import tag_networks
@@ -52,16 +54,14 @@ def task_runner(args: Namespace) -> None:
     print()
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
-        f = open(CUSTOM_BLACKLIST, "w")
-        f.close()
+        CUSTOM_BLACKLIST.touch()
     if not CUSTOM_WHITELIST.exists():
-        f = open(CUSTOM_WHITELIST, "w")
-        f.close()
+        CUSTOM_WHITELIST.touch()
     try:
         if Path(args.outfile.name) != RENDERED_BLACKLIST:
             make_local_copy = True
     except AttributeError:
-        args.outfile = open(RENDERED_BLACKLIST, "w")
+        args.outfile = RENDERED_BLACKLIST.open("w")
 
     # ------------------------------------------------------------------
 
@@ -89,22 +89,21 @@ def task_runner(args: Namespace) -> None:
     console = Console()
     msg = status_label("custom_prune")
     with console.status(msg):
-        with open(CUSTOM_BLACKLIST, "r") as f:
+        with CUSTOM_BLACKLIST.open("r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
         # Make sure the current host's public-facing IP is not in the
         # custom blacklist.
         if (public_ip := get_public_ip()) and (public_ip in custom):
             custom.remove(public_ip)
-        custom_ips, custom_nets = split_hybrid(list(custom))
+        custom_ips, custom_nets = split_hybrid(custom)
         custom_nets_size = len(custom_nets)
+        custom_nets_lookup = build_network_lookup(custom_nets)
         # Remove any custom IP addresses that are covered by existing
         # custom subnets.
         custom_ips = [
             ip
             for ip in custom_ips
-            if not ip_in_network(
-                ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
-            )
+            if not ip_in_network(ip=ip, lookup=custom_nets_lookup)
         ]
     print(format_status("custom_prune"))
 
@@ -114,23 +113,21 @@ def task_runner(args: Namespace) -> None:
     geolite_D = tag_networks()
     msg = status_label("country_filter")
     with console.status(msg):
-        with open(TARGETS, "r") as f:
-            countries = [
+        with TARGETS.open("r") as f:
+            countries = {
                 token.upper()
                 for line in f
                 if (token := line.strip()) and token[0] != "#"
-            ]
+            }
         _, target_geolite = split_hybrid(
             [net for net in geolite_D if geolite_D[net] in countries]
         )
-        target_geolite_size = len(target_geolite)
+        target_geolite_lookup = build_network_lookup(target_geolite)
 
     # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
-        countries.sort()
-        with open(COUNTRY_WHITELIST, "w") as f:
-            country_codes = "\n".join(countries)
-            f.write(country_codes + "\n")
+        sorted_countries = sorted(countries)
+        COUNTRY_WHITELIST.write_text(render_lines(sorted_countries))
     print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
@@ -141,29 +138,20 @@ def task_runner(args: Namespace) -> None:
     # the custom whitelist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
-        with open(CUSTOM_WHITELIST, "r") as f:
-            whitelist = [item for line in f if (item := extract_ip(line.strip()))]
+        with CUSTOM_WHITELIST.open("r") as f:
+            whitelist = {item for line in f if (item := extract_ip(line.strip()))}
         white_ips, white_nets = split_hybrid(whitelist)
-        white_nets_size = len(white_nets)
+        white_nets_lookup = build_network_lookup(white_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip
-            for ip in ipsum_D
+            for ip, hits in ipsum_D.items()
             if (
-                ip_in_network(
-                    ip=ip,
-                    networks=target_geolite,
-                    first=0,
-                    last=target_geolite_size - 1,
-                )
-                and not ip_in_network(
-                    ip=ip, networks=custom_nets, first=0, last=custom_nets_size - 1
-                )
+                ip_in_network(ip=ip, lookup=target_geolite_lookup)
+                and not ip_in_network(ip=ip, lookup=custom_nets_lookup)
                 and ip not in whitelist
-                and not ip_in_network(
-                    ip=ip, networks=white_nets, first=0, last=white_nets_size - 1
-                )
-                and ipsum_D[ip] >= args.threshold
+                and not ip_in_network(ip=ip, lookup=white_nets_lookup)
+                and hits >= args.threshold
             )
         ]
     print(format_status("ipsum_prune"))
@@ -178,9 +166,11 @@ def task_runner(args: Namespace) -> None:
             whitelist=whitelist,
             min_num=args.compact,
         )
+        ipsum_nets_lookup = build_network_lookup(ipsum_nets)
         ipsum_ips_size = len(ipsum_ips)
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
+        ipsum_ips_set = set(ipsum_ips)
         compact_factor = 1 - (ipsum_size / len(ipsum_L))
     print(
         format_status("ipsum_compact", f"{compact_factor:<.2%}", compact=args.compact)
@@ -197,13 +187,9 @@ def task_runner(args: Namespace) -> None:
         custom_ips = [
             ip
             for ip in custom_ips
-            if ip not in ipsum_ips
-            and not ip_in_network(
-                ip=ip, networks=ipsum_nets, first=0, last=ipsum_nets_size - 1
-            )
-            and ip_in_network(
-                ip=ip, networks=target_geolite, first=0, last=target_geolite_size - 1
-            )
+            if ip not in ipsum_ips_set
+            and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
+            and ip_in_network(ip=ip, lookup=target_geolite_lookup)
         ]
         custom_ips_size = len(custom_ips)
     print(format_status("redundant_remove"))
@@ -213,11 +199,7 @@ def task_runner(args: Namespace) -> None:
     # Repackage and save cleaned-up custom IP addresses and networks.
     msg = status_label("repack")
     with console.status(msg):
-        with open(CUSTOM_BLACKLIST, "w") as f:
-            for ip in custom_ips:
-                f.write(str(ip) + "\n")
-            for net in custom_nets:
-                f.write(str(net) + "\n")
+        CUSTOM_BLACKLIST.write_text(render_lines([*custom_ips, *custom_nets]))
     print(format_status("repack"))
 
     # ------------------------------------------------------------------
@@ -225,24 +207,15 @@ def task_runner(args: Namespace) -> None:
     # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
     msg = status_label("lists_render")
     with console.status(msg):
-        with open(RENDERED_BLACKLIST, "w") as f:
-            for ip in ipsum_ips:
-                f.write(str(ip) + "\n")
-            for net in ipsum_nets:
-                f.write(str(net) + "\n")
-            now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write("\n# ------------custom entries -------------\n")
-            f.write(f"# Added on: {now}" + "\n")
-            f.write("# ----------------------------------------\n\n")
-            for ip in custom_ips:
-                f.write(str(ip) + "\n")
-            for net in custom_nets:
-                f.write(str(net) + "\n")
-        with open(RENDERED_WHITELIST, "w") as f:
-            for ip in white_ips:
-                f.write(str(ip) + "\n")
-            for net in white_nets:
-                f.write(str(net) + "\n")
+        now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        RENDERED_BLACKLIST.write_text(
+            render_lines([*ipsum_ips, *ipsum_nets])
+            + "\n# ------------custom entries -------------\n"
+            + f"# Added on: {now}\n"
+            + "# ----------------------------------------\n\n"
+            + render_lines([*custom_ips, *custom_nets])
+        )
+        RENDERED_WHITELIST.write_text(render_lines([*white_ips, *white_nets]))
     print(format_status("lists_render"))
 
     args.outfile.close()
@@ -272,7 +245,7 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
     table.add_column(justify="right")
 
-    table.add_row("Target Countries", f"{','.join(countries)}", end_section=True)
+    table.add_row("Target Countries", f"{','.join(sorted_countries)}", end_section=True)
     table.add_row("IP addresses - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
     table.add_row("IP addresses - custom", f"{(custom_ips_size):,d}")

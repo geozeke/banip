@@ -15,6 +15,7 @@ from banip.constants import AddressType
 from banip.utilities import extract_ip
 from banip.utilities import format_status
 from banip.utilities import load_ipsum
+from banip.utilities import render_lines
 from banip.utilities import status_label
 
 
@@ -64,9 +65,7 @@ def task_runner(args: Namespace) -> None:
     new_ips_added = len(ipsum) - original_ipsum_size
 
     # Update the file on disk.
-    with open(IPSUM, "w") as f:
-        for k, v in ipsum.items():
-            f.write(f"{k} {v}" + "\n")
+    IPSUM.write_text(render_lines(f"{ip} {hits}" for ip, hits in ipsum.items()))
 
     # Generate a table to display metrics.
     table = Table(title="Final Augmentation Stats", box=box.SQUARE, show_header=False)

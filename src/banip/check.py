@@ -10,6 +10,7 @@ from rich.table import Table
 
 from banip.constants import COUNTRY_NETS_DICT
 from banip.constants import AddressType
+from banip.utilities import build_network_lookup
 from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import format_status
@@ -55,14 +56,16 @@ def task_runner(args: argparse.Namespace) -> None:
     msg = status_label("blacklist_rendered_load")
     with console.status(msg):
         rendered_ips, rendered_nets = load_rendered_blacklist()
+        rendered_nets_lookup = build_network_lookup(rendered_nets)
     print(format_status("blacklist_rendered_load"))
 
     # Load geolocation data.
     msg = status_label("geolite_load")
     with console.status(msg):
-        with open(COUNTRY_NETS_DICT, "rb") as f:
+        with COUNTRY_NETS_DICT.open("rb") as f:
             nets_D = pickle.load(f)
         _, nets_L = split_hybrid(nets_D.keys())
+        nets_lookup = build_network_lookup(nets_L)
     print(format_status("geolite_load"))
 
     # Respond to requests
@@ -81,9 +84,7 @@ def task_runner(args: argparse.Namespace) -> None:
         table.add_column(justify="right")
         attribute = "Country Code"
 
-        if located_net := ip_in_network(
-            ip=target, networks=nets_L, first=0, last=len(nets_L) - 1
-        ):
+        if located_net := ip_in_network(ip=target, lookup=nets_lookup):
             status = nets_D[located_net], text_green
         else:
             status = "--", text_red
@@ -91,9 +92,7 @@ def task_runner(args: argparse.Namespace) -> None:
 
         # Check for membership in the rendered blacklist
         attribute = "Rendered Blacklist"
-        if ip_in_network(
-            ip=target, networks=rendered_nets, first=0, last=len(rendered_nets) - 1
-        ):
+        if ip_in_network(ip=target, lookup=rendered_nets_lookup):
             status = "found in subnet", text_red
         elif target in rendered_ips:
             status = "found", text_red

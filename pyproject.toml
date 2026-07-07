@@ -45,6 +45,7 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 source-include = [
+    "changelogs/**",
     "global-gitignore.txt",
     "samples/**",
 ]

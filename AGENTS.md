@@ -11,6 +11,8 @@ blacklist data, and optional user-provided plugin commands.
 - `src/banip/parsers/` contains built-in argparse subcommand parsers.
 - `samples/` contains sample target, whitelist, blacklist, and plugin
   files.
+- `CHANGELOG.md` contains the active minor release line; older minor
+  lines are archived under `changelogs/`.
 - `pyproject.toml`, `uv.lock`, and `justfile` define package metadata,
   dependencies, and common project tasks.
 - `.github/workflows/` contains GitHub Actions for CI and release

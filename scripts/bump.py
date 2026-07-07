@@ -7,10 +7,12 @@ import subprocess as sp
 import sys
 from pathlib import Path
 
+from archive_changelog import archive_changelog
+
 BASE = Path(__file__).parents[1]
 CHANGELOG = BASE / "CHANGELOG.md"
 PYPROJECT = BASE / "pyproject.toml"
-UNRELEASED = BASE / "scratch" / "unreleased.md"
+CHANGELOG_ARCHIVE = BASE / "changelogs"
 
 
 def main() -> None:
@@ -25,29 +27,14 @@ def main() -> None:
     if new_version[0] == "v":
         new_version = new_version[1:]
 
-    # Generate updated changelog entry
+    # Generate updated changelog entry.
     sp.run(
-        f"git cliff -t {new_version} --unreleased -o scratch/unreleased.md".split(),
-        capture_output=True,
+        ["git", "cliff", "--unreleased", "--tag", new_version, "--prepend", CHANGELOG],
+        check=True,
     )
 
-    # Tag header of the new log as "latest"
-    with open(UNRELEASED, "r") as f:
-        new_log = [line.rstrip() for line in f]
-    new_log[0] = f"{new_log[0]} - latest"
-
-    # Integrate it with the existing changelog
-    with open(CHANGELOG, "r") as f:
-        change_log = [line.rstrip() for line in f]
-    for i in range(len(change_log)):
-        if change_log[i].startswith("##") and change_log[i].endswith("latest"):
-            change_log[i] = change_log[i][0 : change_log[i].index(")") + 1]
-            break
-    change_log = change_log[0:4] + new_log + change_log[1:]
-
-    # Write-out the new changelog
-    with open(CHANGELOG, "w") as f:
-        f.write("\n".join(change_log) + "\n")
+    # Keep CHANGELOG.md focused on the active minor line.
+    archive_changelog(new_version, CHANGELOG, CHANGELOG_ARCHIVE)
 
     # Bump version in pyproject.toml
     with open(PYPROJECT, "r") as f:

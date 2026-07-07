@@ -29,6 +29,7 @@ from banip.utilities import format_status
 from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
+from banip.utilities import render_lines
 from banip.utilities import split_hybrid
 from banip.utilities import status_label
 from banip.utilities import tag_networks
@@ -53,16 +54,14 @@ def task_runner(args: Namespace) -> None:
     print()
     make_local_copy = False
     if not CUSTOM_BLACKLIST.exists():
-        f = open(CUSTOM_BLACKLIST, "w")
-        f.close()
+        CUSTOM_BLACKLIST.touch()
     if not CUSTOM_WHITELIST.exists():
-        f = open(CUSTOM_WHITELIST, "w")
-        f.close()
+        CUSTOM_WHITELIST.touch()
     try:
         if Path(args.outfile.name) != RENDERED_BLACKLIST:
             make_local_copy = True
     except AttributeError:
-        args.outfile = open(RENDERED_BLACKLIST, "w")
+        args.outfile = RENDERED_BLACKLIST.open("w")
 
     # ------------------------------------------------------------------
 
@@ -90,7 +89,7 @@ def task_runner(args: Namespace) -> None:
     console = Console()
     msg = status_label("custom_prune")
     with console.status(msg):
-        with open(CUSTOM_BLACKLIST, "r") as f:
+        with CUSTOM_BLACKLIST.open("r") as f:
             custom = {item for line in f if (item := extract_ip(line.strip()))}
         # Make sure the current host's public-facing IP is not in the
         # custom blacklist.
@@ -114,7 +113,7 @@ def task_runner(args: Namespace) -> None:
     geolite_D = tag_networks()
     msg = status_label("country_filter")
     with console.status(msg):
-        with open(TARGETS, "r") as f:
+        with TARGETS.open("r") as f:
             countries = {
                 token.upper()
                 for line in f
@@ -128,9 +127,7 @@ def task_runner(args: Namespace) -> None:
     # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
         sorted_countries = sorted(countries)
-        with open(COUNTRY_WHITELIST, "w") as f:
-            country_codes = "\n".join(sorted_countries)
-            f.write(country_codes + "\n")
+        COUNTRY_WHITELIST.write_text(render_lines(sorted_countries))
     print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
@@ -141,7 +138,7 @@ def task_runner(args: Namespace) -> None:
     # the custom whitelist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
-        with open(CUSTOM_WHITELIST, "r") as f:
+        with CUSTOM_WHITELIST.open("r") as f:
             whitelist = {item for line in f if (item := extract_ip(line.strip()))}
         white_ips, white_nets = split_hybrid(whitelist)
         white_nets_lookup = build_network_lookup(white_nets)
@@ -202,11 +199,7 @@ def task_runner(args: Namespace) -> None:
     # Repackage and save cleaned-up custom IP addresses and networks.
     msg = status_label("repack")
     with console.status(msg):
-        with open(CUSTOM_BLACKLIST, "w") as f:
-            for ip in custom_ips:
-                f.write(str(ip) + "\n")
-            for net in custom_nets:
-                f.write(str(net) + "\n")
+        CUSTOM_BLACKLIST.write_text(render_lines([*custom_ips, *custom_nets]))
     print(format_status("repack"))
 
     # ------------------------------------------------------------------
@@ -214,24 +207,15 @@ def task_runner(args: Namespace) -> None:
     # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
     msg = status_label("lists_render")
     with console.status(msg):
-        with open(RENDERED_BLACKLIST, "w") as f:
-            for ip in ipsum_ips:
-                f.write(str(ip) + "\n")
-            for net in ipsum_nets:
-                f.write(str(net) + "\n")
-            now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-            f.write("\n# ------------custom entries -------------\n")
-            f.write(f"# Added on: {now}" + "\n")
-            f.write("# ----------------------------------------\n\n")
-            for ip in custom_ips:
-                f.write(str(ip) + "\n")
-            for net in custom_nets:
-                f.write(str(net) + "\n")
-        with open(RENDERED_WHITELIST, "w") as f:
-            for ip in white_ips:
-                f.write(str(ip) + "\n")
-            for net in white_nets:
-                f.write(str(net) + "\n")
+        now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
+        RENDERED_BLACKLIST.write_text(
+            render_lines([*ipsum_ips, *ipsum_nets])
+            + "\n# ------------custom entries -------------\n"
+            + f"# Added on: {now}\n"
+            + "# ----------------------------------------\n\n"
+            + render_lines([*custom_ips, *custom_nets])
+        )
+        RENDERED_WHITELIST.write_text(render_lines([*white_ips, *white_nets]))
     print(format_status("lists_render"))
 
     args.outfile.close()

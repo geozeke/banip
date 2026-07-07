@@ -209,6 +209,26 @@ def split_hybrid(
 # ======================================================================
 
 
+def render_lines(items: Iterable[object]) -> str:
+    """Render items as newline-terminated text lines.
+
+    Parameters
+    ----------
+    items : Iterable[object]
+        Items to convert to text.
+
+    Returns
+    -------
+    str
+        One newline-terminated line per item, or an empty string for an
+        empty iterable.
+    """
+    return "".join(f"{item}\n" for item in items)
+
+
+# ======================================================================
+
+
 @dataclass(frozen=True)
 class NetworkBounds:
     """Precomputed integer bounds for one IP network.
@@ -404,7 +424,7 @@ def tag_networks() -> dict[NetworkType, str]:
     # the CSV file (indices start at 0).
     msg = status_label("geo_pull")
     with console.status(msg):
-        with open(GEOLITE_LOC, "r") as f:
+        with GEOLITE_LOC.open("r") as f:
             reader = csv.reader(f)
             next(reader)
             for country in reader:
@@ -424,7 +444,7 @@ def tag_networks() -> dict[NetworkType, str]:
     msg = status_label("geo_tag")
     with console.status(msg):
         for geolite_file in [GEOLITE_4, GEOLITE_6]:
-            with open(geolite_file, "r") as f:
+            with geolite_file.open("r") as f:
                 reader = csv.reader(f)
                 next(reader)
                 for net in reader:
@@ -437,11 +457,11 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = status_label("build_products")
     with console.status(msg):
-        _, keys = split_hybrid(list(networks.keys()))
-        with open(COUNTRY_NETS_TXT, "w") as f:
-            for key in keys:
-                f.write(f"{format(key)} {networks[key]}" + "\n")
-        with open(COUNTRY_NETS_DICT, "wb") as f:
+        _, keys = split_hybrid(networks.keys())
+        COUNTRY_NETS_TXT.write_text(
+            render_lines(f"{format(key)} {networks[key]}" for key in keys)
+        )
+        with COUNTRY_NETS_DICT.open("wb") as f:
             pickle.dump(networks, f)
     print(format_status("build_products"))
 
@@ -500,7 +520,7 @@ def load_ipsum() -> dict[AddressType, int]:
     dict[AddressType, int]
         The contents of ipsum.txt as a dictionary.
     """
-    with open(IPSUM, "r") as f:
+    with IPSUM.open("r") as f:
         ipsum: dict[AddressType, int] = {}
         for line in f:
             parts = line.strip().split()
@@ -527,7 +547,7 @@ def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
     tuple[list[AddressType], list[NetworkType]]
         The rendered blacklist split into IP addresses and networks.
     """
-    with open(RENDERED_BLACKLIST, "r") as f:
+    with RENDERED_BLACKLIST.open("r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(rendered)
 

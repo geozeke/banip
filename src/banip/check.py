@@ -62,7 +62,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # Load geolocation data.
     msg = status_label("geolite_load")
     with console.status(msg):
-        with open(COUNTRY_NETS_DICT, "rb") as f:
+        with COUNTRY_NETS_DICT.open("rb") as f:
             nets_D = pickle.load(f)
         _, nets_L = split_hybrid(nets_D.keys())
         nets_lookup = build_network_lookup(nets_L)

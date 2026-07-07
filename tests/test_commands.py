@@ -303,8 +303,21 @@ def test_build_task_runner_generates_blacklist_outputs(
     assert "0.00%" in output
     assert "Final Build Stats" in output
     assert paths["COUNTRY_WHITELIST"].read_text() == "US\n"
+    assert paths["CUSTOM_BLACKLIST"].read_text() == "192.0.2.5\n192.0.2.0/30\n"
+    assert (
+        paths["COUNTRY_NETS_TXT"].read_text()
+        == "192.0.2.0/24 US\n198.51.100.0/24 CA\n2001:db8::/126 US\n"
+    )
     assert paths["RENDERED_WHITELIST"].read_text() == "192.0.2.4\n"
-    blacklist = paths["RENDERED_BLACKLIST"].read_text()
-    assert "192.0.2.9" in blacklist
-    assert "198.51.100.9" not in blacklist
-    assert "192.0.2.0/30" in blacklist
+    blacklist_lines = paths["RENDERED_BLACKLIST"].read_text().splitlines()
+    assert blacklist_lines[0] == "192.0.2.9"
+    assert blacklist_lines[1] == ""
+    assert blacklist_lines[2] == "# ------------custom entries -------------"
+    assert blacklist_lines[3].startswith("# Added on: ")
+    assert blacklist_lines[4:] == [
+        "# ----------------------------------------",
+        "",
+        "192.0.2.5",
+        "192.0.2.0/30",
+    ]
+    assert "198.51.100.9" not in blacklist_lines

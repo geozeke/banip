@@ -55,7 +55,7 @@ def task_runner(args: argparse.Namespace) -> None:
     print(f"{msg:.<{PAD}}done")
     print()
 
-    if results == [0] * 4:
+    if all(value == 0 for value in results.values()):
         print(f"{target_country} not found")
         return
 

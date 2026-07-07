@@ -320,7 +320,7 @@ def load_ipsum() -> dict[AddressType, int]:
             try:
                 ip = ipa.ip_address(parts[0])
                 hits = int(parts[1])
-            except (ValueError, NameError):
+            except (IndexError, ValueError):
                 continue
             ipsum[ip] = hits
 

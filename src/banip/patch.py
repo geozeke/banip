@@ -51,7 +51,11 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         for line in args.newips:
             parts = line.split()
-            if ip := cast(AddressType, extract_ip(parts[args.index])):
+            try:
+                raw_ip = parts[args.index]
+            except IndexError:
+                continue
+            if ip := cast(AddressType, extract_ip(raw_ip)):
                 new_ips_considered += 1
                 if (ip not in ipsum) or (ipsum[ip] < args.confidence):
                     ipsum[ip] = args.confidence

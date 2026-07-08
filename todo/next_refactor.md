@@ -26,8 +26,10 @@ This file should become the preferred source of truth for target
 countries, custom whitelist entries, custom blacklist entries, and
 related preferences.
 
-Existing flat files should continue to work while this refactor lands.
-If `banip.yaml` is absent, `banip` should keep reading the current files:
+This is a breaking configuration change. After this refactor,
+`banip.yaml` is required for user-maintained configuration. The old flat
+files are migration inputs only and are no longer read by normal runtime
+commands:
 
 - `~/.banip/targets.txt`,
 - `~/.banip/custom_whitelist.txt`,
@@ -327,13 +329,15 @@ Validation rules:
 - invalid entries should fail with a clear error message that includes
   the section and value.
 
-When `banip.yaml` exists, `banip build` should prefer it over the
-legacy flat files. When it does not exist, preserve current behavior.
+After this refactor, `banip build` should require `banip.yaml`. If the
+file is missing, fail with a clear setup message that points users to
+`banip database init` and the README migration instructions.
 
 ### Migration
 
-Add a migration path through `banip database init` or a dedicated future
-subcommand.
+Add a one-time migration path through `banip database init` or a
+dedicated future subcommand. Migration support does not imply runtime
+fallback to old flat files.
 
 Migration should:
 
@@ -349,15 +353,31 @@ In YAML mode, if `banip build` prunes redundant custom blacklist entries,
 it should update the YAML blacklist section rather than rewriting
 `custom_blacklist.txt`.
 
+## README Breaking Change
+
+The implementation must update `README.md` for this breaking
+configuration change.
+
+The README should document:
+
+- the new required `~/.banip/banip.yaml` setup,
+- the migration path from `targets.txt`, `custom_whitelist.txt`, and
+  `custom_blacklist.txt`,
+- that old flat files are not read by `banip build` after this refactor,
+- the new `banip database init` or migration workflow,
+- the relationship between YAML source URL overrides and built-in code
+  defaults.
+
 ## Build Refactor
 
 Before adding bot and YAML behavior, refactor `banip build` so the main
 task runner remains an orchestration layer instead of one long
 procedure. This should be behavior-preserving.
 
-Keep current file formats, output ordering, status labels, and build side
-effects unchanged except where bot or YAML support explicitly requires a
-change.
+Keep current rendered output formats, output ordering, status labels, and
+build side effects unchanged except where bot or YAML support explicitly
+requires a change. Do not preserve the old flat-file input formats as
+runtime configuration.
 
 Move stable build steps into helpers for:
 
@@ -415,8 +435,9 @@ Future implementation should include tests for:
 - missing required GeoLite CSV files,
 - atomic geolite replacement only after validation,
 - YAML config loading and validation,
-- flat-file fallback when `banip.yaml` is absent,
-- migration from existing flat files into YAML,
+- missing `banip.yaml` setup failure,
+- one-time migration from existing flat files into YAML,
+- README breaking-change documentation,
 - unchanged rendered blacklist and whitelist contents before YAML and
   bot ranges are enabled,
 - existing status output and final stats still appearing.
@@ -431,7 +452,8 @@ Run these checks after implementation:
 
 - This is a future-work plan, not an implementation.
 - Python compatibility remains `>=3.12`.
-- Existing flat-file installs remain supported for at least one release.
+- Existing flat files are migration inputs only, not runtime
+  configuration after this refactor.
 - `~/.secrets` uses dotenv-style key-value syntax, not shell code.
 - MaxMind credentials are required only for GeoLite downloads.
 - `banip bots` refreshes managed bot state.

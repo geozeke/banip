@@ -1,10 +1,17 @@
-## 1.5.0 (2026-07-07)
+## 2.0.0 (2026-07-08)
 
-### 🛠️ Changes
+### 📦 Dependency Upgrades
 
-- Disable dependabot (58be2c2)
-- Update cliff.toml (cdfedbf)
+- Upgrade development dependencies (6249f97)
 
 ### ⚙️ Miscellaneous Tasks
 
-- Migrate to codex framework (#92) (141c039)
+- Improve custom types (c08b87c)
+- Use open syntax for pathlib.Path objects (e5d8879)
+- Cleanup remaining optimizations (36519e7)
+- Develop refactor plan (#95) (9079970)
+
+### 🏃‍♂️ Performance Improvements
+
+- Move network lookups to iterative logic (32086c7)
+- Improve set/list handling (c5bafe4)

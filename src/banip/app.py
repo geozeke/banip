@@ -54,6 +54,25 @@ def check_setup() -> bool:
 # ======================================================================
 
 
+def requires_setup(args: argparse.Namespace) -> bool:
+    """Return whether a command requires initialized local data paths.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments.
+
+    Returns
+    -------
+    bool
+        True when setup should be checked before dispatch.
+    """
+    return not (args.cmd == "database" and args.action == "init")
+
+
+# ======================================================================
+
+
 def load_custom_module(mod_name: str, location: Path) -> ModuleType:
     """Load a custom module.
 
@@ -143,7 +162,7 @@ def main() -> int:
 
     # Make sure the local setup is complete after parsing so help and
     # version output work in a fresh environment.
-    if args.cmd and not check_setup():
+    if args.cmd and requires_setup(args) and not check_setup():
         return 1
 
     # Run the selected command. Python's argparse module guarantees that

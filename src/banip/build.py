@@ -12,19 +12,21 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from banip.bots import load_managed_bot_networks
+from banip.config import load_config
+from banip.config import update_blacklist
+from banip.constants import BOTDATA
+from banip.constants import CONFIG
 from banip.constants import COUNTRY_WHITELIST
-from banip.constants import CUSTOM_BLACKLIST
-from banip.constants import CUSTOM_WHITELIST
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
+from banip.constants import NetworkType
 from banip.constants import RENDERED_BLACKLIST
 from banip.constants import RENDERED_WHITELIST
-from banip.constants import TARGETS
 from banip.utilities import build_network_lookup
 from banip.utilities import compact
-from banip.utilities import extract_ip
 from banip.utilities import format_status
 from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
@@ -53,10 +55,6 @@ def task_runner(args: Namespace) -> None:
     # copy of it after computations are complete.
     print()
     make_local_copy = False
-    if not CUSTOM_BLACKLIST.exists():
-        CUSTOM_BLACKLIST.touch()
-    if not CUSTOM_WHITELIST.exists():
-        CUSTOM_WHITELIST.touch()
     try:
         if Path(args.outfile.name) != RENDERED_BLACKLIST:
             make_local_copy = True
@@ -67,20 +65,24 @@ def task_runner(args: Namespace) -> None:
 
     # Now make sure everything is in place.
     files = [
-        CUSTOM_BLACKLIST,
-        CUSTOM_WHITELIST,
+        CONFIG,
         GEOLITE_4,
         GEOLITE_6,
         GEOLITE_LOC,
         IPSUM,
         RENDERED_BLACKLIST,
-        TARGETS,
     ]
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
             print("Visit https://github.com/geozeke/banip for more information.")
             sys.exit(1)
+
+    try:
+        config = load_config(CONFIG)
+    except (FileNotFoundError, ValueError) as exc:
+        print(exc)
+        sys.exit(1)
 
     # ------------------------------------------------------------------
 
@@ -89,8 +91,7 @@ def task_runner(args: Namespace) -> None:
     console = Console()
     msg = status_label("custom_prune")
     with console.status(msg):
-        with CUSTOM_BLACKLIST.open("r") as f:
-            custom = {item for line in f if (item := extract_ip(line.strip()))}
+        custom = config.blacklist
         # Make sure the current host's public-facing IP is not in the
         # custom blacklist.
         if (public_ip := get_public_ip()) and (public_ip in custom):
@@ -113,12 +114,7 @@ def task_runner(args: Namespace) -> None:
     geolite_D = tag_networks()
     msg = status_label("country_filter")
     with console.status(msg):
-        with TARGETS.open("r") as f:
-            countries = {
-                token.upper()
-                for line in f
-                if (token := line.strip()) and token[0] != "#"
-            }
+        countries = config.targets
         _, target_geolite = split_hybrid(
             [net for net in geolite_D if geolite_D[net] in countries]
         )
@@ -138,8 +134,7 @@ def task_runner(args: Namespace) -> None:
     # the custom whitelist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
-        with CUSTOM_WHITELIST.open("r") as f:
-            whitelist = {item for line in f if (item := extract_ip(line.strip()))}
+        whitelist = config.whitelist
         white_ips, white_nets = split_hybrid(whitelist)
         white_nets_lookup = build_network_lookup(white_nets)
         ipsum_D = load_ipsum()
@@ -199,7 +194,7 @@ def task_runner(args: Namespace) -> None:
     # Repackage and save cleaned-up custom IP addresses and networks.
     msg = status_label("repack")
     with console.status(msg):
-        CUSTOM_BLACKLIST.write_text(render_lines([*custom_ips, *custom_nets]))
+        update_blacklist([*custom_ips, *custom_nets], path=CONFIG)
     print(format_status("repack"))
 
     # ------------------------------------------------------------------
@@ -207,14 +202,37 @@ def task_runner(args: Namespace) -> None:
     # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
     msg = status_label("lists_render")
     with console.status(msg):
+        managed_bot_networks: dict[str, list[NetworkType]] = {}
+        if (
+            config.bots.enabled
+            and not getattr(args, "no_bots", False)
+            and BOTDATA.exists()
+        ):
+            managed_bot_networks = load_managed_bot_networks(config.bots.providers)
+        bot_nets = [
+            net
+            for provider in sorted(managed_bot_networks)
+            for net in managed_bot_networks[provider]
+        ]
+        bot_nets_size = len(bot_nets)
         now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-        RENDERED_BLACKLIST.write_text(
-            render_lines([*ipsum_ips, *ipsum_nets])
-            + "\n# ------------custom entries -------------\n"
+        blacklist_text = render_lines([*ipsum_ips, *ipsum_nets])
+        if bot_nets:
+            blacklist_text += (
+                "\n# ---------managed bot ranges -----------\n"
+                + f"# Added on: {now}\n"
+                + "# ----------------------------------------\n\n"
+            )
+            for provider in sorted(managed_bot_networks):
+                blacklist_text += f"# {provider}\n"
+                blacklist_text += render_lines(managed_bot_networks[provider])
+        blacklist_text += (
+            "\n# ------------custom entries -------------\n"
             + f"# Added on: {now}\n"
             + "# ----------------------------------------\n\n"
             + render_lines([*custom_ips, *custom_nets])
         )
+        RENDERED_BLACKLIST.write_text(blacklist_text)
         RENDERED_WHITELIST.write_text(render_lines([*white_ips, *white_nets]))
     print(format_status("lists_render"))
 
@@ -224,19 +242,20 @@ def task_runner(args: Namespace) -> None:
 
     # Generate a table to display metrics. Do not include the network
     # and broadcast addresses when calculating total IP addresses.
-    total_entries = ipsum_size + custom_nets_size + custom_ips_size
+    total_entries = ipsum_size + bot_nets_size + custom_nets_size + custom_ips_size
     table = Table(title="Final Build Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
     total_ipv6s = 0
     for ips in [ipsum_ips, custom_ips]:
         total_ipv4s += sum([1 for ip in ips if ip.version == 4])
         total_ipv6s += sum([1 for ip in ips if ip.version == 6])
-    for nets in [ipsum_nets, custom_nets]:
+    for nets in [ipsum_nets, bot_nets, custom_nets]:
         total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
         total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
     div_length = max(
         ipsum_ips_size,
         ipsum_nets_size,
+        bot_nets_size,
         custom_ips_size,
         custom_nets_size,
     )
@@ -248,6 +267,7 @@ def task_runner(args: Namespace) -> None:
     table.add_row("Target Countries", f"{','.join(sorted_countries)}", end_section=True)
     table.add_row("IP addresses - ipsum.txt", f"{(ipsum_ips_size):,d}")
     table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
+    table.add_row("Subnets - managed bots", f"{(bot_nets_size):,d}")
     table.add_row("IP addresses - custom", f"{(custom_ips_size):,d}")
     table.add_row("Subnets - custom", f"{(custom_nets_size):,d}")
     table.add_row("-" * 19, "-" * div_pad)

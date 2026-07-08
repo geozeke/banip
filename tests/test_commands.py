@@ -276,6 +276,13 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     assert loaded.bots.providers == ["google"]
 
 
+def test_config_defaults_include_meta_provider() -> None:
+    """Managed bot defaults include every built-in provider."""
+    loaded = config.parse_bot_config(None)
+
+    assert loaded.providers == ["google", "bing", "openai", "meta"]
+
+
 def test_config_rejects_invalid_blacklist_entry(tmp_path) -> None:
     """Invalid YAML entries fail with section-specific messages."""
     path = tmp_path / "banip.yaml"
@@ -347,6 +354,43 @@ def test_bots_normalize_ranges_deduplicates_and_sorts() -> None:
         "198.51.100.0/24",
         "2001:db8::/126",
     ]
+
+
+def test_bots_parse_irr_ranges_deduplicates_and_sorts() -> None:
+    """IRR route data normalizes into stable CIDR strings."""
+    text = "\n".join(
+        [
+            "route:          198.51.100.0/24",
+            "route:          192.0.2.0/24",
+            "route:          192.0.2.0/24",
+            "route6:         2001:db8::/48",
+            "route6:         not-a-cidr",
+            "origin:         AS32934",
+        ]
+    )
+
+    assert bots.parse_irr_ranges(text) == [
+        "192.0.2.0/24",
+        "198.51.100.0/24",
+        "2001:db8::/48",
+    ]
+
+
+def test_bots_fetch_provider_supports_meta_whois(monkeypatch) -> None:
+    """Meta provider data is fetched from RADb WHOIS output."""
+    monkeypatch.setattr(
+        bots,
+        "query_whois",
+        lambda host, query: (
+            "route:          192.0.2.0/24\nroute6:         2001:db8::/48\n"
+        ),
+    )
+
+    entry = bots.fetch_provider("meta")
+
+    assert entry["provider"] == "meta"
+    assert entry["source"] == [bots.META_WHOIS_SOURCE]
+    assert entry["ranges"] == ["192.0.2.0/24", "2001:db8::/48"]
 
 
 def test_bots_refresh_replaces_only_selected_provider(

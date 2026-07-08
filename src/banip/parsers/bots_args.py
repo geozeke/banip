@@ -4,7 +4,7 @@ import ipaddress as ipa
 from argparse import _SubParsersAction
 
 COMMAND_NAME = "bots"
-PROVIDERS = ("google", "bing", "openai", "all")
+PROVIDERS = ("google", "bing", "openai", "meta", "all")
 
 
 def load_command_args(sp: _SubParsersAction) -> None:

@@ -269,19 +269,28 @@ and ordering when writing, such as `ruamel.yaml`.
 Initial shape:
 
 ```yaml
+# Config schema version. Required.
 version: 1
 
+# Target countries included when building the rendered blacklist.
+# Required when using banip.yaml.
 targets:
   - US
   - CA
 
+# Addresses or networks that should never be included in the rendered
+# blacklist. Optional.
 whitelist:
   - 203.0.113.10
 
+# User-managed addresses or networks to add to the rendered blacklist.
+# Optional. Managed bot ranges are not stored here.
 blacklist:
   - 192.0.2.5
   - 192.0.2.0/30
 
+# Managed bot/crawler range settings. Optional. If omitted, banip uses
+# built-in defaults.
 bots:
   enabled: true
   providers:
@@ -289,9 +298,24 @@ bots:
     - bing
     - openai
 
+  # Optional source URL overrides for advanced users. Built-in provider
+  # URLs are used when this section is omitted.
+  sources:
+    bing:
+      url: https://www.bing.com/toolbox/bingbot.json
+
+# External database update settings. Optional.
 database:
   maxmind_edition: GeoLite2-Country-CSV
+
+  # Path to dotenv-style credentials. Secrets are not stored in YAML.
   secrets_file: ~/.secrets
+
+  # Optional source URL overrides for advanced users. Built-in URLs are
+  # used when this section is omitted.
+  sources:
+    ipsum:
+      url: https://raw.githubusercontent.com/stamparm/ipsum/master/ipsum.txt
 ```
 
 Validation rules:

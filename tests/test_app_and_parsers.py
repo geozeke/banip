@@ -8,15 +8,17 @@ from pathlib import Path
 import pytest
 
 from banip import app
+from banip.parsers import bots_args
 from banip.parsers import build_args
 from banip.parsers import check_args
+from banip.parsers import database_args
 from banip.parsers import patch_args
 from banip.parsers import stats_args
 
 
 @pytest.mark.parametrize(
     "parser_module",
-    [build_args, check_args, patch_args, stats_args],
+    [bots_args, build_args, check_args, database_args, patch_args, stats_args],
 )
 def test_parser_modules_register_commands(parser_module) -> None:
     """Each parser module registers its command name."""

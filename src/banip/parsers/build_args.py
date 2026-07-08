@@ -45,6 +45,12 @@ def load_command_args(sp: _SubParsersAction) -> None:
     """
     parser.add_argument("-c", "--compact", type=compact_type, help=msg, default=0)
 
+    msg = """
+    Do not load managed crawler and bot ranges from ~/.banip/botdata.json
+    during this build.
+    """
+    parser.add_argument("--no-bots", action="store_true", help=msg)
+
     return
 
 

@@ -45,6 +45,8 @@ blacklist data, and optional user-provided plugin commands.
 - Keep documentation and metadata consistent when making changes,
   including README content, this file, argparse messages, docstrings,
   and code comments.
+- Do not update `CHANGELOG.md` directly for feature, fix, or dependency
+  changes. Changelog entries are managed by running `just bump <ver>`.
 
 ## Verification
 

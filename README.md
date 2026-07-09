@@ -131,6 +131,8 @@ bots:
     - google
     - bing
     - openai
+    - anthropic
+    - meta
 database:
   maxmind_edition: GeoLite2-Country-CSV
   secrets_file: ~/.secrets
@@ -215,6 +217,8 @@ manual custom blacklist entries. Refresh provider data into
 banip bots refresh google
 banip bots refresh bing
 banip bots refresh openai
+banip bots refresh anthropic
+banip bots refresh meta
 ```
 
 To refresh every supported provider, run:

@@ -3,7 +3,6 @@
 import argparse
 import ipaddress as ipa
 import os
-import pickle
 from types import SimpleNamespace
 
 import pytest
@@ -18,6 +17,7 @@ from banip import null
 from banip import patch
 from banip import stats
 from banip import utilities
+from banip.utilities import data as utility_data
 from banip.argument_types import compact_type
 from banip.argument_types import threshold_type
 
@@ -139,7 +139,7 @@ def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
         "ignored 192.0.2.2\nignored 192.0.2.1\nblank\n\nignored invalid\n"
     )
     monkeypatch.setattr(patch, "IPSUM", ipsum)
-    monkeypatch.setattr(utilities, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
 
     with newips.open() as handle:
         args = argparse.Namespace(newips=handle, index=1, confidence=5)
@@ -173,7 +173,7 @@ def test_patch_task_runner_exits_when_ipsum_missing(
 
 def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
     """Stats command prompts users to build data first."""
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", tmp_path / "missing.bin")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
@@ -182,14 +182,10 @@ def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -
 
 def test_stats_task_runner_reports_country_stats(tmp_path, monkeypatch, capsys) -> None:
     """Stats command summarizes IPv4 and IPv6 country data."""
-    data = tmp_path / "country.bin"
-    networks = {
-        ipa.ip_network("192.0.2.0/30"): "US",
-        ipa.ip_network("2001:db8::/126"): "US",
-        ipa.ip_network("198.51.100.0/30"): "CA",
-    }
-    data.write_bytes(pickle.dumps(networks))
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", data)
+    data = tmp_path / "haproxy_geo_ip.txt"
+    data.write_text("192.0.2.0/30 US\n198.51.100.0/30 CA\n2001:db8::/126 US\n")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
@@ -205,9 +201,10 @@ def test_stats_task_runner_reports_unknown_country(
     tmp_path, monkeypatch, capsys
 ) -> None:
     """Stats command reports an unknown country when no networks match."""
-    data = tmp_path / "country.bin"
-    data.write_bytes(pickle.dumps({ipa.ip_network("192.0.2.0/30"): "US"}))
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", data)
+    data = tmp_path / "haproxy_geo_ip.txt"
+    data.write_text("192.0.2.0/30 US\n")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="zz"))
 
@@ -216,16 +213,17 @@ def test_stats_task_runner_reports_unknown_country(
 
 def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> None:
     """Check command loads generated data and handles one interactive lookup."""
-    country_data = tmp_path / "country.bin"
-    country_data.write_bytes(pickle.dumps({ipa.ip_network("192.0.2.0/24"): "US"}))
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("192.0.2.0/24 US\n")
     rendered = tmp_path / "ip_blacklist.txt"
     rendered.write_text("192.0.2.0/28\n198.51.100.1\n")
     ipsum = tmp_path / "ipsum.txt"
     ipsum.write_text("192.0.2.3 7\n")
     inputs = iter(["invalid", "192.0.2.3", "n"])
-    monkeypatch.setattr(check, "COUNTRY_NETS_DICT", country_data)
-    monkeypatch.setattr(utilities, "RENDERED_BLACKLIST", rendered)
-    monkeypatch.setattr(utilities, "IPSUM", ipsum)
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLACKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
     monkeypatch.setattr(check, "clear", lambda: None)
     monkeypatch.setattr("builtins.input", lambda _prompt: next(inputs))
 
@@ -242,7 +240,7 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
 
 def test_check_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
     """Check command prompts users to build data first."""
-    monkeypatch.setattr(check, "COUNTRY_NETS_DICT", tmp_path / "missing.bin")
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
 
     check.task_runner(argparse.Namespace())
 
@@ -274,6 +272,13 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     assert loaded.blacklist == {ipa.ip_network("192.0.2.0/30")}
     assert loaded.bots.enabled is False
     assert loaded.bots.providers == ["google"]
+
+
+def test_config_defaults_include_managed_bot_providers() -> None:
+    """Managed bot defaults include every built-in provider."""
+    loaded = config.parse_bot_config(None)
+
+    assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
 
 
 def test_config_rejects_invalid_blacklist_entry(tmp_path) -> None:
@@ -347,6 +352,79 @@ def test_bots_normalize_ranges_deduplicates_and_sorts() -> None:
         "198.51.100.0/24",
         "2001:db8::/126",
     ]
+
+
+def test_bots_parse_irr_ranges_deduplicates_and_sorts() -> None:
+    """IRR route data normalizes into stable CIDR strings."""
+    text = "\n".join(
+        [
+            "route:          198.51.100.0/24",
+            "route:          192.0.2.0/24",
+            "route:          192.0.2.0/24",
+            "route6:         2001:db8::/48",
+            "route6:         not-a-cidr",
+            "origin:         AS32934",
+        ]
+    )
+
+    assert bots.parse_irr_ranges(text) == [
+        "192.0.2.0/24",
+        "198.51.100.0/24",
+        "2001:db8::/48",
+    ]
+
+
+def test_bots_fetch_provider_supports_meta_whois(monkeypatch) -> None:
+    """Meta provider data is fetched from RADb WHOIS output."""
+    monkeypatch.setattr(
+        bots,
+        "query_whois",
+        lambda host, query: (
+            "route:          192.0.2.0/24\nroute6:         2001:db8::/48\n"
+        ),
+    )
+
+    entry = bots.fetch_provider("meta")
+
+    assert entry["provider"] == "meta"
+    assert entry["source"] == [bots.META_WHOIS_SOURCE]
+    assert entry["ranges"] == ["192.0.2.0/24", "2001:db8::/48"]
+
+
+def test_bots_fetch_provider_supports_anthropic_json(monkeypatch) -> None:
+    """Anthropic provider data is fetched from its JSON feed."""
+
+    class Response:
+        """Fake JSON feed response."""
+
+        def raise_for_status(self) -> None:
+            """No-op successful status check."""
+
+        def json(self) -> dict[str, object]:
+            """Return provider payload data."""
+            return {
+                "creationTime": "2026-05-01T20:46:04Z",
+                "prefixes": [
+                    {"ipv4Prefix": "198.51.100.0/24"},
+                    {"ipv4Prefix": "192.0.2.0/24"},
+                ],
+            }
+
+    seen_urls = []
+
+    def get(url: str, timeout: int) -> Response:
+        seen_urls.append((url, timeout))
+        return Response()
+
+    monkeypatch.setattr(bots.requests, "get", get)
+
+    entry = bots.fetch_provider("anthropic")
+
+    assert seen_urls == [("https://claude.com/crawling/bots.json", 30)]
+    assert entry["provider"] == "anthropic"
+    assert entry["source"] == ["https://claude.com/crawling/bots.json"]
+    assert entry["upstream_updated_at"] == "2026-05-01T20:46:04Z"
+    assert entry["ranges"] == ["192.0.2.0/24", "198.51.100.0/24"]
 
 
 def test_bots_refresh_replaces_only_selected_provider(
@@ -428,7 +506,6 @@ def test_build_task_runner_generates_blacklist_outputs(
         "RENDERED_WHITELIST": data / "ip_whitelist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
-        "COUNTRY_NETS_DICT": data / "haproxy_geo_ip_dict.bin",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
@@ -468,8 +545,8 @@ def test_build_task_runner_generates_blacklist_outputs(
     for name, path in paths.items():
         if hasattr(build, name):
             monkeypatch.setattr(build, name, path)
-        if hasattr(utilities, name):
-            monkeypatch.setattr(utilities, name, path)
+        if hasattr(utility_data, name):
+            monkeypatch.setattr(utility_data, name, path)
         if hasattr(bots, name):
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):
@@ -525,7 +602,6 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "RENDERED_WHITELIST": data / "ip_whitelist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
-        "COUNTRY_NETS_DICT": data / "haproxy_geo_ip_dict.bin",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
@@ -573,8 +649,8 @@ def test_build_task_runner_renders_managed_bot_ranges(
     for name, path in paths.items():
         if hasattr(build, name):
             monkeypatch.setattr(build, name, path)
-        if hasattr(utilities, name):
-            monkeypatch.setattr(utilities, name, path)
+        if hasattr(utility_data, name):
+            monkeypatch.setattr(utility_data, name, path)
         if hasattr(bots, name):
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):

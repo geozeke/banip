@@ -2,6 +2,7 @@
 
 import ipaddress as ipa
 import json
+import socket
 from argparse import Namespace
 from collections.abc import Iterable
 from datetime import UTC
@@ -34,8 +35,13 @@ PROVIDER_URLS = {
         "https://openai.com/gptbot.json",
         "https://openai.com/chatgpt-user.json",
     ),
+    "anthropic": ("https://claude.com/crawling/bots.json",),
+    "meta": (),
 }
 PROVIDERS = tuple(PROVIDER_URLS)
+META_WHOIS_HOST = "whois.radb.net"
+META_WHOIS_QUERY = "-i origin AS32934"
+META_WHOIS_SOURCE = f"whois://{META_WHOIS_HOST}/{META_WHOIS_QUERY}"
 
 
 def sort_networks(networks: Iterable[NetworkType]) -> list[NetworkType]:
@@ -82,6 +88,32 @@ def normalize_ranges(payloads: Iterable[dict[str, Any]]) -> list[str]:
     return [str(network) for network in sort_networks(networks)]
 
 
+def parse_irr_ranges(text: str) -> list[str]:
+    """Normalize IRR route data into deduplicated CIDR strings.
+
+    Parameters
+    ----------
+    text : str
+        Raw RPSL-style IRR response text.
+
+    Returns
+    -------
+    list[str]
+        Deduplicated CIDR strings sorted deterministically.
+    """
+    networks: set[NetworkType] = set()
+    for line in text.splitlines():
+        if not line.startswith(("route:", "route6:")):
+            continue
+        _, _, value = line.partition(":")
+        try:
+            networks.add(ipa.ip_network(value.strip()))
+        except ValueError:
+            continue
+
+    return [str(network) for network in sort_networks(networks)]
+
+
 def collect_upstream_timestamp(payloads: Iterable[dict[str, Any]]) -> str | None:
     """Collect the newest upstream timestamp exposed by a provider.
 
@@ -106,6 +138,31 @@ def collect_upstream_timestamp(payloads: Iterable[dict[str, Any]]) -> str | None
     return sorted(timestamps)[-1]
 
 
+def query_whois(host: str, query: str, timeout: int = 30) -> str:
+    """Query a WHOIS server and return raw response text.
+
+    Parameters
+    ----------
+    host : str
+        WHOIS server hostname.
+    query : str
+        Query string to send.
+    timeout : int, optional
+        Socket timeout in seconds. Defaults to 30.
+
+    Returns
+    -------
+    str
+        Decoded WHOIS response text.
+    """
+    chunks: list[bytes] = []
+    with socket.create_connection((host, 43), timeout=timeout) as connection:
+        connection.sendall(f"{query}\r\n".encode())
+        while chunk := connection.recv(65536):
+            chunks.append(chunk)
+    return b"".join(chunks).decode(errors="replace")
+
+
 def fetch_provider(provider: str) -> dict[str, object]:
     """Fetch and normalize one provider's managed ranges.
 
@@ -119,6 +176,14 @@ def fetch_provider(provider: str) -> dict[str, object]:
     dict[str, object]
         Normalized provider data ready for storage.
     """
+    if provider == "meta":
+        return {
+            "provider": provider,
+            "source": [META_WHOIS_SOURCE],
+            "refreshed_at": dt.now(UTC).isoformat(timespec="seconds"),
+            "ranges": parse_irr_ranges(query_whois(META_WHOIS_HOST, META_WHOIS_QUERY)),
+        }
+
     payloads = []
     for url in PROVIDER_URLS[provider]:
         response = requests.get(url, timeout=30)

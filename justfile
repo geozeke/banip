@@ -171,6 +171,6 @@ typecheck:
 
 # --------------------------------------------
 
-# Upgrade runtime and development dependencies
+# Upgrade dependencies
 upgrade: _require_setup
-    uv sync --upgrade --all-groups
+    bash ./scripts/upgrade_dependencies.sh

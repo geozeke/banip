@@ -190,6 +190,29 @@ def format_changelog(
     return f"{body}\n"
 
 
+def normalize_changelog(changelog_path: Path) -> bool:
+    """Normalize release-section spacing in a changelog file.
+
+    Parameters
+    ----------
+    changelog_path
+        Path to the changelog file to normalize.
+
+    Returns
+    -------
+    bool
+        ``True`` when the changelog was updated, otherwise ``False``.
+    """
+    original = changelog_path.read_text(encoding="utf-8")
+    preamble, releases, link_definitions = split_changelog(original)
+    normalized = format_changelog(preamble, releases, link_definitions)
+    if normalized == original:
+        return False
+
+    changelog_path.write_text(normalized, encoding="utf-8")
+    return True
+
+
 def should_archive(
     target_minor: tuple[int, int],
     releases: list[ReleaseSection],

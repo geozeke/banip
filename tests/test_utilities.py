@@ -214,6 +214,20 @@ def test_load_rendered_blacklist_splits_file(tmp_path, monkeypatch) -> None:
     assert nets == [ipa.ip_network("198.51.100.0/24")]
 
 
+def test_load_country_networks_skips_malformed_lines(tmp_path, monkeypatch) -> None:
+    """Country network data is loaded from the HAProxy text map."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text(
+        "192.0.2.0/24 US\ninvalid CA\n198.51.100.0/24\n2001:db8::/126 EU\n"
+    )
+    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", country_data)
+
+    assert utilities.load_country_networks() == {
+        ipa.ip_network("192.0.2.0/24"): "US",
+        ipa.ip_network("2001:db8::/126"): "EU",
+    }
+
+
 def test_get_public_ip_handles_success_invalid_and_request_failure(monkeypatch) -> None:
     """Public-IP lookup parses valid responses and suppresses request failures."""
 

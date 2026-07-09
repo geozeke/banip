@@ -1,16 +1,16 @@
 """Task runner for the stats command."""
 
 import argparse
-import pickle
 
 from rich import box
 from rich.console import Console
 from rich.style import Style
 from rich.table import Table
 
-from banip.constants import COUNTRY_NETS_DICT
+from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import NetworkType
 from banip.utilities import format_status
+from banip.utilities import load_country_networks
 from banip.utilities import status_label
 
 
@@ -22,7 +22,7 @@ def task_runner(args: argparse.Namespace) -> None:
     args : argparse.Namespace
         Parsed command-line arguments.
     """
-    if not COUNTRY_NETS_DICT.exists():
+    if not COUNTRY_NETS_TXT.exists():
         msg = """
         Some required files are missing. Run the \'build\'
         command before generating statistics for a given country. Run
@@ -40,8 +40,7 @@ def task_runner(args: argparse.Namespace) -> None:
     msg = status_label("stats_load")
     with console.status(msg):
         D: dict[NetworkType, str] = {}
-        with COUNTRY_NETS_DICT.open("rb") as f:
-            D = pickle.load(f)
+        D = load_country_networks()
     print(format_status("stats_load"))
 
     msg = status_label("analyze")

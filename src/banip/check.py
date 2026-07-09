@@ -1,20 +1,20 @@
 """Task runner for the check command."""
 
 import argparse
-import pickle
 from typing import cast
 
 from rich.console import Console
 from rich.style import Style
 from rich.table import Table
 
-from banip.constants import COUNTRY_NETS_DICT
+from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import AddressType
 from banip.utilities import build_network_lookup
 from banip.utilities import clear
 from banip.utilities import extract_ip
 from banip.utilities import format_status
 from banip.utilities import ip_in_network
+from banip.utilities import load_country_networks
 from banip.utilities import load_ipsum
 from banip.utilities import load_rendered_blacklist
 from banip.utilities import split_hybrid
@@ -31,7 +31,7 @@ def task_runner(args: argparse.Namespace) -> None:
     """
     print()
 
-    if not COUNTRY_NETS_DICT.exists():
+    if not COUNTRY_NETS_TXT.exists():
         msg = """
         Some required files are missing. Run the \'build\' command
         before checking an IP address. Run this
@@ -62,8 +62,7 @@ def task_runner(args: argparse.Namespace) -> None:
     # Load geolocation data.
     msg = status_label("geolite_load")
     with console.status(msg):
-        with COUNTRY_NETS_DICT.open("rb") as f:
-            nets_D = pickle.load(f)
+        nets_D = load_country_networks()
         _, nets_L = split_hybrid(nets_D.keys())
         nets_lookup = build_network_lookup(nets_L)
     print(format_status("geolite_load"))

@@ -3,7 +3,6 @@
 import argparse
 import ipaddress as ipa
 import os
-import pickle
 from types import SimpleNamespace
 
 import pytest
@@ -173,7 +172,7 @@ def test_patch_task_runner_exits_when_ipsum_missing(
 
 def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
     """Stats command prompts users to build data first."""
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", tmp_path / "missing.bin")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
@@ -182,14 +181,10 @@ def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -
 
 def test_stats_task_runner_reports_country_stats(tmp_path, monkeypatch, capsys) -> None:
     """Stats command summarizes IPv4 and IPv6 country data."""
-    data = tmp_path / "country.bin"
-    networks = {
-        ipa.ip_network("192.0.2.0/30"): "US",
-        ipa.ip_network("2001:db8::/126"): "US",
-        ipa.ip_network("198.51.100.0/30"): "CA",
-    }
-    data.write_bytes(pickle.dumps(networks))
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", data)
+    data = tmp_path / "haproxy_geo_ip.txt"
+    data.write_text("192.0.2.0/30 US\n198.51.100.0/30 CA\n2001:db8::/126 US\n")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
@@ -205,9 +200,10 @@ def test_stats_task_runner_reports_unknown_country(
     tmp_path, monkeypatch, capsys
 ) -> None:
     """Stats command reports an unknown country when no networks match."""
-    data = tmp_path / "country.bin"
-    data.write_bytes(pickle.dumps({ipa.ip_network("192.0.2.0/30"): "US"}))
-    monkeypatch.setattr(stats, "COUNTRY_NETS_DICT", data)
+    data = tmp_path / "haproxy_geo_ip.txt"
+    data.write_text("192.0.2.0/30 US\n")
+    monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="zz"))
 
@@ -216,14 +212,15 @@ def test_stats_task_runner_reports_unknown_country(
 
 def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> None:
     """Check command loads generated data and handles one interactive lookup."""
-    country_data = tmp_path / "country.bin"
-    country_data.write_bytes(pickle.dumps({ipa.ip_network("192.0.2.0/24"): "US"}))
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("192.0.2.0/24 US\n")
     rendered = tmp_path / "ip_blacklist.txt"
     rendered.write_text("192.0.2.0/28\n198.51.100.1\n")
     ipsum = tmp_path / "ipsum.txt"
     ipsum.write_text("192.0.2.3 7\n")
     inputs = iter(["invalid", "192.0.2.3", "n"])
-    monkeypatch.setattr(check, "COUNTRY_NETS_DICT", country_data)
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", country_data)
     monkeypatch.setattr(utilities, "RENDERED_BLACKLIST", rendered)
     monkeypatch.setattr(utilities, "IPSUM", ipsum)
     monkeypatch.setattr(check, "clear", lambda: None)
@@ -242,7 +239,7 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
 
 def test_check_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
     """Check command prompts users to build data first."""
-    monkeypatch.setattr(check, "COUNTRY_NETS_DICT", tmp_path / "missing.bin")
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
 
     check.task_runner(argparse.Namespace())
 
@@ -508,7 +505,6 @@ def test_build_task_runner_generates_blacklist_outputs(
         "RENDERED_WHITELIST": data / "ip_whitelist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
-        "COUNTRY_NETS_DICT": data / "haproxy_geo_ip_dict.bin",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
@@ -605,7 +601,6 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "RENDERED_WHITELIST": data / "ip_whitelist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
-        "COUNTRY_NETS_DICT": data / "haproxy_geo_ip_dict.bin",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }

@@ -3,7 +3,6 @@
 import csv
 import ipaddress as ipa
 import os
-import pickle
 from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import cast
@@ -12,7 +11,6 @@ import requests
 from requests.exceptions import RequestException
 from rich.console import Console
 
-from banip.constants import COUNTRY_NETS_DICT
 from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
@@ -461,9 +459,31 @@ def tag_networks() -> dict[NetworkType, str]:
         COUNTRY_NETS_TXT.write_text(
             render_lines(f"{format(key)} {networks[key]}" for key in keys)
         )
-        with COUNTRY_NETS_DICT.open("wb") as f:
-            pickle.dump(networks, f)
     print(format_status("build_products"))
+
+    return networks
+
+
+# ======================================================================
+
+
+def load_country_networks() -> dict[NetworkType, str]:
+    """Load the HAProxy country network map.
+
+    Returns
+    -------
+    dict[NetworkType, str]
+        The country network map keyed by IP network.
+    """
+    networks: dict[NetworkType, str] = {}
+    with COUNTRY_NETS_TXT.open("r") as f:
+        for line in f:
+            try:
+                network_text, country_code = line.strip().split(maxsplit=1)
+                network = ipa.ip_network(network_text)
+            except ValueError:
+                continue
+            networks[network] = country_code
 
     return networks
 

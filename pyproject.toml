@@ -1,6 +1,6 @@
 [project]
 name = "banip"
-version = "2.0.0"
+version = "2.0.1"
 description = "Create a list of banned IP addresses for specific countries"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]

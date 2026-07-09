@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from archive_changelog import archive_changelog
+from archive_changelog import normalize_changelog
 
 BASE = Path(__file__).parents[1]
 CHANGELOG = BASE / "CHANGELOG.md"
@@ -32,6 +33,10 @@ def main() -> None:
         ["git", "cliff", "--unreleased", "--tag", new_version, "--prepend", CHANGELOG],
         check=True,
     )
+
+    # git-cliff's trimmed prepend output may not leave a blank line
+    # before the previous release heading.
+    normalize_changelog(CHANGELOG)
 
     # Keep CHANGELOG.md focused on the active minor line.
     archive_changelog(new_version, CHANGELOG, CHANGELOG_ARCHIVE)

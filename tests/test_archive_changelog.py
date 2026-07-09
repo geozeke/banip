@@ -96,6 +96,44 @@ def test_minor_bump_archives_old_sections_and_moves_links(tmp_path: Path) -> Non
     assert "[pkg]: https://example.test/pkg" in archive_13
 
 
+def test_normalize_changelog_restores_release_spacing(tmp_path: Path) -> None:
+    """Normalization restores blank lines between release sections."""
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text(
+        """## 2.0.1 (2026-07-09)
+
+### Refactor
+
+- Migrate utilities.
+## 2.0.0 (2026-07-08)
+
+### Added
+
+- Previous release.
+""",
+        encoding="utf-8",
+    )
+
+    changed = archive_changelog.normalize_changelog(changelog)
+
+    assert changed
+    assert (
+        changelog.read_text(encoding="utf-8")
+        == """## 2.0.1 (2026-07-09)
+
+### Refactor
+
+- Migrate utilities.
+
+## 2.0.0 (2026-07-08)
+
+### Added
+
+- Previous release.
+"""
+    )
+
+
 def test_force_archives_for_initial_cleanup(tmp_path: Path) -> None:
     """Forced cleanup archives non-target minor lines immediately."""
     changelog = tmp_path / "CHANGELOG.md"

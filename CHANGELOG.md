@@ -1,3 +1,19 @@
+## 2.0.1 (2026-07-09)
+
+### 🚀 Features
+
+- Add support for Meta bots and crawlers (701a12c)
+- Add support for Anthropic bots (b9e47f6)
+
+### 🏃‍♂️ Performance Improvements
+
+- Improve dependency update tooling (acaba27)
+- Remove duplicate build artifacts (54a78b3)
+
+### 🚜 Refactor
+
+- Migrate utilities to their own package (cf45df0)
+
 ## 2.0.0 (2026-07-08)
 
 ### 📦 Dependency Upgrades

@@ -276,11 +276,11 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     assert loaded.bots.providers == ["google"]
 
 
-def test_config_defaults_include_meta_provider() -> None:
+def test_config_defaults_include_managed_bot_providers() -> None:
     """Managed bot defaults include every built-in provider."""
     loaded = config.parse_bot_config(None)
 
-    assert loaded.providers == ["google", "bing", "openai", "meta"]
+    assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
 
 
 def test_config_rejects_invalid_blacklist_entry(tmp_path) -> None:
@@ -391,6 +391,42 @@ def test_bots_fetch_provider_supports_meta_whois(monkeypatch) -> None:
     assert entry["provider"] == "meta"
     assert entry["source"] == [bots.META_WHOIS_SOURCE]
     assert entry["ranges"] == ["192.0.2.0/24", "2001:db8::/48"]
+
+
+def test_bots_fetch_provider_supports_anthropic_json(monkeypatch) -> None:
+    """Anthropic provider data is fetched from its JSON feed."""
+
+    class Response:
+        """Fake JSON feed response."""
+
+        def raise_for_status(self) -> None:
+            """No-op successful status check."""
+
+        def json(self) -> dict[str, object]:
+            """Return provider payload data."""
+            return {
+                "creationTime": "2026-05-01T20:46:04Z",
+                "prefixes": [
+                    {"ipv4Prefix": "198.51.100.0/24"},
+                    {"ipv4Prefix": "192.0.2.0/24"},
+                ],
+            }
+
+    seen_urls = []
+
+    def get(url: str, timeout: int) -> Response:
+        seen_urls.append((url, timeout))
+        return Response()
+
+    monkeypatch.setattr(bots.requests, "get", get)
+
+    entry = bots.fetch_provider("anthropic")
+
+    assert seen_urls == [("https://claude.com/crawling/bots.json", 30)]
+    assert entry["provider"] == "anthropic"
+    assert entry["source"] == ["https://claude.com/crawling/bots.json"]
+    assert entry["upstream_updated_at"] == "2026-05-01T20:46:04Z"
+    assert entry["ranges"] == ["192.0.2.0/24", "198.51.100.0/24"]
 
 
 def test_bots_refresh_replaces_only_selected_provider(

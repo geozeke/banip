@@ -35,6 +35,7 @@ PROVIDER_URLS = {
         "https://openai.com/gptbot.json",
         "https://openai.com/chatgpt-user.json",
     ),
+    "anthropic": ("https://claude.com/crawling/bots.json",),
     "meta": (),
 }
 PROVIDERS = tuple(PROVIDER_URLS)

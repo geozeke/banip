@@ -18,7 +18,7 @@ from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.utilities import extract_ip
 
-DEFAULT_BOT_PROVIDERS = ("google", "bing", "openai", "meta")
+DEFAULT_BOT_PROVIDERS = ("google", "bing", "openai", "anthropic", "meta")
 
 
 @dataclass(frozen=True)

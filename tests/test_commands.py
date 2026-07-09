@@ -17,6 +17,7 @@ from banip import null
 from banip import patch
 from banip import stats
 from banip import utilities
+from banip.utilities import data as utility_data
 from banip.argument_types import compact_type
 from banip.argument_types import threshold_type
 
@@ -138,7 +139,7 @@ def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
         "ignored 192.0.2.2\nignored 192.0.2.1\nblank\n\nignored invalid\n"
     )
     monkeypatch.setattr(patch, "IPSUM", ipsum)
-    monkeypatch.setattr(utilities, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
 
     with newips.open() as handle:
         args = argparse.Namespace(newips=handle, index=1, confidence=5)
@@ -184,7 +185,7 @@ def test_stats_task_runner_reports_country_stats(tmp_path, monkeypatch, capsys) 
     data = tmp_path / "haproxy_geo_ip.txt"
     data.write_text("192.0.2.0/30 US\n198.51.100.0/30 CA\n2001:db8::/126 US\n")
     monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
-    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
@@ -203,7 +204,7 @@ def test_stats_task_runner_reports_unknown_country(
     data = tmp_path / "haproxy_geo_ip.txt"
     data.write_text("192.0.2.0/30 US\n")
     monkeypatch.setattr(stats, "COUNTRY_NETS_TXT", data)
-    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", data)
 
     stats.task_runner(argparse.Namespace(country_code="zz"))
 
@@ -220,9 +221,9 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
     ipsum.write_text("192.0.2.3 7\n")
     inputs = iter(["invalid", "192.0.2.3", "n"])
     monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
-    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", country_data)
-    monkeypatch.setattr(utilities, "RENDERED_BLACKLIST", rendered)
-    monkeypatch.setattr(utilities, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLACKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
     monkeypatch.setattr(check, "clear", lambda: None)
     monkeypatch.setattr("builtins.input", lambda _prompt: next(inputs))
 
@@ -544,8 +545,8 @@ def test_build_task_runner_generates_blacklist_outputs(
     for name, path in paths.items():
         if hasattr(build, name):
             monkeypatch.setattr(build, name, path)
-        if hasattr(utilities, name):
-            monkeypatch.setattr(utilities, name, path)
+        if hasattr(utility_data, name):
+            monkeypatch.setattr(utility_data, name, path)
         if hasattr(bots, name):
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):
@@ -648,8 +649,8 @@ def test_build_task_runner_renders_managed_bot_ranges(
     for name, path in paths.items():
         if hasattr(build, name):
             monkeypatch.setattr(build, name, path)
-        if hasattr(utilities, name):
-            monkeypatch.setattr(utilities, name, path)
+        if hasattr(utility_data, name):
+            monkeypatch.setattr(utility_data, name, path)
         if hasattr(bots, name):
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):

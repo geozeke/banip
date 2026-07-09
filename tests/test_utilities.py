@@ -6,6 +6,9 @@ from types import SimpleNamespace
 from requests.exceptions import RequestException
 
 from banip import utilities
+from banip.utilities import data as utility_data
+from banip.utilities import display as utility_display
+from banip.utilities import external as utility_external
 
 
 def test_print_docstring_removes_common_indent(capsys) -> None:
@@ -197,7 +200,7 @@ def test_load_ipsum_skips_malformed_lines(tmp_path, monkeypatch) -> None:
     ipsum.write_text(
         "\n192.0.2.1 5\ninvalid 7\n198.51.100.1\n203.0.113.1 not-a-number\n"
     )
-    monkeypatch.setattr(utilities, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
 
     assert utilities.load_ipsum() == {ipa.ip_address("192.0.2.1"): 5}
 
@@ -206,7 +209,7 @@ def test_load_rendered_blacklist_splits_file(tmp_path, monkeypatch) -> None:
     """Rendered blacklist data is loaded as sorted IP and network lists."""
     rendered = tmp_path / "ip_blacklist.txt"
     rendered.write_text("198.51.100.0/24\n192.0.2.9\nignored\n192.0.2.1\n")
-    monkeypatch.setattr(utilities, "RENDERED_BLACKLIST", rendered)
+    monkeypatch.setattr(utility_data, "RENDERED_BLACKLIST", rendered)
 
     ips, nets = utilities.load_rendered_blacklist()
 
@@ -220,7 +223,7 @@ def test_load_country_networks_skips_malformed_lines(tmp_path, monkeypatch) -> N
     country_data.write_text(
         "192.0.2.0/24 US\ninvalid CA\n198.51.100.0/24\n2001:db8::/126 EU\n"
     )
-    monkeypatch.setattr(utilities, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
 
     assert utilities.load_country_networks() == {
         ipa.ip_network("192.0.2.0/24"): "US",
@@ -241,17 +244,19 @@ def test_get_public_ip_handles_success_invalid_and_request_failure(monkeypatch) 
                 raise RequestException("failed")
 
     monkeypatch.setattr(
-        utilities.requests,
+        utility_external.requests,
         "get",
         lambda _url: Response("192.0.2.4\n"),
     )
     assert utilities.get_public_ip() == ipa.ip_address("192.0.2.4")
 
-    monkeypatch.setattr(utilities.requests, "get", lambda _url: Response("invalid"))
+    monkeypatch.setattr(
+        utility_external.requests, "get", lambda _url: Response("invalid")
+    )
     assert utilities.get_public_ip() is None
 
     monkeypatch.setattr(
-        utilities.requests,
+        utility_external.requests,
         "get",
         lambda _url: SimpleNamespace(
             raise_for_status=lambda: (_ for _ in ()).throw(RequestException("failed"))
@@ -263,8 +268,8 @@ def test_get_public_ip_handles_success_invalid_and_request_failure(monkeypatch) 
 def test_clear_uses_platform_command(monkeypatch) -> None:
     """Screen clearing dispatches to the platform command."""
     commands: list[str] = []
-    monkeypatch.setattr(utilities.os, "system", commands.append)
-    monkeypatch.setattr(utilities.os, "name", "nt")
+    monkeypatch.setattr(utility_display.os, "system", commands.append)
+    monkeypatch.setattr(utility_display.os, "name", "nt")
 
     utilities.clear()
 

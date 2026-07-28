@@ -12,7 +12,7 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-COMMIT_SUBJECT = "deps: DEPS-See commit msg for list"
+COMMIT_SUBJECT = "build(deps): upgrade direct dependencies"
 NAME_PATTERN = re.compile(r"^\s*([A-Za-z0-9_.-]+)")
 OUTDATED_TREE_PATTERN = re.compile(
     r"^[\s│]*[├└]── (?P<name>[A-Za-z0-9_.-]+) v\S+ .*latest:"

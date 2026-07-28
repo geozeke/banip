@@ -17,6 +17,7 @@ nav = [
   { "Managed bots" = "managed-bots.md" },
   { "Plugins" = "plugins.md" },
   { "Development" = "development.md" },
+  { "Dependency licenses" = "dependency-licenses.md" },
   { "Country codes" = "country-codes.md" },
 ]
 

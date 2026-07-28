@@ -1,33 +1,29 @@
-## 2.0.1 (2026-07-09)
+# Changelog
 
-### 🚀 Features
+All notable changes to banip are documented here. The format is based
+on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
+project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-- Add support for Meta bots and crawlers (701a12c)
-- Add support for Anthropic bots (b9e47f6)
+## [2.0.1] - 2026-07-09
 
-### 🏃‍♂️ Performance Improvements
+[View release tag](https://github.com/geozeke/banip/releases/tag/v2.0.1)
 
-- Improve dependency update tooling (acaba27)
-- Remove duplicate build artifacts (54a78b3)
+### Added
 
-### 🚜 Refactor
+- Add support for Meta bots and crawlers ([701a12c](https://github.com/geozeke/banip/commit/701a12c))
 
-- Migrate utilities to their own package (cf45df0)
+- Add support for Anthropic bots ([b9e47f6](https://github.com/geozeke/banip/commit/b9e47f6))
 
-## 2.0.0 (2026-07-08)
+## [2.0.0] - 2026-07-08
 
-### 📦 Dependency Upgrades
+[View release tag](https://github.com/geozeke/banip/releases/tag/v2.0.0)
 
-- Upgrade development dependencies (6249f97)
+### Performance
 
-### ⚙️ Miscellaneous Tasks
+- Move network lookups to iterative logic ([32086c7](https://github.com/geozeke/banip/commit/32086c7))
 
-- Improve custom types (c08b87c)
-- Use open syntax for pathlib.Path objects (e5d8879)
-- Cleanup remaining optimizations (36519e7)
-- Develop refactor plan (#95) (9079970)
+- Improve set/list handling ([c5bafe4](https://github.com/geozeke/banip/commit/c5bafe4))
 
-### 🏃‍♂️ Performance Improvements
+### Dependencies
 
-- Move network lookups to iterative logic (32086c7)
-- Improve set/list handling (c5bafe4)
+- Upgrade development dependencies ([6249f97](https://github.com/geozeke/banip/commit/6249f97))

@@ -14,7 +14,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-from banip.config import migrate_flat_config
+from banip.config import initialize_config
 from banip.config import raw_config_dict
 from banip.constants import CONFIG
 from banip.constants import CUSTOM_CODE
@@ -49,7 +49,7 @@ def init_database(overwrite: bool = False) -> None:
     CUSTOM_PARSERS.mkdir(parents=True, exist_ok=True)
 
     try:
-        migrate_flat_config(overwrite=overwrite, path=CONFIG)
+        initialize_config(overwrite=overwrite, path=CONFIG)
     except FileExistsError as exc:
         print(exc)
         print("Use 'banip database init --overwrite' to replace it.")

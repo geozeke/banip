@@ -16,7 +16,7 @@ from banip.utilities import format_status
 from banip.utilities import ip_in_network
 from banip.utilities import load_country_networks
 from banip.utilities import load_ipsum
-from banip.utilities import load_rendered_blacklist
+from banip.utilities import load_rendered_blocklist
 from banip.utilities import split_hybrid
 from banip.utilities import status_label
 
@@ -52,12 +52,12 @@ def task_runner(args: argparse.Namespace) -> None:
         ipsum = load_ipsum()
     print(format_status("ipsum_load_data"))
 
-    # Load the rendered blacklist.
-    msg = status_label("blacklist_rendered_load")
+    # Load the rendered blocklist.
+    msg = status_label("blocklist_rendered_load")
     with console.status(msg):
-        rendered_ips, rendered_nets = load_rendered_blacklist()
+        rendered_ips, rendered_nets = load_rendered_blocklist()
         rendered_nets_lookup = build_network_lookup(rendered_nets)
-    print(format_status("blacklist_rendered_load"))
+    print(format_status("blocklist_rendered_load"))
 
     # Load geolocation data.
     msg = status_label("geolite_load")
@@ -89,8 +89,8 @@ def task_runner(args: argparse.Namespace) -> None:
             status = "--", text_red
         table.add_row(attribute, status[0], style=status[1])
 
-        # Check for membership in the rendered blacklist
-        attribute = "Rendered Blacklist"
+        # Check for membership in the rendered blocklist.
+        attribute = "Rendered Blocklist"
         if ip_in_network(ip=target, lookup=rendered_nets_lookup):
             status = "found in subnet", text_red
         elif target in rendered_ips:

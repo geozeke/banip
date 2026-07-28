@@ -32,5 +32,7 @@ jobs:
         run: uv run mypy src
       - name: Test
         run: uv run pytest --tb=short
+      - name: Build documentation
+        run: uv run --group docs zensical build --clean --strict
       - name: Build
         run: uv build

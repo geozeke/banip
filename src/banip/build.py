@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""Build a custom list of banned IP addresses."""
+"""Build a custom IP blocklist."""
 
 import shutil
 import sys
@@ -14,17 +14,17 @@ from rich.table import Table
 
 from banip.bots import load_managed_bot_networks
 from banip.config import load_config
-from banip.config import update_blacklist
+from banip.config import update_denylist
 from banip.constants import BOTDATA
 from banip.constants import CONFIG
-from banip.constants import COUNTRY_WHITELIST
+from banip.constants import COUNTRY_ALLOWLIST
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
 from banip.constants import NetworkType
-from banip.constants import RENDERED_BLACKLIST
-from banip.constants import RENDERED_WHITELIST
+from banip.constants import RENDERED_ALLOWLIST
+from banip.constants import RENDERED_BLOCKLIST
 from banip.utilities import build_network_lookup
 from banip.utilities import compact
 from banip.utilities import format_status
@@ -38,7 +38,7 @@ from banip.utilities import tag_networks
 
 
 def task_runner(args: Namespace) -> None:
-    """Generate a custom list of banned IP addresses.
+    """Generate a custom IP blocklist.
 
     Parameters
     ----------
@@ -50,16 +50,16 @@ def task_runner(args: Namespace) -> None:
     # Start by stubbing-out custom files if they're not already in
     # place. In the case of the output file, check for two things: (1)
     # Was a file specified? If not, then save results to the default
-    # (RENDERED_BLACKLIST). (2) If the file was specified, was it the
+    # (RENDERED_BLOCKLIST). (2) If the file was specified, was it the
     # same name as the default? If so, there's no need to make a local
     # copy of it after computations are complete.
     print()
     make_local_copy = False
     try:
-        if Path(args.outfile.name) != RENDERED_BLACKLIST:
+        if Path(args.outfile.name) != RENDERED_BLOCKLIST:
             make_local_copy = True
     except AttributeError:
-        args.outfile = RENDERED_BLACKLIST.open("w")
+        args.outfile = RENDERED_BLOCKLIST.open("w")
 
     # ------------------------------------------------------------------
 
@@ -70,12 +70,12 @@ def task_runner(args: Namespace) -> None:
         GEOLITE_6,
         GEOLITE_LOC,
         IPSUM,
-        RENDERED_BLACKLIST,
+        RENDERED_BLOCKLIST,
     ]
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more information.")
+            print("Visit https://geozeke.github.io/banip/ for more information.")
             sys.exit(1)
 
     try:
@@ -86,14 +86,14 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Load the custom blacklist and split it into separate lists of
+    # Load the custom denylist and split it into separate lists of
     # addresses and networks. Remove any duplicates using sets.
     console = Console()
     msg = status_label("custom_prune")
     with console.status(msg):
-        custom = config.blacklist
+        custom = config.denylist
         # Make sure the current host's public-facing IP is not in the
-        # custom blacklist.
+        # custom denylist.
         if (public_ip := get_public_ip()) and (public_ip in custom):
             custom.remove(public_ip)
         custom_ips, custom_nets = split_hybrid(custom)
@@ -123,7 +123,7 @@ def task_runner(args: Namespace) -> None:
     # Save the cleaned-up country codes for later use in HAProxy.
     with console.status(msg):
         sorted_countries = sorted(countries)
-        COUNTRY_WHITELIST.write_text(render_lines(sorted_countries))
+        COUNTRY_ALLOWLIST.write_text(render_lines(sorted_countries))
     print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
@@ -131,12 +131,12 @@ def task_runner(args: Namespace) -> None:
     # Prune ipsum.txt to keep only IP addresses that (1) are from target
     # countries, (2) are not already covered by a custom subnet, (3)
     # meet the minimum threshold for number of hits, and (4) are not in
-    # the custom whitelist.
+    # the custom allowlist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
-        whitelist = config.whitelist
-        white_ips, white_nets = split_hybrid(whitelist)
-        white_nets_lookup = build_network_lookup(white_nets)
+        allowlist = config.allowlist
+        allow_ips, allow_nets = split_hybrid(allowlist)
+        allow_nets_lookup = build_network_lookup(allow_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
             ip
@@ -144,8 +144,8 @@ def task_runner(args: Namespace) -> None:
             if (
                 ip_in_network(ip=ip, lookup=target_geolite_lookup)
                 and not ip_in_network(ip=ip, lookup=custom_nets_lookup)
-                and ip not in whitelist
-                and not ip_in_network(ip=ip, lookup=white_nets_lookup)
+                and ip not in allowlist
+                and not ip_in_network(ip=ip, lookup=allow_nets_lookup)
                 and hits >= args.threshold
             )
         ]
@@ -158,7 +158,7 @@ def task_runner(args: Namespace) -> None:
     with console.status(msg):
         ipsum_ips, ipsum_nets = compact(
             ip_list=ipsum_L,
-            whitelist=whitelist,
+            allowlist=allowlist,
             min_num=args.compact,
         )
         ipsum_nets_lookup = build_network_lookup(ipsum_nets)
@@ -175,7 +175,7 @@ def task_runner(args: Namespace) -> None:
 
     # Prune the list of custom IP addresses again so that remaining
     # entries are not covered by ipsum.txt and are from countries in the
-    # country whitelist. Do not remove custom IP addresses that might
+    # country allowlist. Do not remove custom IP addresses that might
     # not have a country association, such as local-network addresses.
     msg = status_label("redundant_remove")
     with console.status(msg):
@@ -194,12 +194,12 @@ def task_runner(args: Namespace) -> None:
     # Repackage and save cleaned-up custom IP addresses and networks.
     msg = status_label("repack")
     with console.status(msg):
-        update_blacklist([*custom_ips, *custom_nets], path=CONFIG)
+        update_denylist([*custom_ips, *custom_nets], path=CONFIG)
     print(format_status("repack"))
 
     # ------------------------------------------------------------------
 
-    # Render and save the complete ip_blacklist.txt and ip_whitelist.txt.
+    # Render and save the complete ip_blocklist.txt and ip_allowlist.txt.
     msg = status_label("lists_render")
     with console.status(msg):
         managed_bot_networks: dict[str, list[NetworkType]] = {}
@@ -216,29 +216,29 @@ def task_runner(args: Namespace) -> None:
         ]
         bot_nets_size = len(bot_nets)
         now = dt.now().strftime("%Y-%m-%d %H:%M:%S")
-        blacklist_text = render_lines([*ipsum_ips, *ipsum_nets])
+        blocklist_text = render_lines([*ipsum_ips, *ipsum_nets])
         if bot_nets:
-            blacklist_text += (
+            blocklist_text += (
                 "\n# ---------managed bot ranges -----------\n"
                 + f"# Added on: {now}\n"
                 + "# ----------------------------------------\n\n"
             )
             for provider in sorted(managed_bot_networks):
-                blacklist_text += f"# {provider}\n"
-                blacklist_text += render_lines(managed_bot_networks[provider])
-        blacklist_text += (
+                blocklist_text += f"# {provider}\n"
+                blocklist_text += render_lines(managed_bot_networks[provider])
+        blocklist_text += (
             "\n# ------------custom entries -------------\n"
             + f"# Added on: {now}\n"
             + "# ----------------------------------------\n\n"
             + render_lines([*custom_ips, *custom_nets])
         )
-        RENDERED_BLACKLIST.write_text(blacklist_text)
-        RENDERED_WHITELIST.write_text(render_lines([*white_ips, *white_nets]))
+        RENDERED_BLOCKLIST.write_text(blocklist_text)
+        RENDERED_ALLOWLIST.write_text(render_lines([*allow_ips, *allow_nets]))
     print(format_status("lists_render"))
 
     args.outfile.close()
     if make_local_copy:
-        shutil.copy(Path(args.outfile.name), RENDERED_BLACKLIST)
+        shutil.copy(Path(args.outfile.name), RENDERED_BLOCKLIST)
 
     # Generate a table to display metrics. Do not include the network
     # and broadcast addresses when calculating total IP addresses.

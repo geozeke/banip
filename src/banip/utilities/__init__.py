@@ -2,7 +2,7 @@
 
 from banip.utilities.data import load_country_networks
 from banip.utilities.data import load_ipsum
-from banip.utilities.data import load_rendered_blacklist
+from banip.utilities.data import load_rendered_blocklist
 from banip.utilities.data import tag_networks
 from banip.utilities.display import STATUS_MESSAGES
 from banip.utilities.display import StatusMessages
@@ -34,7 +34,7 @@ __all__ = [
     "ip_in_network",
     "load_country_networks",
     "load_ipsum",
-    "load_rendered_blacklist",
+    "load_rendered_blocklist",
     "print_docstring",
     "render_lines",
     "split_hybrid",

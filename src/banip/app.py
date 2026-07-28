@@ -130,8 +130,8 @@ def collect_parsers(start: Path) -> list[str]:
 def main() -> int:
     """Parse user input and run the requested command."""
     msg = """
-    Generate and query IP blacklists for use with proxy servers such as
-    HAProxy. See the README at https://github.com/geozeke/banip for
+    Generate and query IP blocklists for use with proxy servers such as
+    HAProxy. See https://geozeke.github.io/banip/ for
     setup instructions.
     """
     epi = f"Version: {__version__}"

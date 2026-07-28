@@ -90,10 +90,10 @@ class StatusMessages:
 STATUS_MESSAGES = StatusMessages(
     {
         "analyze": "Analyzing",
-        "blacklist_rendered_load": "Loading rendered blacklist",
+        "blocklist_rendered_load": "Loading rendered blocklist",
         "build_products": "Generating build products",
         "country_filter": "Filtering networks",
-        "custom_prune": "Pruning custom blacklist",
+        "custom_prune": "Pruning custom denylist",
         "geolite_load": "Loading geolocation data",
         "geo_pull": "Pulling country IDs",
         "geo_tag": "Geotagging networks",

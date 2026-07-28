@@ -11,14 +11,15 @@ from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.comments import CommentedSeq
 
 from banip.constants import CONFIG
-from banip.constants import CUSTOM_BLACKLIST
-from banip.constants import CUSTOM_WHITELIST
+from banip.constants import LEGACY_CUSTOM_ALLOWLIST
+from banip.constants import LEGACY_CUSTOM_DENYLIST
 from banip.constants import TARGETS
 from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.utilities import extract_ip
 
 DEFAULT_BOT_PROVIDERS = ("google", "bing", "openai", "anthropic", "meta")
+CONFIG_VERSION = 2
 
 
 @dataclass(frozen=True)
@@ -45,17 +46,17 @@ class BanipConfig:
     ----------
     targets : set[str]
         Uppercase country codes to include in builds.
-    whitelist : set[AddressType | NetworkType]
-        User-maintained whitelist entries.
-    blacklist : set[AddressType | NetworkType]
-        User-maintained blacklist entries.
+    allowlist : set[AddressType | NetworkType]
+        User-maintained entries that must not be blocked.
+    denylist : set[AddressType | NetworkType]
+        User-maintained entries to add to the blocklist.
     bots : BotConfig
         Managed bot range settings.
     """
 
     targets: set[str]
-    whitelist: set[AddressType | NetworkType]
-    blacklist: set[AddressType | NetworkType]
+    allowlist: set[AddressType | NetworkType]
+    denylist: set[AddressType | NetworkType]
     bots: BotConfig
 
 
@@ -185,7 +186,7 @@ def load_raw_config(path: Path = CONFIG) -> CommentedMap:
         msg = (
             f"Missing config file: {path}\n"
             "Run 'banip database init' to create one, then review the "
-            "README migration instructions."
+            "documentation migration instructions."
         )
         raise FileNotFoundError(msg)
 
@@ -208,25 +209,64 @@ def load_config(path: Path = CONFIG) -> BanipConfig:
     BanipConfig
         Validated configuration.
     """
-    data = load_raw_config(path)
-    if "version" not in data:
-        raise ValueError("Config entry 'version' is required.")
+    data = upgrade_config(load_raw_config(path), path)
 
     return BanipConfig(
         targets=parse_country_codes(data.get("targets")),
-        whitelist=parse_ip_entries("whitelist", data.get("whitelist")),
-        blacklist=parse_ip_entries("blacklist", data.get("blacklist")),
+        allowlist=parse_ip_entries("allowlist", data.get("allowlist")),
+        denylist=parse_ip_entries("denylist", data.get("denylist")),
         bots=parse_bot_config(data.get("bots")),
     )
 
 
-def read_flat_entries(path: Path) -> list[str]:
-    """Read non-comment entries from a legacy flat config file.
+def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
+    """Upgrade a supported configuration schema in place.
+
+    Parameters
+    ----------
+    data : CommentedMap
+        Parsed YAML mapping.
+    path : Path
+        Path to rewrite after a successful upgrade.
+
+    Returns
+    -------
+    CommentedMap
+        The current-schema configuration mapping.
+
+    Raises
+    ------
+    ValueError
+        If the configuration schema is missing, unsupported, or mixes
+        schema-version list keys.
+    """
+    version = data.get("version")
+    if version == CONFIG_VERSION:
+        return data
+    if version != 1:
+        raise ValueError(
+            f"Unsupported config version: {version!r}. Expected version {CONFIG_VERSION}."
+        )
+    if "allowlist" in data or "denylist" in data:
+        raise ValueError(
+            "Config version 1 cannot mix allowlist or denylist with its prior list keys."
+        )
+
+    data["allowlist"] = data.pop("whitelist", CommentedSeq())
+    data["denylist"] = data.pop("blacklist", CommentedSeq())
+    data["version"] = CONFIG_VERSION
+    with path.open("w") as handle:
+        yaml().dump(data, handle)
+    return data
+
+
+def read_migration_entries(path: Path) -> list[str]:
+    """Read non-comment entries from a migration input file.
 
     Parameters
     ----------
     path : Path
-        Legacy config path.
+        Migration input path.
 
     Returns
     -------
@@ -244,8 +284,8 @@ def read_flat_entries(path: Path) -> list[str]:
 
 def config_template(
     targets: Iterable[str] | None = None,
-    whitelist: Iterable[str] | None = None,
-    blacklist: Iterable[str] | None = None,
+    allowlist: Iterable[str] | None = None,
+    denylist: Iterable[str] | None = None,
 ) -> CommentedMap:
     """Create starter YAML config data.
 
@@ -253,10 +293,10 @@ def config_template(
     ----------
     targets : Iterable[str] | None, optional
         Target country codes.
-    whitelist : Iterable[str] | None, optional
-        Whitelist entries.
-    blacklist : Iterable[str] | None, optional
-        Blacklist entries.
+    allowlist : Iterable[str] | None, optional
+        Entries that must not be blocked.
+    denylist : Iterable[str] | None, optional
+        Entries to add to the blocklist.
 
     Returns
     -------
@@ -264,10 +304,10 @@ def config_template(
         Starter config mapping.
     """
     data = CommentedMap()
-    data["version"] = 1
+    data["version"] = CONFIG_VERSION
     data["targets"] = CommentedSeq(sorted({item.upper() for item in targets or []}))
-    data["whitelist"] = CommentedSeq(sorted(set(whitelist or [])))
-    data["blacklist"] = CommentedSeq(sorted(set(blacklist or [])))
+    data["allowlist"] = CommentedSeq(sorted(set(allowlist or [])))
+    data["denylist"] = CommentedSeq(sorted(set(denylist or [])))
     data["bots"] = CommentedMap(
         {
             "enabled": True,
@@ -284,15 +324,15 @@ def config_template(
     data.yaml_set_start_comment("Config schema version. Required.")
     data.yaml_set_comment_before_after_key(
         "targets",
-        before="Target countries included when building the rendered blacklist.",
+        before="Target countries included when building the rendered blocklist.",
     )
     data.yaml_set_comment_before_after_key(
-        "whitelist",
-        before="Addresses or networks that should never be blacklisted.",
+        "allowlist",
+        before="Addresses or networks that should never be blocked.",
     )
     data.yaml_set_comment_before_after_key(
-        "blacklist",
-        before="User-managed addresses or networks to add to the blacklist.",
+        "denylist",
+        before="User-managed addresses or networks to add to the blocklist.",
     )
     data.yaml_set_comment_before_after_key(
         "bots",
@@ -305,8 +345,8 @@ def config_template(
     return data
 
 
-def migrate_flat_config(overwrite: bool = False, path: Path = CONFIG) -> None:
-    """Create ``banip.yaml`` from legacy flat config files.
+def initialize_config(overwrite: bool = False, path: Path = CONFIG) -> None:
+    """Create ``banip.yaml`` from prior flat configuration files.
 
     Parameters
     ----------
@@ -319,30 +359,30 @@ def migrate_flat_config(overwrite: bool = False, path: Path = CONFIG) -> None:
         raise FileExistsError(f"Config file already exists: {path}")
 
     data = config_template(
-        targets=read_flat_entries(TARGETS),
-        whitelist=read_flat_entries(CUSTOM_WHITELIST),
-        blacklist=read_flat_entries(CUSTOM_BLACKLIST),
+        targets=read_migration_entries(TARGETS),
+        allowlist=read_migration_entries(LEGACY_CUSTOM_ALLOWLIST),
+        denylist=read_migration_entries(LEGACY_CUSTOM_DENYLIST),
     )
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w") as handle:
         yaml().dump(data, handle)
 
 
-def update_blacklist(
+def update_denylist(
     entries: Iterable[AddressType | NetworkType],
     path: Path = CONFIG,
 ) -> None:
-    """Update the YAML ``blacklist`` section.
+    """Update the YAML ``denylist`` section.
 
     Parameters
     ----------
     entries : Iterable[AddressType | NetworkType]
-        Parsed blacklist entries to write.
+        Parsed denylist entries to write.
     path : Path, optional
         Config file path. Defaults to ``CONFIG``.
     """
     data = load_raw_config(path)
-    data["blacklist"] = CommentedSeq(str(item) for item in entries)
+    data["denylist"] = CommentedSeq(str(item) for item in entries)
     with path.open("w") as handle:
         yaml().dump(data, handle)
 

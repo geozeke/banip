@@ -1,0 +1,41 @@
+[project]
+site_name = "banip"
+site_url = "https://geozeke.github.io/banip/"
+site_description = "Documentation for banip IP blocklists"
+site_author = "Peter Nardi"
+repo_url = "https://github.com/geozeke/banip"
+repo_name = "geozeke/banip"
+edit_uri = "edit/main/docs/"
+docs_dir = "docs"
+site_dir = "site"
+copyright = "Copyright &copy; 2026 Peter Nardi and contributors"
+nav = [
+  { "Home" = "index.md" },
+  { "Getting started" = "getting-started.md" },
+  { "Configuration" = "configuration.md" },
+  { "Commands" = "commands.md" },
+  { "Managed bots" = "managed-bots.md" },
+  { "Plugins" = "plugins.md" },
+  { "Development" = "development.md" },
+  { "Country codes" = "country-codes.md" },
+]
+
+[project.theme]
+variant = "modern"
+features = [
+  "navigation.instant",
+  "search.highlight",
+  "content.code.copy",
+  "content.action.edit",
+  "content.action.view",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"

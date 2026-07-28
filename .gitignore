@@ -34,6 +34,7 @@ htmlcov/
 .tox/
 .nox/
 .release-notes.md
+site/
 
 # Project-generated local state
 .init/

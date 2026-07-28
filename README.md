@@ -1,336 +1,44 @@
-# <a id="top"></a> banip
+# banip
 
 <img
-src="https://raw.githubusercontent.com/geozeke/banip/main/assets/banip-logo.png"
-alt = "Dinobox logo" width="120"/>
+  src="assets/banip-logo.png"
+  alt="banip logo"
+  width="120"
+/>
 
-_banip_ creates a customized list of IP addresses by cross-referencing
-two data sources:
+banip creates country-focused IP blocklists from MaxMind GeoLite2 data,
+the ipsum threat-intelligence feed, and optional plugin commands.
 
-1. [ipsum][ipsum] threat-intelligence data for globally identified
-   blacklisted IP addresses.
-2. Country-specific IP subnet data from MaxMind GeoLite2.
+## Documentation
 
-The result is a targeted IP blacklist for the countries you select.
+Read the full documentation at <https://geozeke.github.io/banip/>.
 
-## Why not just use the source list of all blacklisted IPs?
+It covers installation, configuration, commands, managed bot ranges,
+plugins, development, and the country-code reference.
 
-You could, but where's the fun in that?
+## Quick start
 
-The global list contains several hundred thousand entries. For testing
-or production use, a smaller country-specific list may be easier to
-review, deploy, and maintain.
-
-For example, you may configure HAProxy to drop connections from all
-countries except those you explicitly allow, while still blocking known
-malicious IP addresses from the allowed countries. _banip_ supports that
-workflow by building a focused blacklist from the source data.
-
-## Contents
-
-* [Requirements](#requirements)
-* [Setup](#setup)
-* [Running](#running)
-* [Updating](#updating)
-* [Plugins](#plugins)
-* [Development](#development)
-* [Upgrading](#upgrade)
-* [Uninstalling](#uninstall)
-
-## <a id="requirements"></a> Requirements
-
-### Operating System
-
-_banip_ runs on Unix-like operating systems. macOS, Linux, a Linux
-virtual machine, or [Windows Subsystem for Linux (WSL)][wsl] is
-required.
-
-### MaxMind Database
-
-You need [MaxMind][mmh] credentials for GeoLite2 Country data. A
-premium or corporate MaxMind account works, and the free GeoLite2
-account is also sufficient ([sign up here][mmgeo]).
-
-`banip database update geolite` uses your account ID and license key to
-download and stage the CSV data automatically.
-
-### uv
-
-_banip_ uses [uv][astral] for installation and dependency management.
-Install `uv` from the [uv documentation][astral] for your operating
-system.
-
-### gitignore (optional)
-
-If you want to fork and develop this repository,
-`global-gitignore.txt` contains a copy of the `.gitignore` file used in
-the author's global Git configuration. It reflects one development
-environment, including tools such as VS Code, but yours may be
-different.
-
-Use any relevant entries from `global-gitignore.txt` in your own global
-Git ignore configuration. Do not modify the repository's `.gitignore`
-for personal editor or operating-system files.
-
-_Details about gitignore files are available on [GitHub][git-ignore]._
-
-### Global List of Blacklisted IPs
-
-_banip_ uses the [ipsum][ipsum] threat-intelligence blacklist.
-`banip database update ipsum` downloads the current feed to
-`~/.banip/ipsum.txt`.
-
-[top](#top)
-
-## <a id="setup"></a> Setup
-
-### Install banip
-
-```shell
+```console
 uv tool install --managed-python --from git+https://github.com/geozeke/banip.git@latest banip
-```
-
-### Initialize Local Data
-
-Create the required local directories and starter config:
-
-```text
 banip database init
-```
-
-This creates `~/.banip/banip.yaml`. After this refactor,
-`banip build` reads user-maintained configuration only from this YAML
-file. The old flat files are migration inputs only and are not read at
-runtime:
-
-```text
-~/.banip/targets.txt
-~/.banip/custom_whitelist.txt
-~/.banip/custom_blacklist.txt
-```
-
-If those files already exist, `banip database init` migrates their
-non-comment entries into `banip.yaml` and leaves the originals in
-place. It refuses to overwrite an existing YAML config unless you run:
-
-```text
-banip database init --overwrite
-```
-
-Review `banip.yaml` before building. The initial shape is:
-
-```yaml
-version: 1
-targets:
-  - US
-whitelist: []
-blacklist: []
-bots:
-  enabled: true
-  providers:
-    - google
-    - bing
-    - openai
-    - anthropic
-    - meta
-database:
-  maxmind_edition: GeoLite2-Country-CSV
-  secrets_file: ~/.secrets
-```
-
-The `targets` list contains two-letter country codes. The `whitelist`
-and `blacklist` lists accept IP addresses or [CIDR][cidr] networks.
-Managed bot ranges are stored in `botdata.json`, not in the YAML
-`blacklist` section. See the [country code reference][countries] for
-available target country codes.
-
-### Download External Data
-
-Download the ipsum feed with:
-
-```text
-banip database update ipsum
-```
-
-To download GeoLite2 Country CSV data, set MaxMind credentials in the
-environment or in the dotenv-style file named by `database.secrets_file`
-in `banip.yaml`:
-
-```text
-MAXMIND_ACCOUNT_ID=123456
-MAXMIND_LICENSE_KEY=example
-```
-
-Then run:
-
-```text
-banip database update geolite
-```
-
-Run `banip database update` to update both data sources. YAML source URL
-overrides under `database.sources` are optional; built-in source URLs are
-used when overrides are omitted.
-
-When setup is complete, the `~/.banip` directory should look like this:
-
-```text
-.banip
-├── banip.yaml (required)
-├── botdata.json (optional, generated by `banip bots refresh`)
-├── geolite (required)
-│   ├── COPYRIGHT.txt
-│   ├── GeoLite2-Country-Blocks-IPv4.csv (required)
-│   ├── GeoLite2-Country-Blocks-IPv6.csv (required)
-│   ├── GeoLite2-Country-Locations-de.csv (required)
-│   ├── GeoLite2-Country-Locations-en.csv (required)
-│   ├── GeoLite2-Country-Locations-es.csv (required)
-│   ├── GeoLite2-Country-Locations-fr.csv (required)
-│   ├── GeoLite2-Country-Locations-ja.csv (required)
-│   ├── GeoLite2-Country-Locations-pt-BR.csv (required)
-│   ├── GeoLite2-Country-Locations-ru.csv (required)
-│   ├── GeoLite2-Country-Locations-zh-CN.csv (required)
-│   └── LICENSE.txt (required)
-├── ipsum.txt (required)
-├── plugins (required)
-│   ├── code (required)
-│   └── parsers (required)
-```
-
-[top](#top)
-
-## <a id="running"></a> Running
-
-After copying and configuring the required files, run this command to
-see how to build a custom blacklist:
-
-```text
-banip -h
-```
-
-### Managed Bot Ranges
-
-_banip_ can maintain crawler and bot provider ranges separately from
-manual custom blacklist entries. Refresh provider data into
-`~/.banip/botdata.json` with:
-
-```text
-banip bots refresh google
-banip bots refresh bing
-banip bots refresh openai
-banip bots refresh anthropic
-banip bots refresh meta
-```
-
-To refresh every supported provider, run:
-
-```text
-banip bots refresh all
-```
-
-Use `banip bots list` to inspect stored provider data, or
-`banip bots check <IP>` to check one IP address against the stored
-ranges.
-
-When `~/.banip/botdata.json` exists, `banip build` includes those
-ranges in a separate managed bot section of the rendered blacklist. Use
-`banip build --no-bots` to skip managed bot ranges for one build.
-
-[top](#top)
-
-## <a id="updating"></a> Updating
-
-MaxMind updates the GeoLite2 Country database on Tuesdays and Fridays,
-and `ipsum.txt` is updated daily. Run:
-
-```text
 banip database update
+banip build
 ```
 
-This refreshes `~/.banip/ipsum.txt` and `~/.banip/geolite`, then you can
-run _banip_ again to generate an updated blacklist.
+`banip database update geolite` requires MaxMind credentials. See the
+[getting-started guide](https://geozeke.github.io/banip/getting-started/)
+for the required account and configuration details.
 
-Automating this process with cron or systemd helps keep your lists
-current.
+## Development
 
-[top](#top)
-
-## <a id="plugins"></a> Plugins
-
-_banip_ generates build products that may be useful for other workflows.
-For example, each time it builds a blacklist, _banip_ also creates a
-text file of worldwide subnets tagged with two-letter country codes.
-The file is saved here:
-
-```text
-~/.banip/haproxy_geo_ip.txt
-```
-
-After running _banip_, open that file to review the generated data. If
-you have a specific use case for that data, you can write a plugin that
-uses _banip_ build products.
-
-A _banip_ plugin consists of two required files:
-
-1. Code that creates an argument parser for the new command.
-2. Code that implements the new command's functionality.
-
-Place plugins in the appropriate subdirectory under
-`~/.banip/plugins`: either `parsers` or `code`. See the comments in
-these sample files for plugin implementation details:
-
-```text
-./samples/plugins/foo.py
-./samples/plugins/foo_args.py
-```
-
-[top](#top)
-
-## <a id="development"></a> Development
-
-Use `just` for common maintainer tasks:
-
-```text
+```console
 just setup
 just lint
 just typecheck
 just test
+just docs-build
 ```
 
-Release preparation uses `just bump <version>` to update project
-metadata and the changelog. After committing the release changes, use
-`just tag-release` to push the `vX.Y.Z` tag, or
-`just tag-release-latest` to also update the mutable `latest` tag.
+## License
 
-[top](#top)
-
-## <a id="upgrade"></a> Upgrading banip
-
-To upgrade _banip_, run:
-
-```text
-uv tool upgrade --managed-python banip
-```
-
-[top](#top)
-
-## <a id="uninstall"></a> Uninstalling banip
-
-To uninstall _banip_ and remove its local data directory, run:
-
-```text
-uv tool uninstall banip
-rm -rf ~/.banip
-```
-
-[top](#top)
-
-<!--------------------------------------------------------------------->
-
-[astral]: https://docs.astral.sh/uv/
-[cidr]: https://aws.amazon.com/what-is/cidr/#:~:text=CIDR%20notation%20represents%20an%20IP,as%20192.168.1.0%2F22.
-[countries]: references/countries.md
-[git-ignore]: https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-[ipsum]: https://github.com/stamparm/ipsum
-[mmgeo]: https://dev.maxmind.com/geoip/geolite2-free-geolocation-data
-[mmh]: https://www.maxmind.com/en/home
-[wsl]: https://docs.microsoft.com/en-us/windows/wsl/install
+banip is released under the MIT license. See [LICENSE](LICENSE).

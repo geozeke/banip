@@ -32,8 +32,18 @@ _require_setup:
 
 # Bump the project version and generate changelog
 bump version:
-    uv run python scripts/bump.py {{version}}
-    just sync
+    uv run python -m scripts.bump_version {{version}}
+
+# --------------------------------------------
+
+# Preview user-facing changes since the latest release
+changelog:
+    #!/usr/bin/env bash
+    if ! command -v git-cliff >/dev/null 2>&1; then
+        echo "banip requires git-cliff. See docs/development.md." >&2
+        exit 1
+    fi
+    git-cliff --unreleased
 
 # --------------------------------------------
 
@@ -85,6 +95,12 @@ help:
 lint:
     uv run ruff check .
     uv run ruff format --check .
+
+# --------------------------------------------
+
+# Validate direct dependency licenses against project policy
+licenses:
+    uv run python scripts/check_dependency_licenses.py
 
 # --------------------------------------------
 
@@ -147,15 +163,14 @@ sync: _require_setup
 
 # --------------------------------------------
 
-# Generate release tag
-tag-release:
-    bash ./scripts/release_tags.sh
+# Run the complete local quality-check suite
+check: lint typecheck test docs-build licenses
 
 # --------------------------------------------
 
-# Generate release tag and update latest
-tag-release-latest:
-    bash ./scripts/release_tags.sh --latest
+# Generate and push the release tag
+tag-release:
+    uv run python -m scripts.tag_release
 
 # --------------------------------------------
 
@@ -179,7 +194,7 @@ coverage-open: coverage
 
 # Run static type checks
 typecheck:
-    uv run mypy src
+    uv run mypy src scripts
 
 # --------------------------------------------
 

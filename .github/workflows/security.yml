@@ -1,0 +1,217 @@
+name: Security
+
+on:
+  pull_request:
+  schedule:
+    - cron: "23 7 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - ".github/dependabot.yml"
+      - ".github/workflows/*.yml"
+      - "config/dependency-licenses.toml"
+      - "pyproject.toml"
+      - "scripts/check_dependency_licenses.py"
+      - "uv.lock"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-scan:
+    name: Trivy repository scan
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Scan repository
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln,misconfig,secret
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - name: Summarize repository scan
+        if: always()
+        env:
+          RESULT: ${{ steps.trivy.outcome }}
+        run: |
+          {
+            echo "### Trivy repository scan"
+            echo
+            echo "| Check | Result | Details |"
+            echo "| --- | --- | --- |"
+            echo "| Vulnerabilities, misconfigurations, and secrets | $RESULT | See the Scan repository step log. |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce repository scan
+        if: always() && steps.trivy.outcome == 'failure'
+        run: exit 1
+
+  python-audit:
+    name: Python dependency audit
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.29"
+      - name: Audit Python dependencies
+        id: python_audit
+        continue-on-error: true
+        run: uv run --locked --all-groups pip-audit
+      - name: Summarize Python audit
+        if: always()
+        env:
+          RESULT: ${{ steps.python_audit.outcome }}
+        run: |
+          {
+            echo "### Python dependency audit"
+            echo
+            echo "| Check | Result | Details |"
+            echo "| --- | --- | --- |"
+            echo "| Full resolved dependency graph | $RESULT | See the Audit Python dependencies step log. |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce Python audit
+        if: always() && steps.python_audit.outcome == 'failure'
+        run: exit 1
+
+  license-policy:
+    name: Direct dependency license policy
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.11.29"
+      - name: Check direct dependency licenses
+        id: license_check
+        continue-on-error: true
+        run: uv run --locked python scripts/check_dependency_licenses.py
+      - name: Summarize license policy
+        if: always()
+        env:
+          RESULT: ${{ steps.license_check.outcome }}
+        run: |
+          {
+            echo "### Direct dependency license policy"
+            echo
+            echo "| Check | Result | Details |"
+            echo "| --- | --- | --- |"
+            echo "| Approved direct dependency licenses | $RESULT | See the Check direct dependency licenses step log. |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce license policy
+        if: always() && steps.license_check.outcome == 'failure'
+        run: exit 1
+
+  codeql:
+    name: CodeQL analysis
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Initialize CodeQL
+        id: codeql_init
+        continue-on-error: true
+        uses: github/codeql-action/init@v4
+        with:
+          languages: python
+      - name: Analyze source
+        id: codeql_analyze
+        if: steps.codeql_init.outcome == 'success'
+        continue-on-error: true
+        uses: github/codeql-action/analyze@v4
+      - name: Summarize CodeQL analysis
+        if: always()
+        env:
+          ANALYZE_RESULT: ${{ steps.codeql_analyze.outcome }}
+          INIT_RESULT: ${{ steps.codeql_init.outcome }}
+        run: |
+          {
+            echo "### CodeQL analysis"
+            echo
+            echo "| Check | Result | Details |"
+            echo "| --- | --- | --- |"
+            echo "| Initialization | $INIT_RESULT | See the Initialize CodeQL step log. |"
+            echo "| Source analysis | $ANALYZE_RESULT | See the Analyze source step log and Code Scanning. |"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Enforce CodeQL analysis
+        if: >-
+          always() &&
+          (steps.codeql_init.outcome == 'failure' ||
+          steps.codeql_analyze.outcome == 'failure')
+        run: exit 1
+
+  dependabot-security:
+    name: Dependabot security gate
+    if: always() && github.event_name == 'pull_request'
+    needs:
+      - repository-scan
+      - python-audit
+      - license-policy
+      - codeql
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+      REPOSITORY_SCAN_RESULT: ${{ needs.repository-scan.result }}
+      PYTHON_AUDIT_RESULT: ${{ needs.python-audit.result }}
+      LICENSE_POLICY_RESULT: ${{ needs.license-policy.result }}
+      CODEQL_RESULT: ${{ needs.codeql.result }}
+    steps:
+      - name: Enforce Dependabot security results
+        run: |
+          if [[ "$IS_DEPENDABOT" != "true" ]]; then
+            echo "Security jobs are required only for Dependabot pull requests."
+            exit 0
+          fi
+
+          failed=0
+          for result in \
+            "$REPOSITORY_SCAN_RESULT" \
+            "$PYTHON_AUDIT_RESULT" \
+            "$LICENSE_POLICY_RESULT" \
+            "$CODEQL_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              failed=1
+            fi
+          done
+
+          if ((failed)); then
+            echo "At least one Dependabot security job did not succeed."
+            exit 1
+          fi

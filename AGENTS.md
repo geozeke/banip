@@ -13,6 +13,8 @@ threat-intelligence feed, and optional user-provided plugin commands.
   files.
 - `CHANGELOG.md` contains the active minor release line; older minor
   lines are archived under `changelogs/`.
+- `scripts/` contains release, dependency, and repository-maintenance
+  helpers.
 - `pyproject.toml`, `uv.lock`, and `justfile` define package metadata,
   dependencies, and common project tasks.
 - `.github/workflows/` contains GitHub Actions for CI and release
@@ -47,10 +49,15 @@ threat-intelligence feed, and optional user-provided plugin commands.
   and code comments.
 - Do not update `CHANGELOG.md` directly for feature, fix, or dependency
   changes. Changelog entries are managed by running `just bump <ver>`.
+- Use Conventional Commit titles for pull requests. Changelog-visible
+  types and release steps are documented in `docs/development.md`.
+- Preview pending release entries with `just changelog`. Do not edit
+  generated release or archive sections directly.
 
 ## Verification
 
 - Use `just setup` to prepare runtime and development dependencies.
+- Use `just check` for the complete local quality suite.
 - Use `just lint` after Python code changes.
 - Use `just typecheck` when behavior or types change.
 - Use `just test` when adding or changing behavior.

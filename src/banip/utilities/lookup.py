@@ -80,7 +80,7 @@ def build_network_lookup(networks: Iterable[NetworkType]) -> NetworkLookup:
 
 def compact(
     ip_list: list[AddressType],
-    whitelist: Iterable[AddressType | NetworkType],
+    allowlist: Iterable[AddressType | NetworkType],
     min_num: int,
 ) -> tuple[list[AddressType], list[NetworkType]]:
     """Compact IP addresses into representative /24 subnets.
@@ -90,10 +90,9 @@ def compact(
     ip_list : list[AddressType]
         A list of IP addresses to compact, usually the filtered ipsum
         data.
-    whitelist : Iterable[AddressType | NetworkType]
-        Whitelisted IP addresses, networks, or both. A compacted subnet
-        must not include a whitelisted IP address or overlap a
-        whitelisted network.
+    allowlist : Iterable[AddressType | NetworkType]
+        Allowed IP addresses, networks, or both. A compacted subnet must
+        not include an allowed IP address or overlap an allowed network.
     min_num : int
         The minimum number of IP addresses required before the group is
         collapsed into a /24 subnet.
@@ -106,7 +105,7 @@ def compact(
     compacted: list[AddressType | NetworkType] = []
     leftovers: list[AddressType | NetworkType] = []
     D: dict[NetworkType, set[AddressType]] = {}
-    white_ips, white_nets = split_hybrid(whitelist)
+    allow_ips, allow_nets = split_hybrid(allowlist)
 
     if min_num == 0:
         return sorted(ip_list, key=lambda x: int(x)), []
@@ -124,8 +123,8 @@ def compact(
     for net, ips in D.items():
         if (
             len(ips) >= min_num
-            and not any([ip in net for ip in white_ips])
-            and not any([white_net.overlaps(net) for white_net in white_nets])
+            and not any([ip in net for ip in allow_ips])
+            and not any([allow_net.overlaps(net) for allow_net in allow_nets])
         ):
             compacted.append(net)
         else:

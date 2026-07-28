@@ -215,14 +215,14 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
     """Check command loads generated data and handles one interactive lookup."""
     country_data = tmp_path / "haproxy_geo_ip.txt"
     country_data.write_text("192.0.2.0/24 US\n")
-    rendered = tmp_path / "ip_blacklist.txt"
+    rendered = tmp_path / "ip_blocklist.txt"
     rendered.write_text("192.0.2.0/28\n198.51.100.1\n")
     ipsum = tmp_path / "ipsum.txt"
     ipsum.write_text("192.0.2.3 7\n")
     inputs = iter(["invalid", "192.0.2.3", "n"])
     monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
     monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
-    monkeypatch.setattr(utility_data, "RENDERED_BLACKLIST", rendered)
+    monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
     monkeypatch.setattr(utility_data, "IPSUM", ipsum)
     monkeypatch.setattr(check, "clear", lambda: None)
     monkeypatch.setattr("builtins.input", lambda _prompt: next(inputs))
@@ -231,7 +231,7 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
 
     output = capsys.readouterr().out
     assert utilities.format_status("ipsum_load_data") in output
-    assert utilities.format_status("blacklist_rendered_load") in output
+    assert utilities.format_status("blocklist_rendered_load") in output
     assert utilities.format_status("geolite_load") in output
     assert "invalid is not a valid IP address." in output
     assert "Stats for 192.0.2.3" in output
@@ -251,12 +251,12 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     """YAML config loads normalized runtime values."""
     path = tmp_path / "banip.yaml"
     path.write_text(
-        "version: 1\n"
+        "version: 2\n"
         "targets:\n"
         "  - us\n"
-        "whitelist:\n"
+        "allowlist:\n"
         "  - 203.0.113.10\n"
-        "blacklist:\n"
+        "denylist:\n"
         "  - 192.0.2.0/30\n"
         "bots:\n"
         "  enabled: false\n"
@@ -268,8 +268,8 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     loaded = config.load_config(path)
 
     assert loaded.targets == {"US"}
-    assert loaded.whitelist == {ipa.ip_address("203.0.113.10")}
-    assert loaded.blacklist == {ipa.ip_network("192.0.2.0/30")}
+    assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
+    assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
     assert loaded.bots.enabled is False
     assert loaded.bots.providers == ["google"]
 
@@ -281,12 +281,44 @@ def test_config_defaults_include_managed_bot_providers() -> None:
     assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
 
 
-def test_config_rejects_invalid_blacklist_entry(tmp_path) -> None:
+def test_config_rejects_invalid_denylist_entry(tmp_path) -> None:
     """Invalid YAML entries fail with section-specific messages."""
     path = tmp_path / "banip.yaml"
-    path.write_text("version: 1\ntargets:\n  - US\nblacklist:\n  - nope\n")
+    path.write_text("version: 2\ntargets:\n  - US\ndenylist:\n  - nope\n")
 
-    with pytest.raises(ValueError, match="Invalid blacklist entry"):
+    with pytest.raises(ValueError, match="Invalid denylist entry"):
+        config.load_config(path)
+
+
+def test_config_upgrades_version_one_lists(tmp_path) -> None:
+    """Version-one configuration files upgrade to the current schema."""
+    path = tmp_path / "banip.yaml"
+    path.write_text(
+        "version: 1\n"
+        "targets:\n"
+        "  - US\n"
+        "whitelist:\n"
+        "  - 203.0.113.10\n"
+        "blacklist:\n"
+        "  - 192.0.2.0/30\n"
+    )
+
+    loaded = config.load_config(path)
+
+    assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
+    assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
+    upgraded = path.read_text()
+    assert "version: 2" in upgraded
+    assert "allowlist:" in upgraded
+    assert "denylist:" in upgraded
+
+
+def test_config_rejects_mixed_schema_list_keys(tmp_path) -> None:
+    """Mixed version-one and version-two list keys are rejected."""
+    path = tmp_path / "banip.yaml"
+    path.write_text("version: 1\ntargets:\n  - US\nallowlist: []\n")
+
+    with pytest.raises(ValueError, match="cannot mix"):
         config.load_config(path)
 
 
@@ -301,8 +333,10 @@ def test_database_init_migrates_legacy_flat_files(
     monkeypatch.setattr(database, "CONFIG", data / "banip.yaml")
     monkeypatch.setattr(config, "CONFIG", data / "banip.yaml")
     monkeypatch.setattr(config, "TARGETS", data / "targets.txt")
-    monkeypatch.setattr(config, "CUSTOM_WHITELIST", data / "custom_whitelist.txt")
-    monkeypatch.setattr(config, "CUSTOM_BLACKLIST", data / "custom_blacklist.txt")
+    monkeypatch.setattr(
+        config, "LEGACY_CUSTOM_ALLOWLIST", data / "custom_whitelist.txt"
+    )
+    monkeypatch.setattr(config, "LEGACY_CUSTOM_DENYLIST", data / "custom_blacklist.txt")
     data.mkdir()
     (data / "targets.txt").write_text("# comment\nus\n")
     (data / "custom_whitelist.txt").write_text("203.0.113.10\n")
@@ -487,7 +521,7 @@ def test_bots_check_ip_reports_matching_provider(tmp_path, monkeypatch, capsys) 
     assert "found in google: 192.0.2.0/24" in capsys.readouterr().out
 
 
-def test_build_task_runner_generates_blacklist_outputs(
+def test_build_task_runner_generates_blocklist_outputs(
     tmp_path, monkeypatch, capsys
 ) -> None:
     """Build command filters source data into rendered output files."""
@@ -495,31 +529,27 @@ def test_build_task_runner_generates_blacklist_outputs(
     geolite = data / "geolite"
     geolite.mkdir(parents=True)
     paths = {
-        "COUNTRY_WHITELIST": data / "country_whitelist.txt",
-        "CUSTOM_BLACKLIST": data / "custom_blacklist.txt",
-        "CUSTOM_WHITELIST": data / "custom_whitelist.txt",
+        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
         "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
         "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
         "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
         "IPSUM": data / "ipsum.txt",
-        "RENDERED_BLACKLIST": data / "ip_blacklist.txt",
-        "RENDERED_WHITELIST": data / "ip_whitelist.txt",
+        "RENDERED_BLOCKLIST": data / "ip_blocklist.txt",
+        "RENDERED_ALLOWLIST": data / "ip_allowlist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
-    paths["CUSTOM_BLACKLIST"].write_text("192.0.2.5\n192.0.2.0/30\n")
-    paths["CUSTOM_WHITELIST"].write_text("192.0.2.4\n192.0.2.4\n")
     paths["CONFIG"].write_text(
-        "version: 1\n"
+        "version: 2\n"
         "targets:\n"
         "  - us\n"
         "  - US\n"
-        "whitelist:\n"
+        "allowlist:\n"
         "  - 192.0.2.4\n"
         "  - 192.0.2.4\n"
-        "blacklist:\n"
+        "denylist:\n"
         "  - 192.0.2.5\n"
         "  - 192.0.2.0/30\n"
     )
@@ -561,26 +591,26 @@ def test_build_task_runner_generates_blacklist_outputs(
     assert "Compacting ipsum (0)" in output
     assert "0.00%" in output
     assert "Final Build Stats" in output
-    assert paths["COUNTRY_WHITELIST"].read_text() == "US\n"
+    assert paths["COUNTRY_ALLOWLIST"].read_text() == "US\n"
     assert "192.0.2.5" in paths["CONFIG"].read_text()
     assert "192.0.2.0/30" in paths["CONFIG"].read_text()
     assert (
         paths["COUNTRY_NETS_TXT"].read_text()
         == "192.0.2.0/24 US\n198.51.100.0/24 CA\n2001:db8::/126 US\n"
     )
-    assert paths["RENDERED_WHITELIST"].read_text() == "192.0.2.4\n"
-    blacklist_lines = paths["RENDERED_BLACKLIST"].read_text().splitlines()
-    assert blacklist_lines[0] == "192.0.2.9"
-    assert blacklist_lines[1] == ""
-    assert blacklist_lines[2] == "# ------------custom entries -------------"
-    assert blacklist_lines[3].startswith("# Added on: ")
-    assert blacklist_lines[4:] == [
+    assert paths["RENDERED_ALLOWLIST"].read_text() == "192.0.2.4\n"
+    blocklist_lines = paths["RENDERED_BLOCKLIST"].read_text().splitlines()
+    assert blocklist_lines[0] == "192.0.2.9"
+    assert blocklist_lines[1] == ""
+    assert blocklist_lines[2] == "# ------------custom entries -------------"
+    assert blocklist_lines[3].startswith("# Added on: ")
+    assert blocklist_lines[4:] == [
         "# ----------------------------------------",
         "",
         "192.0.2.5",
         "192.0.2.0/30",
     ]
-    assert "198.51.100.9" not in blacklist_lines
+    assert "198.51.100.9" not in blocklist_lines
 
 
 def test_build_task_runner_renders_managed_bot_ranges(
@@ -591,28 +621,24 @@ def test_build_task_runner_renders_managed_bot_ranges(
     geolite = data / "geolite"
     geolite.mkdir(parents=True)
     paths = {
-        "COUNTRY_WHITELIST": data / "country_whitelist.txt",
-        "CUSTOM_BLACKLIST": data / "custom_blacklist.txt",
-        "CUSTOM_WHITELIST": data / "custom_whitelist.txt",
+        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
         "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
         "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
         "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
         "IPSUM": data / "ipsum.txt",
-        "RENDERED_BLACKLIST": data / "ip_blacklist.txt",
-        "RENDERED_WHITELIST": data / "ip_whitelist.txt",
+        "RENDERED_BLOCKLIST": data / "ip_blocklist.txt",
+        "RENDERED_ALLOWLIST": data / "ip_allowlist.txt",
         "TARGETS": data / "targets.txt",
         "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
-    paths["CUSTOM_BLACKLIST"].write_text("")
-    paths["CUSTOM_WHITELIST"].write_text("")
     paths["CONFIG"].write_text(
-        "version: 1\n"
+        "version: 2\n"
         "targets:\n"
         "  - US\n"
-        "whitelist: []\n"
-        "blacklist: []\n"
+        "allowlist: []\n"
+        "denylist: []\n"
         "bots:\n"
         "  enabled: true\n"
         "  providers:\n"
@@ -660,7 +686,7 @@ def test_build_task_runner_renders_managed_bot_ranges(
     build.task_runner(argparse.Namespace(threshold=3, compact=0, no_bots=False))
 
     output = capsys.readouterr().out
-    blacklist = paths["RENDERED_BLACKLIST"].read_text()
+    blocklist = paths["RENDERED_BLOCKLIST"].read_text()
     assert "Subnets - managed bots" in output
-    assert "# ---------managed bot ranges -----------" in blacklist
-    assert "# google\n203.0.113.0/24\n" in blacklist
+    assert "# ---------managed bot ranges -----------" in blocklist
+    assert "# google\n203.0.113.0/24\n" in blocklist

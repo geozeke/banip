@@ -10,7 +10,7 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
-from banip.constants import RENDERED_BLACKLIST
+from banip.constants import RENDERED_BLOCKLIST
 from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.utilities.display import format_status
@@ -115,16 +115,16 @@ def load_ipsum() -> dict[AddressType, int]:
     return ipsum
 
 
-def load_rendered_blacklist() -> tuple[list[AddressType], list[NetworkType]]:
-    """Load the contents of the rendered blacklist.
+def load_rendered_blocklist() -> tuple[list[AddressType], list[NetworkType]]:
+    """Load the contents of the rendered blocklist.
 
     Separate it into sorted lists of IP addresses and networks.
 
     Returns
     -------
     tuple[list[AddressType], list[NetworkType]]
-        The rendered blacklist split into IP addresses and networks.
+        The rendered blocklist split into IP addresses and networks.
     """
-    with RENDERED_BLACKLIST.open("r") as f:
+    with RENDERED_BLOCKLIST.open("r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(rendered)

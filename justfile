@@ -56,6 +56,18 @@ clean:
 
 # --------------------------------------------
 
+# Serve the Zensical documentation site locally
+docs-serve:
+    uv run --group docs zensical serve
+
+# --------------------------------------------
+
+# Build the Zensical documentation site in strict mode
+docs-build:
+    uv run --group docs zensical build --clean --strict
+
+# --------------------------------------------
+
 # Format Python files and apply fixable Ruff lint rules
 format:
     uv run ruff check --fix .

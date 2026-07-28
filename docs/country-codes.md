@@ -31,6 +31,3 @@ Source data: <https://www.geonames.org/countries/>.
 | 🇨🇭 Switzerland `CH` | 🇹🇼 Taiwan `TW` | 🇹🇭 Thailand `TH` |
 | 🇹🇷 Türkiye `TR` | 🇺🇦 Ukraine `UA` | 🇬🇧 United Kingdom `GB` |
 | 🇺🇸 United States `US` | 🇻🇳 Vietnam `VN` |  |
-
-For the complete GeoNames-derived reference, see the repository’s
-[historical country reference](https://github.com/geozeke/banip/blob/main/references/countries.md).

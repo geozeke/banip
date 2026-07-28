@@ -8,13 +8,13 @@
    code will go there, but you may add additional functions/modules as
    needed. The only rule here is that you must use this pre-defined
    entry point.
-4. "args" will be a argparse.Namespace variable that contains all the
+4. "args" will be an argparse.Namespace variable that contains all the
    inputs captured on the command line, which are defined by foo_args.py
 5. Your code should return None.
-5. Each newly defined function must have an associated argument parser,
-   defined in {function name}_args.py. See "foo_args.py" in
-   banip/samples/plugins as an example.
-6. Make sure to put this file in banip/src/plugins/code
+6. Each newly defined command must have an associated argument parser,
+   defined in {command name}_args.py. See "foo_args.py" in this
+   directory as an example.
+7. Put this file in ~/.banip/plugins/code.
 """
 
 import argparse

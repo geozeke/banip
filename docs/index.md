@@ -19,7 +19,7 @@ or exempt addresses with an allowlist.
 
 - [Install and initialize banip](getting-started.md)
 - [Configure countries, allowlists, and denylists](configuration.md)
-- [Run build, check, and database commands](commands.md)
+- [Use the command-line interface](commands.md)
 - [Manage crawler and bot ranges](managed-bots.md)
 - [Write a plugin](plugins.md)
 - [Set up a development environment](development.md)

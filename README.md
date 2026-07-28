@@ -33,11 +33,11 @@ for the required account and configuration details.
 
 ```console
 just setup
-just lint
-just typecheck
-just test
-just docs-build
+just check
 ```
+
+See the [development guide](https://geozeke.github.io/banip/development/)
+for focused checks, changelog preparation, and release procedures.
 
 ## License
 

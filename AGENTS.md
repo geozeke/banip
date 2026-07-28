@@ -9,8 +9,7 @@ threat-intelligence feed, and optional user-provided plugin commands.
 - `src/banip/` contains the application package.
 - `src/banip/app.py` is the CLI entry point exposed as `banip`.
 - `src/banip/parsers/` contains built-in argparse subcommand parsers.
-- `samples/` contains sample target, allowlist, denylist, and plugin
-  files.
+- `samples/` contains example plugin parser and command files.
 - `CHANGELOG.md` contains the active minor release line; older minor
   lines are archived under `changelogs/`.
 - `scripts/` contains release, dependency, and repository-maintenance

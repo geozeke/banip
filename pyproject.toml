@@ -1,7 +1,7 @@
 [project]
 name = "banip"
 version = "2.0.1"
-description = "Create a list of banned IP addresses for specific countries"
+description = "Create country-focused IP blocklists"
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 readme = {file = "README.md", content-type = "text/markdown"}

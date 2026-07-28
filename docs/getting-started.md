@@ -57,6 +57,14 @@ Review `banip.yaml`, select at least one target country, then run:
 banip build
 ```
 
-The resulting files are `~/.banip/ip_blocklist.txt` and
-`~/.banip/ip_allowlist.txt`. See [Configuration](configuration.md) for
-the available settings and [Commands](commands.md) for build options.
+The build writes:
+
+```text
+~/.banip/ip_blocklist.txt
+~/.banip/ip_allowlist.txt
+~/.banip/country_allowlist.txt
+~/.banip/haproxy_geo_ip.txt
+```
+
+See [Configuration](configuration.md) for the available settings and
+[Commands](commands.md) for build options.

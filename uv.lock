@@ -83,7 +83,7 @@ dev = [
     { name = "mypy", specifier = ">=2.0.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
-    { name = "ruff", specifier = ">=0.15.12" },
+    { name = "ruff", specifier = ">=0.16" },
 ]
 docs = [{ name = "zensical", specifier = ">=0.0.51,<0.1" }]
 security = [{ name = "pip-audit", specifier = ">=2.9,<3" }]

@@ -88,11 +88,11 @@ def prepare_changelog(
         "--unreleased",
         "--tag",
         f"v{version}",
-        "--strip",
-        "header",
         capture=True,
     )
     generated_preamble, generated_sections = split_changelog(generated)
+    if not generated_preamble.startswith("# Changelog"):
+        raise ValueError("git-cliff did not generate a changelog preamble")
     if len(generated_sections) != 1 or generated_sections[0].label != version:
         raise ValueError(
             "git-cliff did not generate exactly one target release section"

@@ -341,6 +341,42 @@ def test_release_commit_validation_rejects_nonconventional_subject(
         bump_version_script.validate_release_commits(["v2.0.0"])
 
 
+def test_prepare_changelog_uses_generated_preamble(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Release preparation retains git-cliff's configured preamble."""
+    generated_preamble = "# Changelog\n\nProject versions follow PEP 440."
+    (tmp_path / "CHANGELOG.md").write_text(
+        f"{PREAMBLE}\n\n{release('2.0.0', 'Current')}\n",
+        encoding="utf-8",
+    )
+    destination = tmp_path / "prepared.md"
+
+    def fake_run(*args: str, capture: bool = False) -> str:
+        assert args == (
+            "git-cliff",
+            "--unreleased",
+            "--tag",
+            "v2.1.0rc1",
+        )
+        assert capture
+        return f"{generated_preamble}\n\n{release('2.1.0rc1', 'Candidate')}\n"
+
+    monkeypatch.setattr(bump_version_script, "PROJECT_ROOT", tmp_path)
+    monkeypatch.setattr(bump_version_script, "run", fake_run)
+
+    bump_version_script.prepare_changelog(
+        "2.1.0rc1",
+        destination,
+        tmp_path / "archives",
+    )
+
+    assert destination.read_text(encoding="utf-8").startswith(
+        f"{generated_preamble}\n\n## [2.1.0rc1]"
+    )
+
+
 def test_bump_restores_versions_after_command_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

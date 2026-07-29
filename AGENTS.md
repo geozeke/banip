@@ -2,14 +2,15 @@
 
 `banip` is a Python 3.12 CLI package for creating country-specific IP
 blocklists and allowlists from MaxMind GeoLite2 country data, the ipsum
-threat-intelligence feed, and optional user-provided plugin commands.
+threat-intelligence feed, and user-managed configuration.
 
 ## Project Layout
 
 - `src/banip/` contains the application package.
 - `src/banip/app.py` is the CLI entry point exposed as `banip`.
 - `src/banip/parsers/` contains built-in argparse subcommand parsers.
-- `samples/` contains example plugin parser and command files.
+- `samples/` contains deprecated plugin examples retained for 2.x
+  compatibility.
 - `CHANGELOG.md` contains the active minor release line; older minor
   lines are archived under `changelogs/`.
 - `scripts/` contains release, dependency, and repository-maintenance

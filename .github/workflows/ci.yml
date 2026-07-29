@@ -39,5 +39,15 @@ jobs:
         run: just check
       - name: Build distributions
         run: |
-          uv build --sdist
-          uv build --wheel
+          uv build --sdist --no-sources
+          uv build --wheel --no-sources
+      - name: Smoke-test wheel
+        run: >-
+          uv run --isolated --no-project --no-cache
+          --with dist/*.whl
+          -- python tests/package_smoke.py
+      - name: Smoke-test source distribution
+        run: >-
+          uv run --isolated --no-project --no-cache
+          --with dist/*.tar.gz
+          -- python tests/package_smoke.py

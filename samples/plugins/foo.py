@@ -1,5 +1,8 @@
 """Rules for writing custom commands.
 
+Plugins are deprecated and will be removed in banip 3.0. This sample is
+retained only for existing banip 2.x plugin users.
+
 1. Start with this sample command file and modify it.
 2. Make sure to give your file the same name as your command (e.g.
    foo.py for the "foo" command).

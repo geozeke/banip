@@ -1,5 +1,8 @@
 """Rules for writing custom argument parsers.
 
+Plugins are deprecated and will be removed in banip 3.0. This sample is
+retained only for existing banip 2.x plugin users.
+
 1. Start with this sample argument parser and modify it.
 2. Make the filename for this parser the same as the filename of your
    command, but with the '_args' suffix (e.g. foo_args.py for the

@@ -79,9 +79,10 @@ Initialize banip's local files:
 banip database init
 ```
 
-Initialization creates the configuration, GeoLite, and plugin
-directories. It imports existing flat configuration files when present
-without deleting them. Use `--overwrite` to replace an existing
+Initialization creates the configuration and local data directories. It
+also creates deprecated plugin directories during the banip 2.x
+compatibility period. It imports existing flat configuration files when
+present without deleting them. Use `--overwrite` to replace an existing
 `~/.banip/banip.yaml`.
 
 Inspect expected local data files:

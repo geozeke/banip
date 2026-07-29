@@ -5,6 +5,9 @@
 > outside banip while their requirements are evaluated for possible
 > first-class commands.
 
+See [Deprecations](deprecations.md#plug-in-architecture) for the public
+status and version 3 removal checklist.
+
 Legacy banip plugins add commands that can use generated build products.
 Each plugin has two required Python files:
 

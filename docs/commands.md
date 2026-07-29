@@ -17,15 +17,26 @@ banip database init
 banip build
 ```
 
-Build reads the selected countries, applies the allowlist and denylist,
-optionally includes managed bot ranges, and writes:
+Build resolves every named country policy, applies the IP allowlist and
+denylist, optionally includes managed bot ranges, and writes:
 
 ```text
 ~/.banip/ip_blocklist.txt
 ~/.banip/ip_allowlist.txt
 ~/.banip/country_allowlist.txt
+~/.banip/country_allowlist_<policy>.txt
 ~/.banip/haproxy_geo_ip.txt
 ```
+
+The deprecated compatibility file `country_allowlist.txt` contains the
+default policy and remains supported throughout banip 2.x. It will be
+removed in banip 3.0 with the `countries.default_policy` setting. New
+integrations should use an explicitly named policy file. Each named
+policy file contains permitted country codes, including when the policy
+was configured as a blocklist. The IP blocklist considers threat
+addresses from countries permitted by any policy. See
+[Deprecations](deprecations.md#legacy-country-allowlist-output) for
+migration guidance.
 
 The available options are:
 

@@ -11,8 +11,11 @@ from pathlib import Path
 from rich import box
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from banip.bots import load_managed_bot_networks
+from banip.config import CountryConfig
+from banip.config import CountryPolicyMode
 from banip.config import load_config
 from banip.config import update_denylist
 from banip.constants import BOTDATA
@@ -35,6 +38,63 @@ from banip.utilities import render_lines
 from banip.utilities import split_hybrid
 from banip.utilities import status_label
 from banip.utilities import tag_networks
+
+
+def resolve_country_policies(
+    countries: CountryConfig,
+    geolite: dict[NetworkType, str],
+) -> dict[str, set[str]]:
+    """Resolve named policies into permitted country codes.
+
+    Parameters
+    ----------
+    countries : CountryConfig
+        Validated named country policies.
+    geolite : dict[NetworkType, str]
+        GeoLite networks mapped to country labels.
+
+    Returns
+    -------
+    dict[str, set[str]]
+        Permitted country codes keyed by policy name.
+    """
+    available_codes = set(geolite.values())
+    resolved: dict[str, set[str]] = {}
+    for name, policy in countries.policies.items():
+        if policy.mode is CountryPolicyMode.ALLOWLIST:
+            resolved[name] = set(policy.codes)
+        else:
+            resolved[name] = available_codes - policy.codes
+    return resolved
+
+
+def write_country_policy_files(
+    countries: CountryConfig,
+    resolved: dict[str, set[str]],
+) -> None:
+    """Write named and compatibility country allowlists.
+
+    Parameters
+    ----------
+    countries : CountryConfig
+        Validated named country policies.
+    resolved : dict[str, set[str]]
+        Permitted country codes keyed by policy name.
+    """
+    current_paths = {
+        COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
+        for name in resolved
+    }
+    for stale_path in COUNTRY_ALLOWLIST.parent.glob("country_allowlist_*.txt"):
+        if stale_path not in current_paths:
+            stale_path.unlink()
+
+    for name, codes in resolved.items():
+        policy_path = COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
+        policy_path.write_text(render_lines(sorted(codes)))
+
+    default_codes = resolved[countries.default_policy]
+    COUNTRY_ALLOWLIST.write_text(render_lines(sorted(default_codes)))
 
 
 def task_runner(args: Namespace) -> None:
@@ -110,20 +170,19 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Geotag all global networks and save entries for target countries.
-    geolite_D = tag_networks()
+    # Geotag all global networks, resolve each named country policy into
+    # permitted codes, and build one lookup covering countries allowed by
+    # any policy.
+    geolite = tag_networks()
     msg = status_label("country_filter")
     with console.status(msg):
-        countries = config.targets
-        _, target_geolite = split_hybrid(
-            [net for net in geolite_D if geolite_D[net] in countries]
+        resolved_policies = resolve_country_policies(config.countries, geolite)
+        threat_countries = set().union(*resolved_policies.values())
+        _, threat_geolite = split_hybrid(
+            [net for net, country in geolite.items() if country in threat_countries]
         )
-        target_geolite_lookup = build_network_lookup(target_geolite)
-
-    # Save the cleaned-up country codes for later use in HAProxy.
-    with console.status(msg):
-        sorted_countries = sorted(countries)
-        COUNTRY_ALLOWLIST.write_text(render_lines(sorted_countries))
+        threat_geolite_lookup = build_network_lookup(threat_geolite)
+        write_country_policy_files(config.countries, resolved_policies)
     print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
@@ -142,7 +201,7 @@ def task_runner(args: Namespace) -> None:
             ip
             for ip, hits in ipsum_D.items()
             if (
-                ip_in_network(ip=ip, lookup=target_geolite_lookup)
+                ip_in_network(ip=ip, lookup=threat_geolite_lookup)
                 and not ip_in_network(ip=ip, lookup=custom_nets_lookup)
                 and ip not in allowlist
                 and not ip_in_network(ip=ip, lookup=allow_nets_lookup)
@@ -166,7 +225,7 @@ def task_runner(args: Namespace) -> None:
         ipsum_nets_size = len(ipsum_nets)
         ipsum_size = ipsum_ips_size + ipsum_nets_size
         ipsum_ips_set = set(ipsum_ips)
-        compact_factor = 1 - (ipsum_size / len(ipsum_L))
+        compact_factor = 1 - (ipsum_size / len(ipsum_L)) if ipsum_L else 0
     print(
         format_status("ipsum_compact", f"{compact_factor:<.2%}", compact=args.compact)
     )
@@ -174,9 +233,8 @@ def task_runner(args: Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Prune the list of custom IP addresses again so that remaining
-    # entries are not covered by ipsum.txt and are from countries in the
-    # country allowlist. Do not remove custom IP addresses that might
-    # not have a country association, such as local-network addresses.
+    # entries are not covered by ipsum.txt and are within the combined
+    # country-policy threat scope.
     msg = status_label("redundant_remove")
     with console.status(msg):
         custom_ips = [
@@ -184,7 +242,7 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips
             if ip not in ipsum_ips_set
             and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
-            and ip_in_network(ip=ip, lookup=target_geolite_lookup)
+            and ip_in_network(ip=ip, lookup=threat_geolite_lookup)
         ]
         custom_ips_size = len(custom_ips)
     print(format_status("redundant_remove"))
@@ -240,10 +298,10 @@ def task_runner(args: Namespace) -> None:
     if make_local_copy:
         shutil.copy(Path(args.outfile.name), RENDERED_BLOCKLIST)
 
-    # Generate a table to display metrics. Do not include the network
-    # and broadcast addresses when calculating total IP addresses.
+    # Generate tables to display country policy and build metrics. Do
+    # not include network and broadcast addresses when calculating total
+    # IP addresses.
     total_entries = ipsum_size + bot_nets_size + custom_nets_size + custom_ips_size
-    table = Table(title="Final Build Stats", box=box.SQUARE, show_header=False)
     total_ipv4s = 0
     total_ipv6s = 0
     for ips in [ipsum_ips, custom_ips]:
@@ -252,31 +310,95 @@ def task_runner(args: Namespace) -> None:
     for nets in [ipsum_nets, bot_nets, custom_nets]:
         total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
         total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
-    div_length = max(
-        ipsum_ips_size,
-        ipsum_nets_size,
-        bot_nets_size,
-        custom_ips_size,
-        custom_nets_size,
+
+    policy_table = Table(
+        title="Country Policies",
+        title_style="bold cyan",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold",
+        padding=(0, 1),
     )
-    div_pad = len(f"{div_length:,d}")
+    policy_table.add_column("Policy", style="bold")
+    policy_table.add_column("Mode")
+    policy_table.add_column("Configured", justify="right", style="cyan")
+    policy_table.add_column("Permitted", justify="right", style="cyan")
 
-    table.add_column(justify="right")
-    table.add_column(justify="right")
+    for name, policy in sorted(config.countries.policies.items()):
+        policy_name = Text(name)
+        if name == config.countries.default_policy:
+            policy_name.stylize("green")
+            policy_name.append(" (default)", style="dim green")
+        mode_style = "green" if policy.mode is CountryPolicyMode.ALLOWLIST else "red"
+        policy_table.add_row(
+            policy_name,
+            Text(policy.mode.value, style=mode_style),
+            f"{len(policy.codes):,d}",
+            f"{len(resolved_policies[name]):,d}",
+        )
+    policy_table.add_section()
+    policy_table.add_row(
+        Text("Threat scope", style="bold"),
+        Text("union", style="dim"),
+        "",
+        f"{len(threat_countries):,d}",
+    )
 
-    table.add_row("Target Countries", f"{','.join(sorted_countries)}", end_section=True)
-    table.add_row("IP addresses - ipsum.txt", f"{(ipsum_ips_size):,d}")
-    table.add_row("Subnets - ipsum.txt", f"{(ipsum_nets_size):,d}")
-    table.add_row("Subnets - managed bots", f"{(bot_nets_size):,d}")
-    table.add_row("IP addresses - custom", f"{(custom_ips_size):,d}")
-    table.add_row("Subnets - custom", f"{(custom_nets_size):,d}")
-    table.add_row("-" * 19, "-" * div_pad)
-    table.add_row("Total entries saved", f"{(total_entries):,d}", end_section=True)
-    table.add_row("Individual IPv4s blocked", f"{(total_ipv4s):,d}")
-    table.add_row("Individual IPv6s blocked", f"{(total_ipv6s):.2e}")
+    summary_table = Table(
+        title="Final Build Summary",
+        title_style="bold cyan",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold",
+        padding=(0, 1),
+    )
+    summary_table.add_column("Source")
+    summary_table.add_column("Addresses", justify="right", style="cyan")
+    summary_table.add_column("Subnets", justify="right", style="cyan")
+    summary_table.add_column("Entries", justify="right", style="cyan")
+    summary_table.add_row(
+        "Threat feeds",
+        f"{ipsum_ips_size:,d}",
+        f"{ipsum_nets_size:,d}",
+        f"{ipsum_size:,d}",
+    )
+    summary_table.add_row(
+        "Managed bots",
+        Text("—", style="dim"),
+        f"{bot_nets_size:,d}",
+        f"{bot_nets_size:,d}",
+    )
+    summary_table.add_row(
+        "Custom entries",
+        f"{custom_ips_size:,d}",
+        f"{custom_nets_size:,d}",
+        f"{custom_ips_size + custom_nets_size:,d}",
+    )
+    summary_table.add_section()
+    summary_table.add_row(
+        Text("Total written", style="bold green"),
+        "",
+        "",
+        Text(f"{total_entries:,d}", style="bold green"),
+    )
+    summary_table.add_section()
+    summary_table.add_row(
+        Text("IPv4 coverage", style="dim"),
+        "",
+        "",
+        Text(f"{total_ipv4s:,d}", style="dim cyan"),
+    )
+    summary_table.add_row(
+        Text("IPv6 coverage", style="dim"),
+        "",
+        "",
+        Text(f"{total_ipv6s:.2e}", style="dim cyan"),
+    )
 
     print()
-    console.print(table)
+    console.print(policy_table)
+    print()
+    console.print(summary_table)
 
     return
 

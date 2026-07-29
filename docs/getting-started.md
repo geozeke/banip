@@ -58,7 +58,8 @@ Run `banip database update` to refresh both sources.
 
 ## Build your first blocklist
 
-Review `banip.yaml`, select at least one target country, then run:
+Review the example restricted and public country policies in
+`banip.yaml`, adjust their country codes, then run:
 
 ```console
 banip build
@@ -70,8 +71,17 @@ The build writes:
 ~/.banip/ip_blocklist.txt
 ~/.banip/ip_allowlist.txt
 ~/.banip/country_allowlist.txt
+~/.banip/country_allowlist_restricted.txt
+~/.banip/country_allowlist_public.txt
 ~/.banip/haproxy_geo_ip.txt
 ```
 
+Additional named country policies produce corresponding
+`country_allowlist_<policy>.txt` files. Use these named products for new
+integrations. The unqualified `country_allowlist.txt` product is
+deprecated and will be removed in banip 3.0.
+
 See [Configuration](configuration.md) for the available settings and
-[Commands](commands.md) for build options.
+[Commands](commands.md) for build options. Review
+[Deprecations](deprecations.md) before planning a major-version
+upgrade.

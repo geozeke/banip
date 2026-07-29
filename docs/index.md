@@ -21,6 +21,7 @@ or exempt addresses with an allowlist.
 - [Configure countries, allowlists, and denylists](configuration.md)
 - [Use the command-line interface](commands.md)
 - [Manage crawler and bot ranges](managed-bots.md)
+- [Review deprecated features and migration guidance](deprecations.md)
 - [Understand deprecated plugins](plugins.md)
 - [Set up a development environment](development.md)
 - [Browse country codes](country-codes.md)

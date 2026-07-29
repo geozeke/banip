@@ -4,7 +4,7 @@ header = """
 
 All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
-project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 """
 body = """
 {% if version %}\
@@ -67,7 +67,7 @@ commit_parsers = [
 ]
 filter_commits = true
 fail_on_unmatched_commit = false
-tag_pattern = "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?"
+tag_pattern = "v?[0-9]+\\.[0-9]+\\.[0-9]+(?:(?:a|b|rc)[0-9]+)?"
 ignore_tags = "latest"
 topo_order = false
 topo_order_commits = true

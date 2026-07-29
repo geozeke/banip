@@ -4,7 +4,7 @@
 Functions
 ---------
 parse_version
-    Parse a supported semantic version.
+    Parse a supported PEP 440 release version.
 split_changelog
     Split changelog Markdown into its preamble and release sections.
 archive_changelog
@@ -22,11 +22,11 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-SEMVER_CORE = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
-PRERELEASE = r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
-SEMVER_RE = re.compile(rf"^(?P<version>{SEMVER_CORE}{PRERELEASE})$")
+VERSION_CORE = r"(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)"
+PRERELEASE = r"(?:(?:a|b|rc)(?:0|[1-9]\d*))?"
+VERSION_RE = re.compile(rf"^(?P<version>{VERSION_CORE}{PRERELEASE})$")
 HEADING_RE = re.compile(
-    rf"^## \[(?P<label>Unreleased|{SEMVER_CORE}{PRERELEASE})\]"
+    rf"^## \[(?P<label>Unreleased|{VERSION_CORE}{PRERELEASE})\]"
     r"(?: - (?P<date>\d{4}-\d{2}-\d{2}))?$"
 )
 GROUP_RE = re.compile(r"^### (?P<group>.+)$")
@@ -68,7 +68,7 @@ PrereleaseKey = tuple[tuple[int, int | str], ...]
 
 @dataclass(frozen=True)
 class Version:
-    """Represent a supported semantic version.
+    """Represent a supported PEP 440 release version.
 
     Parameters
     ----------
@@ -107,7 +107,7 @@ class Section:
     Parameters
     ----------
     label
-        ``Unreleased`` or a normalized semantic version.
+        ``Unreleased`` or a canonical PEP 440 release version.
     text
         Complete Markdown for the section, including its heading.
     """
@@ -124,30 +124,26 @@ class Section:
 
 
 def _prerelease_key(text: str) -> PrereleaseKey:
-    """Return a SemVer-compatible prerelease key."""
-    if "-" not in text:
+    """Return a sortable PEP 440 prerelease key."""
+    core = f"{'.'.join(text.split('.')[:2])}."
+    suffix = text.removeprefix(core)
+    match = re.fullmatch(r"\d+(?P<label>a|b|rc)(?P<number>\d+)", suffix)
+    if match is None:
         return ()
-    identifiers = text.split("-", maxsplit=1)[1].split(".")
-    if any(
-        identifier.isdigit() and len(identifier) > 1 and identifier.startswith("0")
-        for identifier in identifiers
-    ):
-        raise ValueError(
-            f"Numeric prerelease identifiers cannot contain leading zeros: {text}"
-        )
-    return tuple(
-        (0, int(identifier)) if identifier.isdigit() else (1, identifier)
-        for identifier in identifiers
+    label_order = {"a": 0, "b": 1, "rc": 2}
+    return (
+        (0, label_order[match.group("label")]),
+        (0, int(match.group("number"))),
     )
 
 
 def parse_version(text: str) -> Version:
-    """Parse a supported semantic version.
+    """Parse a canonical PEP 440 release version.
 
     Parameters
     ----------
     text
-        Bare semantic version without build metadata or a leading ``v``.
+        Bare release version without a leading ``v``.
 
     Returns
     -------
@@ -157,14 +153,19 @@ def parse_version(text: str) -> Version:
     Raises
     ------
     ValueError
-        If the value is not a supported semantic version.
+        If the value is not a canonical supported release version.
     """
-    match = SEMVER_RE.fullmatch(text)
+    match = VERSION_RE.fullmatch(text)
     if not match:
-        raise ValueError(f"Expected a bare semantic version, got: {text}")
+        raise ValueError(
+            f"Expected a canonical PEP 440 version such as 2.1.0 or "
+            f"2.1.0rc1, got: {text}"
+        )
     normalized = match.group("version")
-    core = normalized.split("-", maxsplit=1)[0]
-    major, minor, patch = (int(part) for part in core.split("."))
+    core_match = re.match(VERSION_CORE, normalized)
+    if core_match is None:
+        raise ValueError(f"Missing release segment in version: {text}")
+    major, minor, patch = (int(part) for part in core_match.group().split("."))
     return Version(normalized, major, minor, patch, _prerelease_key(normalized))
 
 
@@ -364,7 +365,7 @@ def validate_project_version(project_root: Path, expected: str | None = None) ->
         raise ValueError(f"Project versions are not synchronized: {details}")
     version = unique.pop()
     parse_version(version)
-    if expected is not None and version != expected:
+    if expected is not None and version != parse_version(expected).text:
         raise ValueError(
             f"Project version {version} does not match expected {expected}"
         )

@@ -30,7 +30,7 @@ def validate_release(tag: str, project_root: Path = PROJECT_ROOT) -> Version:
     Returns
     -------
     Version
-        Validated semantic version metadata.
+        Validated PEP 440 release metadata.
 
     Raises
     ------

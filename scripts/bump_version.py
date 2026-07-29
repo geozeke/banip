@@ -92,14 +92,16 @@ def prepare_changelog(
         "header",
         capture=True,
     )
-    _generated_preamble, generated_sections = split_changelog(generated)
+    generated_preamble, generated_sections = split_changelog(generated)
     if len(generated_sections) != 1 or generated_sections[0].label != version:
         raise ValueError(
             "git-cliff did not generate exactly one target release section"
         )
 
     source = PROJECT_ROOT / "CHANGELOG.md"
-    preamble, existing_sections = split_changelog(source.read_text(encoding="utf-8"))
+    _existing_preamble, existing_sections = split_changelog(
+        source.read_text(encoding="utf-8")
+    )
     unreleased = next(
         (section for section in existing_sections if section.label == "Unreleased"),
         None,
@@ -126,7 +128,8 @@ def prepare_changelog(
         if section.label not in {"Unreleased", version}
     ]
     destination.write_text(
-        format_changelog(preamble, [release, *retained]), encoding="utf-8"
+        format_changelog(generated_preamble, [release, *retained]),
+        encoding="utf-8",
     )
     archive_changelog(version, destination, archive_dir)
 
@@ -225,7 +228,7 @@ def bump(version_text: str) -> None:
 def main() -> None:
     """Parse the target version and prepare its release files."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("version", help="Bare semantic version, such as 2.1.0-rc.1.")
+    parser.add_argument("version", help="Canonical PEP 440 version, such as 2.1.0rc1.")
     args = parser.parse_args()
     try:
         bump(args.version)

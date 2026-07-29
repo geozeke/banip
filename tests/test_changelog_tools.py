@@ -37,20 +37,27 @@ def release(version: str, note: str = "Changed") -> str:
 
 @pytest.mark.parametrize(
     "version",
-    ("0.1.0", "1.2.3-beta.1", "2.0.0-rc.2"),
+    ("0.1.0", "1.2.3b1", "2.0.0rc2"),
 )
-def test_parse_version_accepts_supported_semver(version: str) -> None:
+def test_parse_version_accepts_supported_pep440(version: str) -> None:
     """Supported stable and prerelease versions parse."""
     assert parse_version(version).text == version
 
 
 @pytest.mark.parametrize(
     "version",
-    ("v1.2.3", "1.2", "1.2.3+build", "01.2.3", "1.2.3-rc.01"),
+    (
+        "v1.2.3",
+        "1.2",
+        "1.2.3+build",
+        "01.2.3",
+        "1.2.3-rc.1",
+        "1.2.3rc01",
+    ),
 )
 def test_parse_version_rejects_unsupported_values(version: str) -> None:
-    """Leading v, build metadata, and malformed versions are rejected."""
-    with pytest.raises(ValueError, match="semantic version|leading zeros"):
+    """Noncanonical or unsupported release versions are rejected."""
+    with pytest.raises(ValueError, match="PEP 440"):
         parse_version(version)
 
 
@@ -120,12 +127,12 @@ def test_archive_changelog_keeps_patch_and_prerelease_line(tmp_path: Path) -> No
     """Patch and prerelease entries remain together in the active minor line."""
     changelog = tmp_path / "CHANGELOG.md"
     changelog.write_text(
-        f"{PREAMBLE}\n\n{release('2.1.0')}\n\n{release('2.1.0-rc.1')}\n",
+        f"{PREAMBLE}\n\n{release('2.1.0')}\n\n{release('2.1.0rc1')}\n",
         encoding="utf-8",
     )
 
     assert archive_changelog("2.1.0", changelog, tmp_path / "changelogs") == []
-    assert "[2.1.0-rc.1]" in changelog.read_text(encoding="utf-8")
+    assert "[2.1.0rc1]" in changelog.read_text(encoding="utf-8")
 
 
 def test_extract_release_notes_uses_active_then_archive(tmp_path: Path) -> None:
@@ -201,14 +208,14 @@ def write_version_files(project_root: Path, version: str = "2.0.0") -> None:
 
 @pytest.mark.parametrize(
     ("version", "prerelease"),
-    (("2.1.0", "false"), ("2.1.0-rc.1", "true")),
+    (("2.1.0", "false"), ("2.1.0rc1", "true")),
 )
 def test_write_github_outputs_classifies_release(
     version: str,
     prerelease: str,
     tmp_path: Path,
 ) -> None:
-    """Validated semantic versions select exactly one publication path."""
+    """Validated PEP 440 versions select exactly one publication path."""
     output = tmp_path / "github-output"
 
     validate_release_script.write_github_outputs(output, parse_version(version))
@@ -268,6 +275,15 @@ def test_validate_project_version_rejects_mismatched_metadata(
 
     with pytest.raises(ValueError, match="not synchronized"):
         validate_project_version(tmp_path)
+
+
+def test_validate_project_version_accepts_pep440_prerelease(
+    tmp_path: Path,
+) -> None:
+    """PEP 440 project metadata matches its release version exactly."""
+    write_version_files(tmp_path, "2.1.0rc1")
+
+    assert validate_project_version(tmp_path, "2.1.0rc1") == "2.1.0rc1"
 
 
 def test_tag_release_creates_and_pushes_annotated_tag(
@@ -411,8 +427,8 @@ def test_update_latest_tag_moves_only_latest_stable_release(
 @pytest.mark.parametrize(
     ("candidate", "latest_release"),
     (
-        ("v2.1.0-beta.1", "v2.0.1"),
-        ("v2.1.0-rc.1", "v2.0.1"),
+        ("v2.1.0b1", "v2.0.1"),
+        ("v2.1.0rc1", "v2.0.1"),
         ("v2.0.1", "v2.1.0"),
     ),
 )

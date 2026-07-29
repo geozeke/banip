@@ -73,7 +73,7 @@ just changelog
 ```
 
 Prepare a release from a clean release-preparation branch with an
-explicit bare semantic version:
+explicit canonical PEP 440 version:
 
 ```console
 just bump 2.1.0
@@ -105,7 +105,7 @@ workflow validates the release candidate, builds and smoke-tests the
 wheel and source distribution, publishes the distributions to a package
 index, and then publishes the GitHub Release.
 
-Prerelease tags such as `v2.1.0-rc.1` publish to TestPyPI and create a
+Prerelease tags such as `v2.1.0rc1` publish to TestPyPI and create a
 GitHub prerelease. Stable tags such as `v2.1.0` publish automatically to
 PyPI and create a stable GitHub Release. The GitHub release is not
 created if the corresponding package-index publication fails.

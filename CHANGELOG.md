@@ -4,6 +4,22 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.0rc2] - 2026-07-29
+
+[Compare with 2.1.0rc1](https://github.com/geozeke/banip/compare/v2.1.0rc1...v2.1.0rc2)
+
+### Added
+
+- Add dual-policy capability (#111) ([3558a93](https://github.com/geozeke/banip/commit/3558a9368cfff24de2cd679a39546c81019cb428))
+
+### Dependencies
+
+- *(deps)* Bump actions/checkout from 6 to 7 ([5c8d2e4](https://github.com/geozeke/banip/commit/5c8d2e4600b83bc3aa331cdd22cc16473831cfdc))
+
+- *(deps)* Bump extractions/setup-just from 3 to 4 ([fce96c0](https://github.com/geozeke/banip/commit/fce96c04a10419cb1b81c0d6f9395a3a4ef468ab))
+
+- *(deps)* Bump actions/setup-python from 6 to 7 ([22a5bc2](https://github.com/geozeke/banip/commit/22a5bc206c4cf5f327dbcf70a0d417cb0da5314e))
+
 ## [2.1.0rc1] - 2026-07-29
 
 [Compare with 2.0.1](https://github.com/geozeke/banip/compare/v2.0.1...v2.1.0rc1)

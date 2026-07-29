@@ -27,6 +27,9 @@ banip build
 
 Upgrade an existing installation with `uv tool upgrade banip`.
 
+For pipx and virtual-environment installation options, see the
+[getting-started guide](https://geozeke.github.io/banip/getting-started/).
+
 `banip database update geolite` requires MaxMind credentials. See the
 [getting-started guide](https://geozeke.github.io/banip/getting-started/)
 for the required account and configuration details.

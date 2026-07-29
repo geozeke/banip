@@ -9,7 +9,13 @@ account with access to GeoLite2 Country CSV data.
 ## Install banip
 
 ```console
-uv tool install --managed-python --from git+https://github.com/geozeke/banip.git@latest banip
+uv tool install --managed-python banip
+```
+
+Upgrade an existing installation with:
+
+```console
+uv tool upgrade banip
 ```
 
 ## Initialize local data
@@ -20,10 +26,11 @@ Create the local directory structure and starter configuration:
 banip database init
 ```
 
-This writes `~/.banip/banip.yaml` and creates plugin directories. If
-the prior flat configuration files exist, initialization imports their
-non-comment entries into the new YAML configuration without deleting the
-source files.
+This writes `~/.banip/banip.yaml` and creates the local data
+directories. During the banip 2.x compatibility period it also creates
+the deprecated plugin directories. If the prior flat configuration
+files exist, initialization imports their non-comment entries into the
+new YAML configuration without deleting the source files.
 
 ## Download source data
 
@@ -57,6 +64,14 @@ Review `banip.yaml`, select at least one target country, then run:
 banip build
 ```
 
-The resulting files are `~/.banip/ip_blocklist.txt` and
-`~/.banip/ip_allowlist.txt`. See [Configuration](configuration.md) for
-the available settings and [Commands](commands.md) for build options.
+The build writes:
+
+```text
+~/.banip/ip_blocklist.txt
+~/.banip/ip_allowlist.txt
+~/.banip/country_allowlist.txt
+~/.banip/haproxy_geo_ip.txt
+```
+
+See [Configuration](configuration.md) for the available settings and
+[Commands](commands.md) for build options.

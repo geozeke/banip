@@ -19,9 +19,9 @@ or exempt addresses with an allowlist.
 
 - [Install and initialize banip](getting-started.md)
 - [Configure countries, allowlists, and denylists](configuration.md)
-- [Run build, check, and database commands](commands.md)
+- [Use the command-line interface](commands.md)
 - [Manage crawler and bot ranges](managed-bots.md)
-- [Write a plugin](plugins.md)
+- [Understand deprecated plugins](plugins.md)
 - [Set up a development environment](development.md)
 - [Browse country codes](country-codes.md)
 - [Read the active changelog](https://github.com/geozeke/banip/blob/main/CHANGELOG.md)

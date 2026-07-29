@@ -45,6 +45,54 @@ def test_collect_parsers_returns_empty_list_for_missing_directory(
     assert app.collect_parsers(tmp_path / "missing") == []
 
 
+def test_legacy_plugins_present_checks_parser_and_code_directories(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Either legacy plugin directory triggers deprecation detection."""
+    parser_dir = tmp_path / "plugins" / "parsers"
+    code_dir = tmp_path / "plugins" / "code"
+    parser_dir.mkdir(parents=True)
+    code_dir.mkdir(parents=True)
+    monkeypatch.setattr(app, "CUSTOM_PARSERS", parser_dir)
+    monkeypatch.setattr(app, "CUSTOM_CODE", code_dir)
+
+    assert not app.legacy_plugins_present()
+
+    (code_dir / "custom.py").write_text("")
+
+    assert app.legacy_plugins_present()
+
+
+def test_main_warns_once_and_dispatches_legacy_plugin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A legacy plugin warns once and remains operational."""
+    parser_dir = tmp_path / "plugins" / "parsers"
+    code_dir = tmp_path / "plugins" / "code"
+    parser_dir.mkdir(parents=True)
+    code_dir.mkdir(parents=True)
+    (parser_dir / "custom_args.py").write_text(
+        "def load_command_args(subparsers):\n    subparsers.add_parser(name='custom')\n"
+    )
+    (code_dir / "custom.py").write_text(
+        "def task_runner(args):\n    print('legacy plugin ran')\n"
+    )
+    monkeypatch.setattr(app, "ARG_PARSERS_BASE", tmp_path / "missing")
+    monkeypatch.setattr(app, "CUSTOM_PARSERS", parser_dir)
+    monkeypatch.setattr(app, "CUSTOM_CODE", code_dir)
+    monkeypatch.setattr(app, "check_setup", lambda: True)
+    monkeypatch.setattr("sys.argv", ["banip", "custom"])
+
+    assert app.main() == 0
+
+    captured = capsys.readouterr()
+    assert captured.err.count(app.LEGACY_PLUGIN_WARNING) == 1
+    assert "legacy plugin ran" in captured.out
+
+
 def test_module_entry_point_delegates_to_app_main(monkeypatch) -> None:
     """``python -m banip`` delegates to ``banip.app.main``."""
     monkeypatch.setattr(app, "main", lambda: 7)

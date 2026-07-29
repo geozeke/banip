@@ -6,17 +6,20 @@ on:
       - "v*.*.*"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Validate and publish release
+  build:
+    name: Validate and build release
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      prerelease: ${{ steps.metadata.outputs.prerelease }}
+      version: ${{ steps.metadata.outputs.version }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -30,15 +33,136 @@ jobs:
       - name: Sync locked dependencies
         run: uv sync --locked --all-groups
       - name: Validate release metadata and notes
-        run: uv run python -m scripts.validate_release "$GITHUB_REF_NAME"
+        id: metadata
+        run: >-
+          uv run python -m scripts.validate_release
+          "$GITHUB_REF_NAME"
+          --github-output "$GITHUB_OUTPUT"
       - name: Run release quality checks
         run: just check
       - name: Build distributions
         run: |
-          uv build --sdist
-          uv build --wheel
+          uv build --sdist --no-sources
+          uv build --wheel --no-sources
+      - name: Smoke-test wheel
+        run: >-
+          uv run --isolated --no-project --no-cache
+          --with dist/*.whl
+          -- python tests/package_smoke.py
+      - name: Smoke-test source distribution
+        run: >-
+          uv run --isolated --no-project --no-cache
+          --with dist/*.tar.gz
+          -- python tests/package_smoke.py
       - name: Extract release notes
-        run: uv run python -m scripts.extract_release_notes "$GITHUB_REF_NAME" .release-notes.md
+        run: >-
+          uv run python -m scripts.extract_release_notes
+          "$GITHUB_REF_NAME"
+          .release-notes.md
+      - name: Store release artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: python-package-distributions
+          path: |
+            dist/
+            .release-notes.md
+          if-no-files-found: error
+          include-hidden-files: true
+
+  publish-prerelease:
+    name: Publish prerelease to TestPyPI
+    if: needs.build.outputs.prerelease == 'true'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/banip
+    permissions:
+      id-token: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+      - name: Publish distributions
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  publish-stable:
+    name: Publish stable release to PyPI
+    if: needs.build.outputs.prerelease == 'false'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: pypi
+      url: https://pypi.org/p/banip
+    permissions:
+      id-token: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+      - name: Publish distributions
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-prerelease:
+    name: Publish GitHub prerelease
+    if: needs.build.outputs.prerelease == 'true'
+    needs:
+      - build
+      - publish-prerelease
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
+      - name: Create or update GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          title="banip $GITHUB_REF_NAME"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "$title" \
+              --notes-file .release-notes.md \
+              --prerelease
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* \
+              --title "$title" \
+              --notes-file .release-notes.md \
+              --prerelease \
+              --verify-tag
+          fi
+
+  github-stable:
+    name: Publish stable GitHub release
+    if: needs.build.outputs.prerelease == 'false'
+    needs:
+      - build
+      - publish-stable
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: python-package-distributions
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -49,12 +173,6 @@ jobs:
               --title "$title" \
               --notes-file .release-notes.md
             gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-          elif [[ "$GITHUB_REF_NAME" == *-* ]]; then
-            gh release create "$GITHUB_REF_NAME" dist/* \
-              --title "$title" \
-              --notes-file .release-notes.md \
-              --prerelease \
-              --verify-tag
           else
             gh release create "$GITHUB_REF_NAME" dist/* \
               --title "$title" \
@@ -68,7 +186,7 @@ jobs:
           latest_release_tag="$(
             gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name
           )"
-          uv run python -m scripts.update_latest_tag \
+          python -m scripts.update_latest_tag \
             "$GITHUB_REF_NAME" \
             "$latest_release_tag" \
             "$GITHUB_SHA"

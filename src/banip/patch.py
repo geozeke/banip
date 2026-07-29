@@ -36,7 +36,7 @@ def task_runner(args: Namespace) -> None:
     for file in files:
         if not file.exists():
             print(f"Missing file: {file}")
-            print("Visit https://github.com/geozeke/banip for more information.")
+            print("Visit https://geozeke.github.io/banip/ for more information.")
             sys.exit(1)
 
     # Load ipsum.txt.

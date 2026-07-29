@@ -50,29 +50,17 @@ def test_argument_types_reject_invalid_values(
 def test_check_setup_reports_missing_directories(tmp_path, monkeypatch, capsys) -> None:
     """Setup validation explains missing local directories."""
     monkeypatch.setattr(app, "DATA", tmp_path / ".banip")
-    monkeypatch.setattr(app, "CUSTOM_CODE", tmp_path / ".banip" / "plugins" / "code")
-    monkeypatch.setattr(
-        app,
-        "CUSTOM_PARSERS",
-        tmp_path / ".banip" / "plugins" / "parsers",
-    )
 
     assert app.check_setup() is False
     assert "not configured correctly" in capsys.readouterr().out
 
 
 def test_check_setup_accepts_required_directories(tmp_path, monkeypatch) -> None:
-    """Setup validation passes when required local directories exist."""
+    """Setup validation does not require deprecated plugin directories."""
     data = tmp_path / ".banip"
-    custom_code = data / "plugins" / "code"
-    custom_parsers = data / "plugins" / "parsers"
     geolite = data / "geolite"
-    custom_code.mkdir(parents=True)
-    custom_parsers.mkdir(parents=True)
-    geolite.mkdir()
+    geolite.mkdir(parents=True)
     monkeypatch.setattr(app, "DATA", data)
-    monkeypatch.setattr(app, "CUSTOM_CODE", custom_code)
-    monkeypatch.setattr(app, "CUSTOM_PARSERS", custom_parsers)
 
     assert app.check_setup() is True
 

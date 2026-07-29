@@ -35,7 +35,7 @@ def load_command_args(sp: _SubParsersAction) -> None:
     parser.add_argument("-i", "--index", type=int, help=msg, default=-1)
 
     msg = """
-    Each banned IP address in ipsum.txt has a factor (from 1 to 10)
+    Each blocked IP address in ipsum.txt has a factor (from 1 to 10)
     indicating confidence that the IP address is malicious (higher is
     more confident). Use this option to set the confidence factor for
     all new IP addresses added to ipsum.txt. The default is 10.

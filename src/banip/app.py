@@ -19,6 +19,11 @@ from banip.utilities import print_docstring
 
 __version__ = version("banip")
 
+LEGACY_PLUGIN_WARNING = (
+    "Warning: banip plugins are deprecated and will be removed in banip 3.0. "
+    "Legacy plugins remain supported throughout banip 2.x."
+)
+
 # ======================================================================
 
 
@@ -30,21 +35,14 @@ def check_setup() -> bool:
     bool
         True if the required directories exist; otherwise False.
     """
-    proper_setup = (
-        CUSTOM_PARSERS.exists()
-        and CUSTOM_CODE.exists()
-        and (DATA / "geolite").exists()
-    )  # fmt: off
+    proper_setup = (DATA / "geolite").exists()
     if not proper_setup:
         msg = """
         The local environment is not configured correctly. Make sure
         the following structure exists in your home directory:
 
         .banip
-        ├── geolite
-        └── plugins
-            ├── code
-            └── parsers
+        └── geolite
         """
         print_docstring(msg=msg)
         return False
@@ -127,6 +125,25 @@ def collect_parsers(start: Path) -> list[str]:
 # ======================================================================
 
 
+def legacy_plugins_present() -> bool:
+    """Return whether either legacy plugin directory contains Python code.
+
+    Returns
+    -------
+    bool
+        True when a legacy parser or command implementation is present.
+    """
+    return any(
+        path.is_file() and path.suffix == ".py" and path.name != "__init__.py"
+        for directory in (CUSTOM_PARSERS, CUSTOM_CODE)
+        if directory.exists()
+        for path in directory.iterdir()
+    )
+
+
+# ======================================================================
+
+
 def main() -> int:
     """Parse user input and run the requested command."""
     msg = """
@@ -149,6 +166,8 @@ def main() -> int:
     mod: ModuleType | None = None
     parser_names = collect_parsers(ARG_PARSERS_BASE)
     parser_names += collect_parsers(CUSTOM_PARSERS)
+    if legacy_plugins_present():
+        print(LEGACY_PLUGIN_WARNING, file=sys.stderr)
     parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
     for p_name in parser_names:
         if "plugins" not in p_name:

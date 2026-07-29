@@ -14,6 +14,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts import bump_version as bump_version_script  # noqa: E402
 from scripts import tag_release as tag_release_script  # noqa: E402
 from scripts import update_latest_tag as latest_tag_script  # noqa: E402
+from scripts import validate_release as validate_release_script  # noqa: E402
 from scripts.changelog_tools import (  # noqa: E402
     Section,
     archive_changelog,
@@ -196,6 +197,26 @@ def write_version_files(project_root: Path, version: str = "2.0.0") -> None:
         f'version = 1\n\n[[package]]\nname = "banip"\nversion = "{version}"\n',
         encoding="utf-8",
     )
+
+
+@pytest.mark.parametrize(
+    ("version", "prerelease"),
+    (("2.1.0", "false"), ("2.1.0-rc.1", "true")),
+)
+def test_write_github_outputs_classifies_release(
+    version: str,
+    prerelease: str,
+    tmp_path: Path,
+) -> None:
+    """Validated semantic versions select exactly one publication path."""
+    output = tmp_path / "github-output"
+
+    validate_release_script.write_github_outputs(output, parse_version(version))
+
+    assert output.read_text(encoding="utf-8").splitlines() == [
+        f"version={version}",
+        f"prerelease={prerelease}",
+    ]
 
 
 def run_git(project_root: Path, *args: str) -> str:

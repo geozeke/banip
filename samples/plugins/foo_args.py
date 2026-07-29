@@ -1,5 +1,8 @@
 """Rules for writing custom argument parsers.
 
+Plugins are deprecated and will be removed in banip 3.0. This sample is
+retained only for existing banip 2.x plugin users.
+
 1. Start with this sample argument parser and modify it.
 2. Make the filename for this parser the same as the filename of your
    command, but with the '_args' suffix (e.g. foo_args.py for the
@@ -17,7 +20,7 @@
    adding something like "from argparse import FileType" if one of your
    command line arguments is a file type.
 8. Your code should return None.
-9. Make sure to put this file in banip/src/plugins/parsers
+9. Put this file in ~/.banip/plugins/parsers.
 """
 
 from argparse import _SubParsersAction
@@ -28,7 +31,7 @@ COMMAND_NAME = "foo"
 def load_command_args(sp: _SubParsersAction) -> None:
     """Assemble the argument parser."""
     msg = """
-    This command takes two intergers on the command line, adds them
+    This command takes two integers on the command line, adds them
     together, then prints the result. Isn't that wonderful!
     """
     parser = sp.add_parser(

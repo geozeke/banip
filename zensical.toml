@@ -15,6 +15,7 @@ nav = [
   { "Configuration" = "configuration.md" },
   { "Commands" = "commands.md" },
   { "Managed bots" = "managed-bots.md" },
+  { "Deprecations" = "deprecations.md" },
   { "Plugins" = "plugins.md" },
   { "Development" = "development.md" },
   { "Dependency licenses" = "dependency-licenses.md" },

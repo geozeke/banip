@@ -1,7 +1,9 @@
 """Load, validate, and write banip YAML configuration."""
 
+import re
 from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 from typing import cast
@@ -19,7 +21,49 @@ from banip.constants import NetworkType
 from banip.utilities import extract_ip
 
 DEFAULT_BOT_PROVIDERS = ("google", "bing", "openai", "anthropic", "meta")
-CONFIG_VERSION = 2
+STARTER_PUBLIC_BLOCKLIST = ("CN", "RU")
+STARTER_RESTRICTED_ALLOWLIST = ("CA", "US")
+CONFIG_VERSION = 3
+COUNTRY_POLICY_NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
+
+
+class CountryPolicyMode(StrEnum):
+    """Supported country policy modes."""
+
+    ALLOWLIST = "allowlist"
+    BLOCKLIST = "blocklist"
+
+
+@dataclass(frozen=True)
+class CountryPolicy:
+    """Validated country policy.
+
+    Parameters
+    ----------
+    mode : CountryPolicyMode
+        Whether configured country codes are allowed or blocked.
+    codes : set[str]
+        Normalized two-letter country codes.
+    """
+
+    mode: CountryPolicyMode
+    codes: set[str]
+
+
+@dataclass(frozen=True)
+class CountryConfig:
+    """Validated named country policies.
+
+    Parameters
+    ----------
+    default_policy : str
+        Policy used for the compatibility country allowlist.
+    policies : dict[str, CountryPolicy]
+        Policies keyed by their validated names.
+    """
+
+    default_policy: str
+    policies: dict[str, CountryPolicy]
 
 
 @dataclass(frozen=True)
@@ -44,8 +88,8 @@ class BanipConfig:
 
     Parameters
     ----------
-    targets : set[str]
-        Uppercase country codes to include in builds.
+    countries : CountryConfig
+        Named country policies used in builds.
     allowlist : set[AddressType | NetworkType]
         User-maintained entries that must not be blocked.
     denylist : set[AddressType | NetworkType]
@@ -54,7 +98,7 @@ class BanipConfig:
         Managed bot range settings.
     """
 
-    targets: set[str]
+    countries: CountryConfig
     allowlist: set[AddressType | NetworkType]
     denylist: set[AddressType | NetworkType]
     bots: BotConfig
@@ -74,31 +118,100 @@ def yaml() -> YAML:
     return parser
 
 
-def parse_country_codes(values: object) -> set[str]:
-    """Validate and normalize target country codes.
+def parse_country_codes(
+    section: str,
+    values: object,
+    *,
+    allow_empty: bool = False,
+) -> set[str]:
+    """Validate and normalize country codes.
 
     Parameters
     ----------
+    section : str
+        Configuration section name for validation messages.
     values : object
-        Raw YAML value from the ``targets`` section.
+        Raw YAML country-code list.
+    allow_empty : bool, optional
+        Whether an empty country-code list is valid. Defaults to False.
 
     Returns
     -------
     set[str]
         Uppercase two-letter country codes.
     """
-    if not isinstance(values, list) or not values:
-        raise ValueError("Config section 'targets' must be a non-empty list.")
+    if not isinstance(values, list):
+        raise ValueError(f"Config section '{section}' must be a list.")
+    if not values and not allow_empty:
+        raise ValueError(f"Config section '{section}' must be a non-empty list.")
 
     countries: set[str] = set()
     for value in values:
         if not isinstance(value, str):
-            raise ValueError(f"Invalid targets entry: {value!r}")
+            raise ValueError(f"Invalid {section} entry: {value!r}")
         country = value.strip().upper()
         if len(country) != 2 or not country.isalpha():
-            raise ValueError(f"Invalid targets entry: {value!r}")
+            raise ValueError(f"Invalid {section} entry: {value!r}")
         countries.add(country)
     return countries
+
+
+def parse_country_config(values: object) -> CountryConfig:
+    """Validate and normalize named country policies.
+
+    Parameters
+    ----------
+    values : object
+        Raw YAML value from the ``countries`` section.
+
+    Returns
+    -------
+    CountryConfig
+        Validated country policy configuration.
+    """
+    if not isinstance(values, dict):
+        raise ValueError("Config section 'countries' must be a mapping.")
+
+    default_policy = values.get("default_policy")
+    if not isinstance(default_policy, str):
+        raise ValueError("Config entry 'countries.default_policy' must be a name.")
+
+    raw_policies = values.get("policies")
+    if not isinstance(raw_policies, dict) or not raw_policies:
+        raise ValueError(
+            "Config section 'countries.policies' must be a non-empty mapping."
+        )
+
+    policies: dict[str, CountryPolicy] = {}
+    for name, raw_policy in raw_policies.items():
+        if not isinstance(name, str) or not COUNTRY_POLICY_NAME.fullmatch(name):
+            raise ValueError(f"Invalid country policy name: {name!r}")
+        if not isinstance(raw_policy, dict):
+            raise ValueError(
+                f"Config section 'countries.policies.{name}' must be a mapping."
+            )
+
+        raw_mode = raw_policy.get("mode")
+        if not isinstance(raw_mode, str):
+            raise ValueError(f"Invalid country policy mode for {name!r}: {raw_mode!r}")
+        try:
+            mode = CountryPolicyMode(raw_mode)
+        except ValueError:
+            raise ValueError(
+                f"Invalid country policy mode for {name!r}: {raw_mode!r}"
+            ) from None
+
+        section = f"countries.policies.{name}.codes"
+        codes = parse_country_codes(
+            section,
+            raw_policy.get("codes"),
+            allow_empty=mode is CountryPolicyMode.BLOCKLIST,
+        )
+        policies[name] = CountryPolicy(mode=mode, codes=codes)
+
+    if default_policy not in policies:
+        raise ValueError(f"Default country policy {default_policy!r} is not defined.")
+    return CountryConfig(default_policy=default_policy, policies=policies)
 
 
 def parse_ip_entries(
@@ -212,7 +325,7 @@ def load_config(path: Path = CONFIG) -> BanipConfig:
     data = upgrade_config(load_raw_config(path), path)
 
     return BanipConfig(
-        targets=parse_country_codes(data.get("targets")),
+        countries=parse_country_config(data.get("countries")),
         allowlist=parse_ip_entries("allowlist", data.get("allowlist")),
         denylist=parse_ip_entries("denylist", data.get("denylist")),
         bots=parse_bot_config(data.get("bots")),
@@ -241,20 +354,46 @@ def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
         schema-version list keys.
     """
     version = data.get("version")
-    if version == CONFIG_VERSION:
-        return data
-    if version != 1:
+    if version not in {1, 2, CONFIG_VERSION}:
         raise ValueError(
             f"Unsupported config version: {version!r}. Expected version {CONFIG_VERSION}."
         )
-    if "allowlist" in data or "denylist" in data:
+    if version == CONFIG_VERSION:
+        return data
+
+    if version == 1:
+        if "allowlist" in data or "denylist" in data:
+            raise ValueError(
+                "Config version 1 cannot mix allowlist or denylist "
+                "with its prior list keys."
+            )
+        data["allowlist"] = data.pop("whitelist", CommentedSeq())
+        data["denylist"] = data.pop("blacklist", CommentedSeq())
+
+    if "countries" in data:
         raise ValueError(
-            "Config version 1 cannot mix allowlist or denylist with its prior list keys."
+            f"Config version {version} cannot mix targets with country policies."
         )
 
-    data["allowlist"] = data.pop("whitelist", CommentedSeq())
-    data["denylist"] = data.pop("blacklist", CommentedSeq())
+    targets = data.pop("targets", CommentedSeq())
+    policy = CommentedMap(
+        {
+            "mode": CountryPolicyMode.ALLOWLIST.value,
+            "codes": targets,
+        }
+    )
+    countries = CommentedMap(
+        {
+            "default_policy": "restricted",
+            "policies": CommentedMap({"restricted": policy}),
+        }
+    )
+    data["countries"] = countries
     data["version"] = CONFIG_VERSION
+    data.yaml_set_comment_before_after_key(
+        "countries",
+        before="Named country policies used to generate country allowlists.",
+    )
     with path.open("w") as handle:
         yaml().dump(data, handle)
     return data
@@ -292,7 +431,8 @@ def config_template(
     Parameters
     ----------
     targets : Iterable[str] | None, optional
-        Target country codes.
+        Legacy target country codes to migrate. When omitted, create the
+        documented restricted and public starter policies.
     allowlist : Iterable[str] | None, optional
         Entries that must not be blocked.
     denylist : Iterable[str] | None, optional
@@ -305,7 +445,49 @@ def config_template(
     """
     data = CommentedMap()
     data["version"] = CONFIG_VERSION
-    data["targets"] = CommentedSeq(sorted({item.upper() for item in targets or []}))
+    if targets is None:
+        default_policy = "restricted"
+        policies = CommentedMap(
+            {
+                "restricted": CommentedMap(
+                    {
+                        "mode": CountryPolicyMode.ALLOWLIST.value,
+                        "codes": CommentedSeq(STARTER_RESTRICTED_ALLOWLIST),
+                    }
+                ),
+                "public": CommentedMap(
+                    {
+                        "mode": CountryPolicyMode.BLOCKLIST.value,
+                        "codes": CommentedSeq(STARTER_PUBLIC_BLOCKLIST),
+                    }
+                ),
+            }
+        )
+    else:
+        default_policy = "restricted"
+        policies = CommentedMap(
+            {
+                "restricted": CommentedMap(
+                    {
+                        "mode": CountryPolicyMode.ALLOWLIST.value,
+                        "codes": CommentedSeq(
+                            sorted({item.upper() for item in targets})
+                        ),
+                    }
+                )
+            }
+        )
+    country_config = CommentedMap(
+        {
+            "default_policy": default_policy,
+            "policies": policies,
+        }
+    )
+    country_config.yaml_add_eol_comment(
+        "Deprecated compatibility selector; removed in banip 3.0.",
+        "default_policy",
+    )
+    data["countries"] = country_config
     data["allowlist"] = CommentedSeq(sorted(set(allowlist or [])))
     data["denylist"] = CommentedSeq(sorted(set(denylist or [])))
     data["bots"] = CommentedMap(
@@ -323,8 +505,8 @@ def config_template(
 
     data.yaml_set_start_comment("Config schema version. Required.")
     data.yaml_set_comment_before_after_key(
-        "targets",
-        before="Target countries included when building the rendered blocklist.",
+        "countries",
+        before="Named country policies used to generate country allowlists.",
     )
     data.yaml_set_comment_before_after_key(
         "allowlist",
@@ -358,8 +540,9 @@ def initialize_config(overwrite: bool = False, path: Path = CONFIG) -> None:
     if path.exists() and not overwrite:
         raise FileExistsError(f"Config file already exists: {path}")
 
+    legacy_targets = read_migration_entries(TARGETS) if TARGETS.exists() else None
     data = config_template(
-        targets=read_migration_entries(TARGETS),
+        targets=legacy_targets,
         allowlist=read_migration_entries(LEGACY_CUSTOM_ALLOWLIST),
         denylist=read_migration_entries(LEGACY_CUSTOM_DENYLIST),
     )

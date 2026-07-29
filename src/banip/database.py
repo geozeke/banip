@@ -6,6 +6,7 @@ import sys
 import tempfile
 import zipfile
 from argparse import Namespace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ import requests
 from rich import box
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from banip.config import initialize_config
 from banip.config import raw_config_dict
@@ -240,11 +242,41 @@ def update_geolite() -> None:
 
 def status() -> None:
     """Print local database status."""
-    table = Table(title="Database Status", box=box.SQUARE)
-    table.add_column("Path")
+    table = Table(
+        title="Database Status",
+        title_style="bold cyan",
+        caption=f"Data directory: {DATA}",
+        caption_style="dim",
+        caption_justify="left",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold",
+        padding=(0, 1),
+    )
+    table.add_column("Resource")
     table.add_column("Status")
-    for path in [CONFIG, IPSUM, GEOLITE_4, GEOLITE_6, GEOLITE_LOC]:
-        table.add_row(str(path), "present" if path.exists() else "missing")
+    table.add_column("Last modified")
+    resources = (
+        ("Configuration", CONFIG),
+        ("Ipsum threat feed", IPSUM),
+        ("GeoLite IPv4 blocks", GEOLITE_4),
+        ("GeoLite IPv6 blocks", GEOLITE_6),
+        ("GeoLite country locations", GEOLITE_LOC),
+    )
+    for label, path in resources:
+        if path.exists():
+            modified = datetime.fromtimestamp(path.stat().st_mtime).astimezone()
+            table.add_row(
+                label,
+                Text("present", style="green"),
+                Text(modified.strftime("%Y-%m-%d %H:%M:%S %Z"), style="cyan"),
+            )
+        else:
+            table.add_row(
+                label,
+                Text("missing", style="bold red"),
+                Text("—", style="dim"),
+            )
     Console().print(table)
 
 

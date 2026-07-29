@@ -17,15 +17,26 @@ banip database init
 banip build
 ```
 
-Build reads the selected countries, applies the allowlist and denylist,
-optionally includes managed bot ranges, and writes:
+Build resolves every named country policy, applies the IP allowlist and
+denylist, optionally includes managed bot ranges, and writes:
 
 ```text
 ~/.banip/ip_blocklist.txt
 ~/.banip/ip_allowlist.txt
 ~/.banip/country_allowlist.txt
+~/.banip/country_allowlist_<policy>.txt
 ~/.banip/haproxy_geo_ip.txt
 ```
+
+The deprecated compatibility file `country_allowlist.txt` contains the
+default policy and remains supported throughout banip 2.x. It will be
+removed in banip 3.0 with the `countries.default_policy` setting. New
+integrations should use an explicitly named policy file. Each named
+policy file contains permitted country codes, including when the policy
+was configured as a blocklist. The IP blocklist considers threat
+addresses from countries permitted by any policy. See
+[Deprecations](deprecations.md#legacy-country-allowlist-output) for
+migration guidance.
 
 The available options are:
 
@@ -56,6 +67,10 @@ Inspect or query the stored data with:
 banip bots list
 banip bots check 192.0.2.1
 ```
+
+Bot command summaries use local time-zone timestamps. Refresh and list
+tables identify the `botdata.json` destination, while check results
+identify the queried address and any matching provider networks.
 
 See [Managed bot ranges](managed-bots.md) for configuration and build
 behavior.
@@ -90,6 +105,11 @@ Inspect expected local data files:
 ```console
 banip database status
 ```
+
+The status table reports whether each required file is present and
+shows its last modification time in the local time zone. The table
+caption identifies the local data directory. Missing files have no
+modification time.
 
 Refresh both external sources, or choose one:
 

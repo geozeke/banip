@@ -3,6 +3,8 @@
 import argparse
 import ipaddress as ipa
 import os
+from io import StringIO
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -255,7 +257,11 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
 
     loaded = config.load_config(path)
 
-    assert loaded.targets == {"US"}
+    assert loaded.countries.default_policy == "restricted"
+    assert loaded.countries.policies["restricted"] == config.CountryPolicy(
+        mode=config.CountryPolicyMode.ALLOWLIST,
+        codes={"US"},
+    )
     assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
     assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
     assert loaded.bots.enabled is False
@@ -267,6 +273,123 @@ def test_config_defaults_include_managed_bot_providers() -> None:
     loaded = config.parse_bot_config(None)
 
     assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
+
+
+def test_documented_starter_config_matches_generated_template() -> None:
+    """The documented starter YAML matches database initialization."""
+    rendered = StringIO()
+    config.yaml().dump(config.config_template(), rendered)
+    documentation = (
+        Path(__file__).parents[1] / "docs" / "configuration.md"
+    ).read_text()
+    documented_yaml = documentation.split("```yaml", 1)[1].split("```", 1)[0]
+
+    assert documented_yaml.strip() == rendered.getvalue().strip()
+
+
+def test_initialize_config_uses_starter_policies_without_legacy_targets(
+    tmp_path, monkeypatch
+) -> None:
+    """Fresh initialization creates the documented named policies."""
+    path = tmp_path / "banip.yaml"
+    monkeypatch.setattr(config, "TARGETS", tmp_path / "missing-targets.txt")
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_ALLOWLIST",
+        tmp_path / "missing-allowlist.txt",
+    )
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_DENYLIST",
+        tmp_path / "missing-denylist.txt",
+    )
+
+    config.initialize_config(path=path)
+    loaded = config.load_config(path)
+
+    assert loaded.countries.default_policy == "restricted"
+    assert loaded.countries.policies["restricted"].codes == {"CA", "US"}
+    assert loaded.countries.policies["public"] == config.CountryPolicy(
+        mode=config.CountryPolicyMode.BLOCKLIST,
+        codes={"CN", "RU"},
+    )
+
+
+def test_config_parses_named_country_policies() -> None:
+    """Named allowlist and blocklist policies are normalized."""
+    loaded = config.parse_country_config(
+        {
+            "default_policy": "restricted",
+            "policies": {
+                "restricted": {
+                    "mode": "allowlist",
+                    "codes": ["us", "CA"],
+                },
+                "public": {
+                    "mode": "blocklist",
+                    "codes": [],
+                },
+            },
+        }
+    )
+
+    assert loaded.default_policy == "restricted"
+    assert loaded.policies["restricted"].codes == {"CA", "US"}
+    assert loaded.policies["public"] == config.CountryPolicy(
+        mode=config.CountryPolicyMode.BLOCKLIST,
+        codes=set(),
+    )
+
+
+@pytest.mark.parametrize(
+    ("countries", "message"),
+    [
+        (None, "countries.*mapping"),
+        (
+            {"default_policy": "default", "policies": {}},
+            "countries.policies.*non-empty mapping",
+        ),
+        (
+            {
+                "default_policy": "default",
+                "policies": {"../default": {"mode": "allowlist", "codes": ["US"]}},
+            },
+            "Invalid country policy name",
+        ),
+        (
+            {
+                "default_policy": "default",
+                "policies": {"default": {"mode": "permit", "codes": ["US"]}},
+            },
+            "Invalid country policy mode",
+        ),
+        (
+            {
+                "default_policy": "default",
+                "policies": {"default": {"mode": "allowlist", "codes": []}},
+            },
+            "must be a non-empty list",
+        ),
+        (
+            {
+                "default_policy": "default",
+                "policies": {"default": {"mode": "allowlist", "codes": ["USA"]}},
+            },
+            "Invalid countries.policies.default.codes entry",
+        ),
+        (
+            {
+                "default_policy": "missing",
+                "policies": {"default": {"mode": "allowlist", "codes": ["US"]}},
+            },
+            "Default country policy.*not defined",
+        ),
+    ],
+)
+def test_config_rejects_invalid_country_policies(countries, message: str) -> None:
+    """Malformed country policy structures fail with useful messages."""
+    with pytest.raises(ValueError, match=message):
+        config.parse_country_config(countries)
 
 
 def test_config_rejects_invalid_denylist_entry(tmp_path) -> None:
@@ -295,10 +418,38 @@ def test_config_upgrades_version_one_lists(tmp_path) -> None:
 
     assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
     assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
+    assert loaded.countries.policies["restricted"].codes == {"US"}
     upgraded = path.read_text()
-    assert "version: 2" in upgraded
+    assert "version: 3" in upgraded
     assert "allowlist:" in upgraded
     assert "denylist:" in upgraded
+    assert "countries:" in upgraded
+
+
+def test_config_upgrades_version_two_country_targets(tmp_path) -> None:
+    """Version-two targets become a restricted allowlist policy."""
+    path = tmp_path / "banip.yaml"
+    path.write_text(
+        "# Keep this deployment note.\n"
+        "version: 2\n"
+        "targets:\n"
+        "  - ca\n"
+        "  - US\n"
+        "allowlist: []\n"
+        "denylist: []\n"
+    )
+
+    loaded = config.load_config(path)
+    first_upgrade = path.read_text()
+    loaded_again = config.load_config(path)
+
+    assert loaded.countries.default_policy == "restricted"
+    assert loaded.countries.policies["restricted"].codes == {"CA", "US"}
+    assert loaded_again == loaded
+    assert path.read_text() == first_upgrade
+    assert first_upgrade.startswith("# Keep this deployment note.\n")
+    assert "version: 3" in first_upgrade
+    assert "targets:" not in first_upgrade
 
 
 def test_config_rejects_mixed_schema_list_keys(tmp_path) -> None:
@@ -339,6 +490,48 @@ def test_database_init_migrates_legacy_flat_files(
     assert "US" in (data / "banip.yaml").read_text()
     assert "203.0.113.10" in (data / "banip.yaml").read_text()
     assert "192.0.2.0/30" in (data / "banip.yaml").read_text()
+    loaded = config.load_config(data / "banip.yaml")
+    assert loaded.countries.default_policy == "restricted"
+    assert loaded.countries.policies["restricted"].codes == {"US"}
+
+
+def test_database_status_reports_modification_times(tmp_path, monkeypatch) -> None:
+    """Database status shows local modification times and missing files."""
+    present = tmp_path / "banip.yaml"
+    present.write_text("version: 3\n")
+    missing = tmp_path / "ipsum.txt"
+    timestamp = present.stat().st_mtime
+    expected = (
+        database.datetime.fromtimestamp(timestamp)
+        .astimezone()
+        .strftime("%Y-%m-%d %H:%M:%S %Z")
+    )
+
+    monkeypatch.setattr(database, "CONFIG", present)
+    monkeypatch.setattr(database, "IPSUM", missing)
+    monkeypatch.setattr(database, "GEOLITE_4", tmp_path / "ipv4.csv")
+    monkeypatch.setattr(database, "GEOLITE_6", tmp_path / "ipv6.csv")
+    monkeypatch.setattr(database, "GEOLITE_LOC", tmp_path / "locations.csv")
+    monkeypatch.setattr(database, "DATA", tmp_path)
+    output_stream = StringIO()
+    console = database.Console(
+        file=output_stream,
+        width=200,
+        color_system=None,
+    )
+    monkeypatch.setattr(database, "Console", lambda: console)
+
+    database.status()
+
+    output = output_stream.getvalue()
+    assert "Database Status" in output
+    assert "Configuration" in output
+    assert "Ipsum threat feed" in output
+    assert "present" in output
+    assert expected in output
+    assert "missing" in output
+    assert "—" in output
+    assert "Data directory:" in output
 
 
 def test_database_load_secrets_does_not_execute_shell(tmp_path, monkeypatch) -> None:
@@ -484,7 +677,50 @@ def test_bots_refresh_replaces_only_selected_provider(
     assert sorted(data["providers"]) == ["bing", "google"]
     assert data["providers"]["bing"]["ranges"] == ["198.51.100.0/24"]
     assert data["providers"]["google"]["ranges"] == ["192.0.2.0/24"]
-    assert "Refreshed google: 1 ranges" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Bot Range Refresh" in output
+    assert "google" in output
+    assert "1" in output
+    assert "Saved to:" in output
+
+
+def test_bots_list_providers_formats_stored_data(tmp_path, monkeypatch, capsys) -> None:
+    """Bot provider listings use the shared summary presentation."""
+    botdata = tmp_path / "botdata.json"
+    botdata.write_text(
+        "{\n"
+        '  "providers": {\n'
+        '    "google": {\n'
+        '      "provider": "google",\n'
+        '      "source": ["test"],\n'
+        '      "refreshed_at": "2026-05-01T20:46:04+00:00",\n'
+        '      "ranges": ["192.0.2.0/24"]\n'
+        "    }\n"
+        "  }\n"
+        "}\n"
+    )
+    expected = bots.format_timestamp("2026-05-01T20:46:04+00:00")
+    monkeypatch.setattr(bots, "BOTDATA", botdata)
+
+    bots.list_providers()
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Ranges" in output
+    assert "google" in output
+    assert "1" in output
+    assert expected in output
+    assert "Data file:" in output
+
+
+def test_bots_list_providers_reports_empty_data(tmp_path, monkeypatch, capsys) -> None:
+    """An empty bot data file produces an explicit empty-state row."""
+    monkeypatch.setattr(bots, "BOTDATA", tmp_path / "botdata.json")
+
+    bots.list_providers()
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Ranges" in output
+    assert "No stored providers" in output
 
 
 def test_bots_check_ip_reports_matching_provider(tmp_path, monkeypatch, capsys) -> None:
@@ -506,7 +742,24 @@ def test_bots_check_ip_reports_matching_provider(tmp_path, monkeypatch, capsys) 
 
     bots.check_ip(ipa.ip_address("192.0.2.9"))
 
-    assert "found in google: 192.0.2.0/24" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Managed Bot Check" in output
+    assert "Address: 192.0.2.9" in output
+    assert "google" in output
+    assert "192.0.2.0/24" in output
+    assert "found" in output
+
+
+def test_bots_check_ip_reports_no_match(tmp_path, monkeypatch, capsys) -> None:
+    """Bot range checks show a distinct not-found result."""
+    monkeypatch.setattr(bots, "BOTDATA", tmp_path / "botdata.json")
+
+    bots.check_ip(ipa.ip_address("198.51.100.9"))
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Check" in output
+    assert "Address: 198.51.100.9" in output
+    assert "not found" in output
 
 
 def test_build_task_runner_generates_blocklist_outputs(
@@ -578,8 +831,9 @@ def test_build_task_runner_generates_blocklist_outputs(
     assert utilities.format_status("repack") in output
     assert "Compacting ipsum (0)" in output
     assert "0.00%" in output
-    assert "Final Build Stats" in output
+    assert "Final Build Summary" in output
     assert paths["COUNTRY_ALLOWLIST"].read_text() == "US\n"
+    assert (data / "country_allowlist_restricted.txt").read_text() == "US\n"
     assert "192.0.2.5" in paths["CONFIG"].read_text()
     assert "192.0.2.0/30" in paths["CONFIG"].read_text()
     assert (
@@ -599,6 +853,99 @@ def test_build_task_runner_generates_blocklist_outputs(
         "192.0.2.0/30",
     ]
     assert "198.51.100.9" not in blocklist_lines
+
+
+def test_build_task_runner_generates_named_country_policies(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """Build resolves named policies and uses their union for threats."""
+    data = tmp_path / ".banip"
+    geolite = data / "geolite"
+    geolite.mkdir(parents=True)
+    paths = {
+        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
+        "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
+        "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
+        "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
+        "IPSUM": data / "ipsum.txt",
+        "RENDERED_BLOCKLIST": data / "ip_blocklist.txt",
+        "RENDERED_ALLOWLIST": data / "ip_allowlist.txt",
+        "COUNTRY_NETS_TXT": data / "haproxy_geo_ip.txt",
+        "BOTDATA": data / "botdata.json",
+        "CONFIG": data / "banip.yaml",
+    }
+    paths["CONFIG"].write_text(
+        "version: 3\n"
+        "countries:\n"
+        "  default_policy: restricted\n"
+        "  policies:\n"
+        "    restricted:\n"
+        "      mode: allowlist\n"
+        "      codes:\n"
+        "        - US\n"
+        "    public:\n"
+        "      mode: blocklist\n"
+        "      codes:\n"
+        "        - MX\n"
+        "allowlist: []\n"
+        "denylist: []\n"
+        "bots:\n"
+        "  enabled: false\n"
+    )
+    paths["GEOLITE_LOC"].write_text(
+        "geoname_id,locale_code,continent_code,continent_name,country_iso_code,"
+        "country_name,is_in_european_union\n"
+        "1,en,NA,North America,US,United States,0\n"
+        "2,en,NA,North America,CA,Canada,0\n"
+    )
+    paths["GEOLITE_4"].write_text(
+        "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,"
+        "is_anonymous_proxy,is_satellite_provider,postal_code\n"
+        "192.0.2.0/24,1,1,,0,0,\n"
+        "198.51.100.0/24,2,2,,0,0,\n"
+    )
+    paths["GEOLITE_6"].write_text(
+        "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,"
+        "is_anonymous_proxy,is_satellite_provider,postal_code\n"
+        "2001:db8::/126,2,2,,0,0,\n"
+    )
+    paths["IPSUM"].write_text(
+        "192.0.2.9 8\n198.51.100.9 8\n203.0.113.9 8\n2001:db8::1 8\n"
+    )
+    paths["RENDERED_BLOCKLIST"].touch()
+    stale_policy = data / "country_allowlist_removed.txt"
+    stale_policy.write_text("GB\n")
+    unrelated_file = data / "country_allowlist_notes"
+    unrelated_file.write_text("keep\n")
+
+    for name, path in paths.items():
+        if hasattr(build, name):
+            monkeypatch.setattr(build, name, path)
+        if hasattr(utility_data, name):
+            monkeypatch.setattr(utility_data, name, path)
+        if hasattr(bots, name):
+            monkeypatch.setattr(bots, name, path)
+        if hasattr(config, name):
+            monkeypatch.setattr(config, name, path)
+    monkeypatch.setattr(build, "get_public_ip", lambda: ipa.ip_address("203.0.113.10"))
+
+    build.task_runner(argparse.Namespace(threshold=3, compact=0, no_bots=False))
+
+    output = capsys.readouterr().out
+    assert paths["COUNTRY_ALLOWLIST"].read_text() == "US\n"
+    assert (data / "country_allowlist_restricted.txt").read_text() == "US\n"
+    assert (data / "country_allowlist_public.txt").read_text() == "CA\nUS\n"
+    assert not stale_policy.exists()
+    assert unrelated_file.read_text() == "keep\n"
+    blocklist = paths["RENDERED_BLOCKLIST"].read_text()
+    assert "192.0.2.9" in blocklist
+    assert "198.51.100.9" in blocklist
+    assert "2001:db8::1" in blocklist
+    assert "203.0.113.9" not in blocklist
+    assert "Country Policies" in output
+    assert "public" in output
+    assert "restricted (default)" in output
+    assert "Threat scope" in output
 
 
 def test_build_task_runner_renders_managed_bot_ranges(
@@ -622,9 +969,14 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "CONFIG": data / "banip.yaml",
     }
     paths["CONFIG"].write_text(
-        "version: 2\n"
-        "targets:\n"
-        "  - US\n"
+        "version: 3\n"
+        "countries:\n"
+        "  default_policy: blocked\n"
+        "  policies:\n"
+        "    blocked:\n"
+        "      mode: blocklist\n"
+        "      codes:\n"
+        "        - US\n"
         "allowlist: []\n"
         "denylist: []\n"
         "bots:\n"
@@ -675,6 +1027,6 @@ def test_build_task_runner_renders_managed_bot_ranges(
 
     output = capsys.readouterr().out
     blocklist = paths["RENDERED_BLOCKLIST"].read_text()
-    assert "Subnets - managed bots" in output
+    assert "Managed bots" in output
     assert "# ---------managed bot ranges -----------" in blocklist
     assert "# google\n203.0.113.0/24\n" in blocklist

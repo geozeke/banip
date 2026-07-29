@@ -1,7 +1,8 @@
 # Country codes
 
-Use these two-letter country codes in the `targets` list of `banip.yaml`.
-Source data: <https://www.geonames.org/countries/>.
+Use these two-letter country codes in named policies under the
+`countries` section of `banip.yaml`. Source data:
+<https://www.geonames.org/countries/>.
 
 | Country/Code | Country/Code | Country/Code |
 | --- | --- | --- |

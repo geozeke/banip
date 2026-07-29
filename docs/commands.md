@@ -68,6 +68,10 @@ banip bots list
 banip bots check 192.0.2.1
 ```
 
+Bot command summaries use local time-zone timestamps. Refresh and list
+tables identify the `botdata.json` destination, while check results
+identify the queried address and any matching provider networks.
+
 See [Managed bot ranges](managed-bots.md) for configuration and build
 behavior.
 
@@ -101,6 +105,11 @@ Inspect expected local data files:
 ```console
 banip database status
 ```
+
+The status table reports whether each required file is present and
+shows its last modification time in the local time zone. The table
+caption identifies the local data directory. Missing files have no
+modification time.
 
 Refresh both external sources, or choose one:
 

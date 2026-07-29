@@ -495,6 +495,45 @@ def test_database_init_migrates_legacy_flat_files(
     assert loaded.countries.policies["restricted"].codes == {"US"}
 
 
+def test_database_status_reports_modification_times(tmp_path, monkeypatch) -> None:
+    """Database status shows local modification times and missing files."""
+    present = tmp_path / "banip.yaml"
+    present.write_text("version: 3\n")
+    missing = tmp_path / "ipsum.txt"
+    timestamp = present.stat().st_mtime
+    expected = (
+        database.datetime.fromtimestamp(timestamp)
+        .astimezone()
+        .strftime("%Y-%m-%d %H:%M:%S %Z")
+    )
+
+    monkeypatch.setattr(database, "CONFIG", present)
+    monkeypatch.setattr(database, "IPSUM", missing)
+    monkeypatch.setattr(database, "GEOLITE_4", tmp_path / "ipv4.csv")
+    monkeypatch.setattr(database, "GEOLITE_6", tmp_path / "ipv6.csv")
+    monkeypatch.setattr(database, "GEOLITE_LOC", tmp_path / "locations.csv")
+    monkeypatch.setattr(database, "DATA", tmp_path)
+    output_stream = StringIO()
+    console = database.Console(
+        file=output_stream,
+        width=200,
+        color_system=None,
+    )
+    monkeypatch.setattr(database, "Console", lambda: console)
+
+    database.status()
+
+    output = output_stream.getvalue()
+    assert "Database Status" in output
+    assert "Configuration" in output
+    assert "Ipsum threat feed" in output
+    assert "present" in output
+    assert expected in output
+    assert "missing" in output
+    assert "—" in output
+    assert "Data directory:" in output
+
+
 def test_database_load_secrets_does_not_execute_shell(tmp_path, monkeypatch) -> None:
     """Secrets files are parsed as dotenv data."""
     secrets = tmp_path / ".secrets"
@@ -638,7 +677,50 @@ def test_bots_refresh_replaces_only_selected_provider(
     assert sorted(data["providers"]) == ["bing", "google"]
     assert data["providers"]["bing"]["ranges"] == ["198.51.100.0/24"]
     assert data["providers"]["google"]["ranges"] == ["192.0.2.0/24"]
-    assert "Refreshed google: 1 ranges" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Bot Range Refresh" in output
+    assert "google" in output
+    assert "1" in output
+    assert "Saved to:" in output
+
+
+def test_bots_list_providers_formats_stored_data(tmp_path, monkeypatch, capsys) -> None:
+    """Bot provider listings use the shared summary presentation."""
+    botdata = tmp_path / "botdata.json"
+    botdata.write_text(
+        "{\n"
+        '  "providers": {\n'
+        '    "google": {\n'
+        '      "provider": "google",\n'
+        '      "source": ["test"],\n'
+        '      "refreshed_at": "2026-05-01T20:46:04+00:00",\n'
+        '      "ranges": ["192.0.2.0/24"]\n'
+        "    }\n"
+        "  }\n"
+        "}\n"
+    )
+    expected = bots.format_timestamp("2026-05-01T20:46:04+00:00")
+    monkeypatch.setattr(bots, "BOTDATA", botdata)
+
+    bots.list_providers()
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Ranges" in output
+    assert "google" in output
+    assert "1" in output
+    assert expected in output
+    assert "Data file:" in output
+
+
+def test_bots_list_providers_reports_empty_data(tmp_path, monkeypatch, capsys) -> None:
+    """An empty bot data file produces an explicit empty-state row."""
+    monkeypatch.setattr(bots, "BOTDATA", tmp_path / "botdata.json")
+
+    bots.list_providers()
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Ranges" in output
+    assert "No stored providers" in output
 
 
 def test_bots_check_ip_reports_matching_provider(tmp_path, monkeypatch, capsys) -> None:
@@ -660,7 +742,24 @@ def test_bots_check_ip_reports_matching_provider(tmp_path, monkeypatch, capsys) 
 
     bots.check_ip(ipa.ip_address("192.0.2.9"))
 
-    assert "found in google: 192.0.2.0/24" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Managed Bot Check" in output
+    assert "Address: 192.0.2.9" in output
+    assert "google" in output
+    assert "192.0.2.0/24" in output
+    assert "found" in output
+
+
+def test_bots_check_ip_reports_no_match(tmp_path, monkeypatch, capsys) -> None:
+    """Bot range checks show a distinct not-found result."""
+    monkeypatch.setattr(bots, "BOTDATA", tmp_path / "botdata.json")
+
+    bots.check_ip(ipa.ip_address("198.51.100.9"))
+
+    output = capsys.readouterr().out
+    assert "Managed Bot Check" in output
+    assert "Address: 198.51.100.9" in output
+    assert "not found" in output
 
 
 def test_build_task_runner_generates_blocklist_outputs(

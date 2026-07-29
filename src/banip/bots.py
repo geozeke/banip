@@ -14,6 +14,7 @@ import requests
 from rich import box
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 from banip.constants import BOTDATA
 from banip.constants import AddressType
@@ -42,6 +43,57 @@ PROVIDERS = tuple(PROVIDER_URLS)
 META_WHOIS_HOST = "whois.radb.net"
 META_WHOIS_QUERY = "-i origin AS32934"
 META_WHOIS_SOURCE = f"whois://{META_WHOIS_HOST}/{META_WHOIS_QUERY}"
+
+
+def output_table(title: str, *, caption: str | None = None) -> Table:
+    """Create a consistently styled bot command table.
+
+    Parameters
+    ----------
+    title : str
+        Table title.
+    caption : str | None, optional
+        Optional context displayed below the table.
+
+    Returns
+    -------
+    Table
+        Styled Rich table.
+    """
+    return Table(
+        title=title,
+        title_style="bold cyan",
+        caption=caption,
+        caption_style="dim",
+        caption_justify="left",
+        box=box.ROUNDED,
+        border_style="bright_black",
+        header_style="bold",
+        padding=(0, 1),
+    )
+
+
+def format_timestamp(value: object) -> str:
+    """Format a stored timestamp in the local time zone.
+
+    Parameters
+    ----------
+    value : object
+        Stored timestamp value.
+
+    Returns
+    -------
+    str
+        Local date and time, the original text when it cannot be parsed,
+        or an em dash when no timestamp is available.
+    """
+    if not isinstance(value, str) or not value:
+        return "—"
+    try:
+        timestamp = dt.fromisoformat(value.replace("Z", "+00:00")).astimezone()
+    except ValueError:
+        return value
+    return timestamp.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 def sort_networks(networks: Iterable[NetworkType]) -> list[NetworkType]:
@@ -290,25 +342,44 @@ def refresh(provider: str) -> None:
         data["providers"] = stored_providers
 
     selected = PROVIDERS if provider == "all" else (provider,)
+    refreshed: list[tuple[str, int, str]] = []
     for item in selected:
         entry = fetch_provider(item)
         stored_providers[item] = entry
         ranges = entry.get("ranges", [])
         range_count = len(ranges) if isinstance(ranges, list) else 0
-        print(f"Refreshed {item}: {range_count:,d} ranges")
+        refreshed.append(
+            (
+                item,
+                range_count,
+                format_timestamp(entry.get("refreshed_at")),
+            )
+        )
     write_botdata(data)
-    print(f"Saved {BOTDATA}")
+
+    table = output_table("Bot Range Refresh", caption=f"Saved to: {BOTDATA}")
+    table.add_column("Provider", style="bold")
+    table.add_column("Ranges", justify="right", style="cyan")
+    table.add_column("Refreshed")
+    for item, range_count, refreshed_at in refreshed:
+        table.add_row(
+            item,
+            f"{range_count:,d}",
+            Text(refreshed_at, style="cyan"),
+        )
+    Console().print(table)
 
 
 def list_providers() -> None:
     """List stored bot provider range counts."""
     data = load_botdata()
     providers = data.get("providers", {})
-    table = Table(title="Managed Bot Ranges", box=box.SQUARE)
-    table.add_column("Provider")
-    table.add_column("Ranges", justify="right")
-    table.add_column("Last Refreshed")
+    table = output_table("Managed Bot Ranges", caption=f"Data file: {BOTDATA}")
+    table.add_column("Provider", style="bold")
+    table.add_column("Ranges", justify="right", style="cyan")
+    table.add_column("Last refreshed")
 
+    rows = 0
     if isinstance(providers, dict):
         for provider in sorted(providers):
             entry = providers[provider]
@@ -316,8 +387,20 @@ def list_providers() -> None:
                 continue
             ranges = entry.get("ranges", [])
             range_count = len(ranges) if isinstance(ranges, list) else 0
-            refreshed_at = entry.get("refreshed_at", "--")
-            table.add_row(provider, f"{range_count:,d}", str(refreshed_at))
+            refreshed_at = format_timestamp(entry.get("refreshed_at"))
+            table.add_row(
+                provider,
+                f"{range_count:,d}",
+                Text(refreshed_at, style="cyan"),
+            )
+            rows += 1
+
+    if not rows:
+        table.add_row(
+            Text("No stored providers", style="dim"),
+            Text("—", style="dim"),
+            Text("—", style="dim"),
+        )
 
     console = Console()
     console.print(table)
@@ -337,12 +420,25 @@ def check_ip(ip: AddressType) -> None:
         if network := ip_in_network(ip=ip, lookup=lookup):
             matches.append((provider, network))
 
-    if not matches:
-        print(f"{ip} not found in managed bot ranges.")
-        return
+    table = output_table("Managed Bot Check", caption=f"Address: {ip}")
+    table.add_column("Provider", style="bold")
+    table.add_column("Matching network", style="cyan")
+    table.add_column("Result")
 
-    for provider, network in matches:
-        print(f"{ip} found in {provider}: {network}")
+    if matches:
+        for provider, network in matches:
+            table.add_row(
+                provider,
+                str(network),
+                Text("found", style="bold green"),
+            )
+    else:
+        table.add_row(
+            Text("—", style="dim"),
+            Text("—", style="dim"),
+            Text("not found", style="yellow"),
+        )
+    Console().print(table)
 
 
 def task_runner(args: Namespace) -> None:

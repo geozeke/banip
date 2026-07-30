@@ -4,6 +4,14 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.0] - 2026-07-30
+
+[Compare with 2.1.0rc2](https://github.com/geozeke/banip/compare/v2.1.0rc2...v2.1.0)
+
+### Documentation
+
+- Show alternate installation methods ([bd13f95](https://github.com/geozeke/banip/commit/bd13f958a242f52f25cec019cd21f9186c74bb5c))
+
 ## [2.1.0rc2] - 2026-07-29
 
 [Compare with 2.1.0rc1](https://github.com/geozeke/banip/compare/v2.1.0rc1...v2.1.0rc2)

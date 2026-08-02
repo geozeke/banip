@@ -17,8 +17,9 @@ banip database init
 banip build
 ```
 
-Build resolves every named country policy, applies the IP allowlist and
-denylist, optionally includes managed bot ranges, and writes:
+Build resolves every named country policy, filters ipsum threat entries
+to the union of permitted countries, applies user-managed entries,
+optionally includes managed bot ranges, and writes:
 
 ```text
 ~/.banip/ip_blocklist.txt
@@ -33,14 +34,18 @@ default policy and remains supported throughout banip 2.x. It will be
 removed in banip 3.0 with the `countries.default_policy` setting. New
 integrations should use an explicitly named policy file. Each named
 policy file contains permitted country codes, including when the policy
-was configured as a blocklist. The IP blocklist considers threat
-addresses from countries permitted by any policy. See
+was configured as a blocklist. The IP blocklist considers ipsum threat
+addresses from countries permitted by any policy. Explicit denylist and
+managed bot entries are not limited by country policies. The allowlist
+has final precedence over every blocklist source. See
 [Deprecations](deprecations.md#legacy-country-allowlist-output) for
 migration guidance.
 
 The available options are:
 
-- `-o FILE` or `--outfile FILE` selects an alternate blocklist output.
+- `-o FILE` or `--outfile FILE` writes the blocklist to an alternate
+  path and refreshes the canonical `~/.banip/ip_blocklist.txt` copy used
+  by other banip commands.
 - `-t N` or `--threshold N` sets the minimum ipsum confidence score.
   The default is `3`, and valid values are `1` through `10`.
 - `-c N` or `--compact N` collapses sufficiently dense IPv4 `/24`
@@ -97,8 +102,12 @@ banip database init
 Initialization creates the configuration and local data directories. It
 also creates deprecated plugin directories during the banip 2.x
 compatibility period. It imports existing flat configuration files when
-present without deleting them. Use `--overwrite` to replace an existing
-`~/.banip/banip.yaml`.
+present without deleting them. Invalid legacy IP entries are ignored. An
+existing legacy targets file must contain at least one valid country
+code.
+
+Use `--overwrite` to replace an existing `~/.banip/banip.yaml` with the
+starter configuration. Overwrite does not reimport retained flat files.
 
 Inspect expected local data files:
 

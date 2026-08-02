@@ -114,7 +114,15 @@ This writes `~/.banip/banip.yaml` and creates the local data
 directories. During the banip 2.x compatibility period it also creates
 the deprecated plugin directories. If the prior flat configuration
 files exist, initialization imports their non-comment entries into the
-new YAML configuration without deleting the source files.
+new YAML configuration without deleting the source files. Invalid IP
+entries retain the legacy behavior and are ignored. If an existing
+`targets.txt` contains no valid country codes, initialization stops
+without writing `banip.yaml`; select at least one country or remove the
+legacy file to use the starter policies.
+
+Running `banip database init --overwrite` replaces an existing YAML
+file with the documented starter configuration. It does not reimport
+retained legacy files.
 
 ## Download source data
 

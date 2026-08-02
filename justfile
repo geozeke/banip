@@ -1,8 +1,9 @@
 set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 project_name := "banip"
 
-# Show help
-default: help
+# Show available recipes
+default:
+    @just --list
 
 # --------------------------------------------
 
@@ -85,12 +86,6 @@ format:
 
 # --------------------------------------------
 
-# Show available recipes
-help:
-    @just --list
-
-# --------------------------------------------
-
 # Run lint checks
 lint:
     uv run ruff check .
@@ -101,23 +96,6 @@ lint:
 # Validate direct dependency licenses against project policy
 licenses:
     uv run python scripts/check_dependency_licenses.py
-
-# --------------------------------------------
-
-# Show outdated top-level dependencies
-outdated:
-    #!/usr/bin/env bash
-    uv tree --outdated --depth=1 --all-groups | awk '
-        /latest/ {
-            found = 1
-            print
-        }
-        END {
-            if (!found) {
-                print "No outdated top-level dependencies found."
-            }
-        }
-    '
 
 # --------------------------------------------
 
@@ -195,9 +173,3 @@ coverage-open: coverage
 # Run static type checks
 typecheck:
     uv run mypy src scripts
-
-# --------------------------------------------
-
-# Upgrade dependencies
-upgrade: _require_setup
-    bash ./scripts/upgrade_dependencies.sh

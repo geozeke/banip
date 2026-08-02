@@ -1,7 +1,7 @@
 """Argument parser for build command."""
 
-from argparse import FileType
 from argparse import _SubParsersAction
+from pathlib import Path
 
 from banip.argument_types import compact_type
 from banip.argument_types import threshold_type
@@ -22,9 +22,10 @@ def load_command_args(sp: _SubParsersAction) -> None:
 
     msg = """
     Output file for the generated IP blocklist. If not provided, results
-    are saved to ~/.banip/ip_blocklist.txt.
+    are saved to ~/.banip/ip_blocklist.txt. An alternate output is also
+    copied to the default location for use by other banip commands.
     """
-    parser.add_argument("-o", "--outfile", type=FileType("w"), help=msg)
+    parser.add_argument("-o", "--outfile", type=Path, help=msg)
 
     msg = """
     Each blocked IP address in the source database has a factor (from 1

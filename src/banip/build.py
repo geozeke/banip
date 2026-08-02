@@ -2,9 +2,11 @@
 
 """Build a custom IP blocklist."""
 
+import ipaddress as ipa
 import shutil
 import sys
 from argparse import Namespace
+from collections.abc import Iterable
 from datetime import datetime as dt
 from pathlib import Path
 
@@ -17,7 +19,6 @@ from banip.bots import load_managed_bot_networks
 from banip.config import CountryConfig
 from banip.config import CountryPolicyMode
 from banip.config import load_config
-from banip.config import update_denylist
 from banip.constants import BOTDATA
 from banip.constants import CONFIG
 from banip.constants import COUNTRY_ALLOWLIST
@@ -25,13 +26,13 @@ from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
 from banip.constants import IPSUM
+from banip.constants import AddressType
 from banip.constants import NetworkType
 from banip.constants import RENDERED_ALLOWLIST
 from banip.constants import RENDERED_BLOCKLIST
 from banip.utilities import build_network_lookup
 from banip.utilities import compact
 from banip.utilities import format_status
-from banip.utilities import get_public_ip
 from banip.utilities import ip_in_network
 from banip.utilities import load_ipsum
 from banip.utilities import render_lines
@@ -97,6 +98,96 @@ def write_country_policy_files(
     COUNTRY_ALLOWLIST.write_text(render_lines(sorted(default_codes)))
 
 
+def exclude_network(
+    network: NetworkType,
+    exemption: NetworkType,
+) -> list[NetworkType]:
+    """Remove one exempt network from a blocked network.
+
+    Parameters
+    ----------
+    network : NetworkType
+        Network proposed for blocking.
+    exemption : NetworkType
+        Network that must remain unblocked.
+
+    Returns
+    -------
+    list[NetworkType]
+        Remaining blocked fragments.
+    """
+    if isinstance(network, ipa.IPv4Network):
+        if not isinstance(exemption, ipa.IPv4Network):
+            return [network]
+        if not network.overlaps(exemption):
+            return [network]
+        if network.subnet_of(exemption):
+            return []
+        return list(network.address_exclude(exemption))
+
+    if not isinstance(exemption, ipa.IPv6Network):
+        return [network]
+    if not network.overlaps(exemption):
+        return [network]
+    if network.subnet_of(exemption):
+        return []
+    return list(network.address_exclude(exemption))
+
+
+def apply_allowlist(
+    addresses: Iterable[AddressType],
+    networks: Iterable[NetworkType],
+    allowlist: set[AddressType | NetworkType],
+) -> tuple[list[AddressType], list[NetworkType]]:
+    """Remove allowlisted address space from blocked entries.
+
+    Parameters
+    ----------
+    addresses : Iterable[AddressType]
+        Individual addresses proposed for blocking.
+    networks : Iterable[NetworkType]
+        Networks proposed for blocking.
+    allowlist : set[AddressType | NetworkType]
+        Addresses and networks that must remain unblocked.
+
+    Returns
+    -------
+    tuple[list[AddressType], list[NetworkType]]
+        Blocked addresses and networks with all allowlisted space removed.
+    """
+    allow_ips, allow_nets = split_hybrid(allowlist)
+    allow_lookup = build_network_lookup(allow_nets)
+    filtered_ips = [
+        address
+        for address in addresses
+        if address not in allowlist
+        and not ip_in_network(ip=address, lookup=allow_lookup)
+    ]
+    exemptions = [
+        *allow_nets,
+        *(
+            ipa.ip_network(f"{address}/{address.max_prefixlen}")
+            for address in allow_ips
+        ),
+    ]
+    filtered_nets: list[NetworkType] = []
+    for network in networks:
+        fragments = [network]
+        for exemption in exemptions:
+            if network.version != exemption.version:
+                continue
+            remaining: list[NetworkType] = []
+            for fragment in fragments:
+                remaining.extend(exclude_network(fragment, exemption))
+            fragments = remaining
+        filtered_nets.extend(fragments)
+
+    return filtered_ips, sorted(
+        filtered_nets,
+        key=lambda item: (item.version, int(item.network_address), item.prefixlen),
+    )
+
+
 def task_runner(args: Namespace) -> None:
     """Generate a custom IP blocklist.
 
@@ -107,19 +198,11 @@ def task_runner(args: Namespace) -> None:
     """
     # ------------------------------------------------------------------
 
-    # Start by stubbing-out custom files if they're not already in
-    # place. In the case of the output file, check for two things: (1)
-    # Was a file specified? If not, then save results to the default
-    # (RENDERED_BLOCKLIST). (2) If the file was specified, was it the
-    # same name as the default? If so, there's no need to make a local
-    # copy of it after computations are complete.
+    # Select the requested blocklist destination while retaining the
+    # canonical local copy used by other banip commands.
     print()
-    make_local_copy = False
-    try:
-        if Path(args.outfile.name) != RENDERED_BLOCKLIST:
-            make_local_copy = True
-    except AttributeError:
-        args.outfile = RENDERED_BLOCKLIST.open("w")
+    outfile = getattr(args, "outfile", None)
+    output_path = Path(outfile) if outfile else RENDERED_BLOCKLIST
 
     # ------------------------------------------------------------------
 
@@ -130,7 +213,6 @@ def task_runner(args: Namespace) -> None:
         GEOLITE_6,
         GEOLITE_LOC,
         IPSUM,
-        RENDERED_BLOCKLIST,
     ]
     for file in files:
         if not file.exists():
@@ -146,17 +228,19 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Load the custom denylist and split it into separate lists of
-    # addresses and networks. Remove any duplicates using sets.
+    # Load the allowlist and denylist, give the allowlist final
+    # precedence, and remove redundant individual denylist addresses.
     console = Console()
     msg = status_label("custom_prune")
     with console.status(msg):
-        custom = config.denylist
-        # Make sure the current host's public-facing IP is not in the
-        # custom denylist.
-        if (public_ip := get_public_ip()) and (public_ip in custom):
-            custom.remove(public_ip)
-        custom_ips, custom_nets = split_hybrid(custom)
+        allowlist = config.allowlist
+        allow_ips, allow_nets = split_hybrid(allowlist)
+        custom_ips, custom_nets = split_hybrid(config.denylist)
+        custom_ips, custom_nets = apply_allowlist(
+            custom_ips,
+            custom_nets,
+            allowlist,
+        )
         custom_nets_size = len(custom_nets)
         custom_nets_lookup = build_network_lookup(custom_nets)
         # Remove any custom IP addresses that are covered by existing
@@ -193,8 +277,6 @@ def task_runner(args: Namespace) -> None:
     # the custom allowlist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
-        allowlist = config.allowlist
-        allow_ips, allow_nets = split_hybrid(allowlist)
         allow_nets_lookup = build_network_lookup(allow_nets)
         ipsum_D = load_ipsum()
         ipsum_L = [
@@ -233,8 +315,7 @@ def task_runner(args: Namespace) -> None:
     # ------------------------------------------------------------------
 
     # Prune the list of custom IP addresses again so that remaining
-    # entries are not covered by ipsum.txt and are within the combined
-    # country-policy threat scope.
+    # entries are not already covered by ipsum.txt.
     msg = status_label("redundant_remove")
     with console.status(msg):
         custom_ips = [
@@ -242,18 +323,9 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips
             if ip not in ipsum_ips_set
             and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
-            and ip_in_network(ip=ip, lookup=threat_geolite_lookup)
         ]
         custom_ips_size = len(custom_ips)
     print(format_status("redundant_remove"))
-
-    # ------------------------------------------------------------------
-
-    # Repackage and save cleaned-up custom IP addresses and networks.
-    msg = status_label("repack")
-    with console.status(msg):
-        update_denylist([*custom_ips, *custom_nets], path=CONFIG)
-    print(format_status("repack"))
 
     # ------------------------------------------------------------------
 
@@ -267,6 +339,10 @@ def task_runner(args: Namespace) -> None:
             and BOTDATA.exists()
         ):
             managed_bot_networks = load_managed_bot_networks(config.bots.providers)
+        managed_bot_networks = {
+            provider: apply_allowlist([], networks, allowlist)[1]
+            for provider, networks in managed_bot_networks.items()
+        }
         bot_nets = [
             net
             for provider in sorted(managed_bot_networks)
@@ -290,13 +366,12 @@ def task_runner(args: Namespace) -> None:
             + "# ----------------------------------------\n\n"
             + render_lines([*custom_ips, *custom_nets])
         )
-        RENDERED_BLOCKLIST.write_text(blocklist_text)
+        output_path.write_text(blocklist_text)
         RENDERED_ALLOWLIST.write_text(render_lines([*allow_ips, *allow_nets]))
     print(format_status("lists_render"))
 
-    args.outfile.close()
-    if make_local_copy:
-        shutil.copy(Path(args.outfile.name), RENDERED_BLOCKLIST)
+    if output_path != RENDERED_BLOCKLIST:
+        shutil.copy2(output_path, RENDERED_BLOCKLIST)
 
     # Generate tables to display country policy and build metrics. Do
     # not include network and broadcast addresses when calculating total
@@ -308,8 +383,16 @@ def task_runner(args: Namespace) -> None:
         total_ipv4s += sum([1 for ip in ips if ip.version == 4])
         total_ipv6s += sum([1 for ip in ips if ip.version == 6])
     for nets in [ipsum_nets, bot_nets, custom_nets]:
-        total_ipv4s += sum([net.num_addresses - 2 for net in nets if net.version == 4])
-        total_ipv6s += sum([net.num_addresses - 2 for net in nets if net.version == 6])
+        total_ipv4s += sum(
+            1 if net.num_addresses == 1 else net.num_addresses - 2
+            for net in nets
+            if net.version == 4
+        )
+        total_ipv6s += sum(
+            1 if net.num_addresses == 1 else net.num_addresses - 2
+            for net in nets
+            if net.version == 6
+        )
 
     policy_table = Table(
         title="Country Policies",

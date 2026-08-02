@@ -22,4 +22,6 @@ no managed range contains it.
 
 When bot data exists and `bots.enabled` is true, `banip build` adds
 those networks in a separate managed section of the rendered
-blocklist.
+blocklist. Entries in the IP allowlist take precedence; overlapping bot
+networks are split as needed so allowlisted address space remains
+unblocked.

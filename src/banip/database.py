@@ -8,7 +8,6 @@ import zipfile
 from argparse import Namespace
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 import requests
 from rich import box
@@ -17,7 +16,7 @@ from rich.table import Table
 from rich.text import Text
 
 from banip.config import initialize_config
-from banip.config import raw_config_dict
+from banip.config import load_config
 from banip.constants import CONFIG
 from banip.constants import CUSTOM_CODE
 from banip.constants import CUSTOM_PARSERS
@@ -61,54 +60,10 @@ def init_database(overwrite: bool = False) -> None:
     print(f"Wrote {CONFIG}")
 
 
-def config_section(name: str) -> dict[str, Any]:
-    """Return one optional config section.
-
-    Parameters
-    ----------
-    name : str
-        Section name.
-
-    Returns
-    -------
-    dict[str, Any]
-        Config section data, or an empty mapping.
-    """
-    value = raw_config_dict().get(name, {})
-    if isinstance(value, dict):
-        return value
-    return {}
-
-
-def source_url(section: str, default: str) -> str:
-    """Return a source URL from config overrides or a default.
-
-    Parameters
-    ----------
-    section : str
-        Source section name.
-    default : str
-        Built-in source URL.
-
-    Returns
-    -------
-    str
-        URL to use.
-    """
-    database = config_section("database")
-    sources = database.get("sources", {})
-    if not isinstance(sources, dict):
-        return default
-    source = sources.get(section, {})
-    if not isinstance(source, dict):
-        return default
-    url = source.get("url", default)
-    return url if isinstance(url, str) else default
-
-
 def update_ipsum() -> None:
     """Download the ipsum threat-intelligence feed."""
-    url = source_url("ipsum", IPSUM_URL)
+    settings = load_config(CONFIG).database
+    url = settings.ipsum_url or IPSUM_URL
     response = requests.get(url, timeout=60)
     response.raise_for_status()
     IPSUM.parent.mkdir(parents=True, exist_ok=True)
@@ -145,22 +100,18 @@ def maxmind_settings() -> tuple[str, str, str]:
     tuple[str, str, str]
         Edition, account ID, and license key.
     """
-    database = config_section("database")
-    secrets_file = database.get("secrets_file", "~/.secrets")
-    if isinstance(secrets_file, str):
-        load_secrets(Path(secrets_file).expanduser())
+    settings = load_config(CONFIG).database
+    if settings.secrets_file:
+        load_secrets(Path(settings.secrets_file).expanduser())
 
-    edition = database.get("maxmind_edition", "GeoLite2-Country-CSV")
     account_id = os.environ.get("MAXMIND_ACCOUNT_ID")
     license_key = os.environ.get("MAXMIND_LICENSE_KEY")
-    if not isinstance(edition, str):
-        edition = "GeoLite2-Country-CSV"
     if not account_id or not license_key:
         raise RuntimeError(
             "MAXMIND_ACCOUNT_ID and MAXMIND_LICENSE_KEY are required for "
             "GeoLite updates."
         )
-    return edition, account_id, license_key
+    return settings.maxmind_edition, account_id, license_key
 
 
 def validate_geolite(path: Path) -> None:
@@ -298,7 +249,7 @@ def task_runner(args: Namespace) -> None:
                 update_geolite()
         elif args.action == "status":
             status()
-    except (OSError, RuntimeError, requests.RequestException) as exc:
+    except (OSError, RuntimeError, ValueError, requests.RequestException) as exc:
         print(exc)
         sys.exit(1)
 

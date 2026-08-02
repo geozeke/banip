@@ -21,7 +21,10 @@ def load_command_args(sp: _SubParsersAction) -> None:
     init.add_argument(
         "--overwrite",
         action="store_true",
-        help="Replace an existing ~/.banip/banip.yaml.",
+        help=(
+            "Replace an existing ~/.banip/banip.yaml with the starter "
+            "configuration without reimporting legacy files."
+        ),
     )
 
     msg = """

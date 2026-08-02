@@ -29,6 +29,17 @@ def test_parser_modules_register_commands(parser_module) -> None:
     assert parser_module.COMMAND_NAME in subparsers.choices
 
 
+def test_build_outfile_is_parsed_as_a_path() -> None:
+    """The build parser does not open or truncate its output path."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    build_args.load_command_args(subparsers)
+
+    args = parser.parse_args(["build", "--outfile", "custom.txt"])
+
+    assert args.outfile == Path("custom.txt")
+
+
 def test_collect_parsers_excludes_init(tmp_path: Path) -> None:
     """Parser collection skips package initializers."""
     (tmp_path / "__init__.py").write_text("")

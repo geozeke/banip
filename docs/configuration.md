@@ -2,8 +2,9 @@
 
 banip reads user-managed settings from `~/.banip/banip.yaml`.
 `version`, `countries`, `allowlist`, and `denylist` are validated when
-banip loads the configuration. The `bots` and `database` sections have
-defaults when they are omitted.
+banip loads the configuration. Country codes must appear in the
+[country-code reference](country-codes.md). The `bots` and `database`
+sections have defaults when they are omitted.
 
 ```yaml
 # Config schema version. Required.
@@ -86,9 +87,16 @@ supplemental control rather than as authentication or authorization.
 ## Allowlists and denylists
 
 `allowlist` contains addresses or CIDR networks that must never be
-blocked. `denylist` contains user-managed addresses or CIDR networks to
-add to the rendered blocklist. Managed bot ranges are stored separately
-in `botdata.json` rather than in `denylist`.
+blocked. It has final precedence over the ipsum feed, the denylist, and
+managed bot ranges. When an allowlisted address or network overlaps a
+blocked network, banip splits the blocked network to preserve the
+allowlisted space.
+
+`denylist` contains user-managed addresses or CIDR networks to add to
+the rendered blocklist. These entries are not limited by country
+policies. A build reads but does not rewrite the denylist. Managed bot
+ranges are stored separately in `botdata.json` rather than in
+`denylist`.
 
 ## Managed bots
 
@@ -96,7 +104,7 @@ in `botdata.json` rather than in `denylist`.
 and defaults to `true`. `bots.providers` selects from `google`, `bing`,
 `openai`, `anthropic`, and `meta`; all five are enabled by default. See
 [Managed bot ranges](managed-bots.md) for refresh and inspection
-commands.
+commands. Unknown and duplicate provider names are rejected.
 
 ## Automatic configuration upgrade
 
@@ -104,7 +112,9 @@ When banip reads a version-1 or version-2 configuration, it
 automatically writes schema version 3. Existing `targets` become the
 codes in a `restricted` allowlist policy, preserving the previous
 country filter and threat-selection behavior. Version-1 list keys are
-also renamed to their current forms.
+also renamed to their current forms. The complete converted
+configuration is validated before banip atomically replaces the prior
+file, so a failed upgrade leaves the original unchanged.
 
 Do not mix keys from different schema versions in one file. banip
 reports the ambiguity instead of choosing a precedence.
@@ -114,6 +124,8 @@ reports the ambiguity instead of choosing a precedence.
 `database.maxmind_edition` selects the MaxMind CSV edition and
 `database.secrets_file` identifies an optional dotenv-style credential
 file. The default values are `GeoLite2-Country-CSV` and `~/.secrets`.
+Set `database.secrets_file` to `null` to disable credential-file loading
+and use environment variables only.
 
 The ipsum download URL can be overridden for mirrors or compatible
 feeds:
@@ -126,4 +138,6 @@ database:
 ```
 
 GeoLite downloads always use MaxMind's authenticated download endpoint
-and the configured `database.maxmind_edition`.
+and the configured `database.maxmind_edition`. Unknown configuration
+keys and invalid database setting types are rejected rather than
+silently replaced with defaults.

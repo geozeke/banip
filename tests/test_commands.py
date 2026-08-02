@@ -3,6 +3,7 @@
 import argparse
 import ipaddress as ipa
 import os
+import re
 from io import StringIO
 from pathlib import Path
 from types import SimpleNamespace
@@ -266,6 +267,9 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
     assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
     assert loaded.bots.enabled is False
     assert loaded.bots.providers == ["google"]
+    assert loaded.database.maxmind_edition == "GeoLite2-Country-CSV"
+    assert loaded.database.secrets_file == "~/.secrets"
+    assert loaded.database.ipsum_url is None
 
 
 def test_config_defaults_include_managed_bot_providers() -> None:
@@ -273,6 +277,42 @@ def test_config_defaults_include_managed_bot_providers() -> None:
     loaded = config.parse_bot_config(None)
 
     assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
+
+
+@pytest.mark.parametrize(
+    ("bots_config", "message"),
+    [
+        ({"providers": ["unknown"]}, "Unknown bot provider"),
+        ({"providers": ["google", "GOOGLE"]}, "contains duplicates"),
+        ({"enabled": True, "enable": False}, "Unsupported config key"),
+    ],
+)
+def test_config_rejects_invalid_bot_settings(
+    bots_config: object,
+    message: str,
+) -> None:
+    """Bot configuration rejects names and keys that would be ignored."""
+    with pytest.raises(ValueError, match=message):
+        config.parse_bot_config(bots_config)
+
+
+@pytest.mark.parametrize(
+    ("database_config", "message"),
+    [
+        ({"maxmind_edition": 1}, "maxmind_edition"),
+        ({"secrets_file": ""}, "secrets_file"),
+        ({"sources": []}, "database.sources"),
+        ({"sources": {"ipsum": {"url": 1}}}, "ipsum.url"),
+        ({"source": {}}, "Unsupported config key"),
+    ],
+)
+def test_config_rejects_invalid_database_settings(
+    database_config: object,
+    message: str,
+) -> None:
+    """Database configuration rejects malformed values and typos."""
+    with pytest.raises(ValueError, match=message):
+        config.parse_database_config(database_config)
 
 
 def test_documented_starter_config_matches_generated_template() -> None:
@@ -341,6 +381,14 @@ def test_config_parses_named_country_policies() -> None:
     )
 
 
+def test_country_code_reference_matches_config_validation() -> None:
+    """The documented and accepted country-code sets remain synchronized."""
+    reference = Path(__file__).parents[1] / "docs" / "country-codes.md"
+    documented = set(re.findall(r"`([A-Z]{2})`", reference.read_text()))
+
+    assert documented == config.COUNTRY_CODES
+
+
 @pytest.mark.parametrize(
     ("countries", "message"),
     [
@@ -379,6 +427,13 @@ def test_config_parses_named_country_policies() -> None:
         ),
         (
             {
+                "default_policy": "default",
+                "policies": {"default": {"mode": "allowlist", "codes": ["ZZ"]}},
+            },
+            "Unknown countries.policies.default.codes country code",
+        ),
+        (
+            {
                 "default_policy": "missing",
                 "policies": {"default": {"mode": "allowlist", "codes": ["US"]}},
             },
@@ -397,8 +452,10 @@ def test_config_rejects_invalid_denylist_entry(tmp_path) -> None:
     path = tmp_path / "banip.yaml"
     path.write_text("version: 2\ntargets:\n  - US\ndenylist:\n  - nope\n")
 
+    original = path.read_text()
     with pytest.raises(ValueError, match="Invalid denylist entry"):
         config.load_config(path)
+    assert path.read_text() == original
 
 
 def test_config_upgrades_version_one_lists(tmp_path) -> None:
@@ -461,6 +518,37 @@ def test_config_rejects_mixed_schema_list_keys(tmp_path) -> None:
         config.load_config(path)
 
 
+@pytest.mark.parametrize("version_yaml", ["true", "1.0", "'1'"])
+def test_config_rejects_noninteger_schema_versions(
+    tmp_path,
+    version_yaml: str,
+) -> None:
+    """Schema versions must be actual integers rather than equal values."""
+    path = tmp_path / "banip.yaml"
+    path.write_text(f"version: {version_yaml}\n")
+
+    with pytest.raises(ValueError, match="Unsupported config version"):
+        config.load_config(path)
+
+
+def test_config_reports_malformed_yaml_as_a_value_error(tmp_path) -> None:
+    """Malformed YAML produces a controlled configuration error."""
+    path = tmp_path / "banip.yaml"
+    path.write_text("version: [\n")
+
+    with pytest.raises(ValueError, match="Invalid YAML in config file"):
+        config.load_config(path)
+
+
+def test_config_rejects_unknown_top_level_keys() -> None:
+    """Top-level typos cannot be silently ignored."""
+    data = config.config_template()
+    data["botz"] = {}
+
+    with pytest.raises(ValueError, match="Unsupported config key"):
+        config.parse_current_config(data)
+
+
 def test_database_init_migrates_legacy_flat_files(
     tmp_path, monkeypatch, capsys
 ) -> None:
@@ -493,6 +581,84 @@ def test_database_init_migrates_legacy_flat_files(
     loaded = config.load_config(data / "banip.yaml")
     assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"].codes == {"US"}
+
+
+def test_initialize_config_ignores_invalid_legacy_ip_entries(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    """Legacy IP lists retain their prior invalid-line behavior."""
+    path = tmp_path / "banip.yaml"
+    targets = tmp_path / "targets.txt"
+    allowlist = tmp_path / "custom_whitelist.txt"
+    denylist = tmp_path / "custom_blacklist.txt"
+    targets.write_text("US\n")
+    allowlist.write_text("invalid\n203.0.113.10\n")
+    denylist.write_text("also-invalid\n192.0.2.0/30\n")
+    monkeypatch.setattr(config, "TARGETS", targets)
+    monkeypatch.setattr(config, "LEGACY_CUSTOM_ALLOWLIST", allowlist)
+    monkeypatch.setattr(config, "LEGACY_CUSTOM_DENYLIST", denylist)
+
+    config.initialize_config(path=path)
+    loaded = config.load_config(path)
+
+    assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
+    assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
+    assert "invalid" not in path.read_text()
+
+
+def test_initialize_config_rejects_empty_legacy_targets(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    """An empty legacy selection cannot create an invalid YAML file."""
+    path = tmp_path / "banip.yaml"
+    targets = tmp_path / "targets.txt"
+    targets.write_text("# No selected countries\nnot-a-code\n")
+    monkeypatch.setattr(config, "TARGETS", targets)
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_ALLOWLIST",
+        tmp_path / "missing-allowlist.txt",
+    )
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_DENYLIST",
+        tmp_path / "missing-denylist.txt",
+    )
+
+    with pytest.raises(ValueError, match="no valid country codes"):
+        config.initialize_config(path=path)
+
+    assert not path.exists()
+
+
+def test_initialize_config_overwrite_does_not_reimport_legacy_files(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    """Overwrite creates a starter config independent of stale flat files."""
+    path = tmp_path / "banip.yaml"
+    path.write_text("existing configuration\n")
+    targets = tmp_path / "targets.txt"
+    targets.write_text("GB\n")
+    monkeypatch.setattr(config, "TARGETS", targets)
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_ALLOWLIST",
+        tmp_path / "missing-allowlist.txt",
+    )
+    monkeypatch.setattr(
+        config,
+        "LEGACY_CUSTOM_DENYLIST",
+        tmp_path / "missing-denylist.txt",
+    )
+
+    config.initialize_config(overwrite=True, path=path)
+    loaded = config.load_config(path)
+
+    assert loaded.countries.policies["restricted"].codes == {"CA", "US"}
+    assert "GB" not in path.read_text()
 
 
 def test_database_status_reports_modification_times(tmp_path, monkeypatch) -> None:
@@ -547,6 +713,41 @@ def test_database_load_secrets_does_not_execute_shell(tmp_path, monkeypatch) -> 
 
     assert os.environ["MAXMIND_ACCOUNT_ID"] == "123"
     assert os.environ["MAXMIND_LICENSE_KEY"] == "abc"
+
+
+def test_database_update_ipsum_uses_validated_url_override(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    """Ipsum updates consume the validated database configuration."""
+
+    class Response:
+        """Successful feed response."""
+
+        text = "192.0.2.1 5\n"
+
+        def raise_for_status(self) -> None:
+            """Accept the fake response."""
+
+    seen = []
+    settings = SimpleNamespace(ipsum_url="https://example.com/ipsum.txt")
+    monkeypatch.setattr(
+        database,
+        "load_config",
+        lambda _path: SimpleNamespace(database=settings),
+    )
+    monkeypatch.setattr(
+        database.requests,
+        "get",
+        lambda url, timeout: seen.append((url, timeout)) or Response(),
+    )
+    ipsum = tmp_path / "ipsum.txt"
+    monkeypatch.setattr(database, "IPSUM", ipsum)
+
+    database.update_ipsum()
+
+    assert seen == [("https://example.com/ipsum.txt", 60)]
+    assert ipsum.read_text() == Response.text
 
 
 def test_bots_normalize_ranges_deduplicates_and_sorts() -> None:
@@ -822,13 +1023,17 @@ def test_build_task_runner_generates_blocklist_outputs(
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):
             monkeypatch.setattr(config, name, path)
-    monkeypatch.setattr(build, "get_public_ip", lambda: ipa.ip_address("203.0.113.10"))
-
-    build.task_runner(argparse.Namespace(threshold=3, compact=0))
+    alternate = data / "alternate_blocklist.txt"
+    build.task_runner(
+        argparse.Namespace(
+            threshold=3,
+            compact=0,
+            outfile=alternate,
+        )
+    )
 
     output = capsys.readouterr().out
     assert utilities.format_status("redundant_remove") in output
-    assert utilities.format_status("repack") in output
     assert "Compacting ipsum (0)" in output
     assert "0.00%" in output
     assert "Final Build Summary" in output
@@ -853,6 +1058,7 @@ def test_build_task_runner_generates_blocklist_outputs(
         "192.0.2.0/30",
     ]
     assert "198.51.100.9" not in blocklist_lines
+    assert alternate.read_text() == paths["RENDERED_BLOCKLIST"].read_text()
 
 
 def test_build_task_runner_generates_named_country_policies(
@@ -927,8 +1133,6 @@ def test_build_task_runner_generates_named_country_policies(
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):
             monkeypatch.setattr(config, name, path)
-    monkeypatch.setattr(build, "get_public_ip", lambda: ipa.ip_address("203.0.113.10"))
-
     build.task_runner(argparse.Namespace(threshold=3, compact=0, no_bots=False))
 
     output = capsys.readouterr().out
@@ -968,7 +1172,7 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "BOTDATA": data / "botdata.json",
         "CONFIG": data / "banip.yaml",
     }
-    paths["CONFIG"].write_text(
+    config_text = (
         "version: 3\n"
         "countries:\n"
         "  default_policy: blocked\n"
@@ -977,13 +1181,18 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "      mode: blocklist\n"
         "      codes:\n"
         "        - US\n"
-        "allowlist: []\n"
-        "denylist: []\n"
+        "allowlist:\n"
+        "  - 198.51.100.9\n"
+        "  - 203.0.113.1\n"
+        "denylist:\n"
+        "  - 198.51.100.9\n"
+        "  - 198.51.100.10\n"
         "bots:\n"
         "  enabled: true\n"
         "  providers:\n"
         "    - google\n"
     )
+    paths["CONFIG"].write_text(config_text)
     paths["GEOLITE_LOC"].write_text(
         "geoname_id,locale_code,continent_code,continent_name,country_iso_code,"
         "country_name,is_in_european_union\n"
@@ -1021,12 +1230,56 @@ def test_build_task_runner_renders_managed_bot_ranges(
             monkeypatch.setattr(bots, name, path)
         if hasattr(config, name):
             monkeypatch.setattr(config, name, path)
-    monkeypatch.setattr(build, "get_public_ip", lambda: ipa.ip_address("198.51.100.1"))
-
     build.task_runner(argparse.Namespace(threshold=3, compact=0, no_bots=False))
 
     output = capsys.readouterr().out
     blocklist = paths["RENDERED_BLOCKLIST"].read_text()
+    blocklist_entries = [
+        token
+        for line in blocklist.splitlines()
+        if (token := utilities.extract_ip(line))
+    ]
+    blocklist_ips, blocklist_nets = utilities.split_hybrid(blocklist_entries)
     assert "Managed bots" in output
     assert "# ---------managed bot ranges -----------" in blocklist
-    assert "# google\n203.0.113.0/24\n" in blocklist
+    assert "# google\n" in blocklist
+    assert ipa.ip_address("198.51.100.9") not in blocklist_ips
+    assert ipa.ip_address("198.51.100.10") in blocklist_ips
+    assert not utilities.ip_in_network(
+        ipa.ip_address("203.0.113.1"),
+        utilities.build_network_lookup(blocklist_nets),
+    )
+    assert utilities.ip_in_network(
+        ipa.ip_address("203.0.113.2"),
+        utilities.build_network_lookup(blocklist_nets),
+    )
+    assert paths["CONFIG"].read_text() == config_text
+
+
+def test_apply_allowlist_splits_overlapping_networks() -> None:
+    """Allowlisted space is removed from every blocked entry type."""
+    blocked_ips = [
+        ipa.ip_address("192.0.2.1"),
+        ipa.ip_address("198.51.100.1"),
+    ]
+    blocked_nets = [
+        ipa.ip_network("192.0.2.0/24"),
+        ipa.ip_network("2001:db8::/126"),
+    ]
+    allowlist = {
+        ipa.ip_address("192.0.2.1"),
+        ipa.ip_network("2001:db8::/127"),
+    }
+
+    filtered_ips, filtered_nets = build.apply_allowlist(
+        blocked_ips,
+        blocked_nets,
+        allowlist,
+    )
+    lookup = utilities.build_network_lookup(filtered_nets)
+
+    assert filtered_ips == [ipa.ip_address("198.51.100.1")]
+    assert not utilities.ip_in_network(ipa.ip_address("192.0.2.1"), lookup)
+    assert utilities.ip_in_network(ipa.ip_address("192.0.2.2"), lookup)
+    assert not utilities.ip_in_network(ipa.ip_address("2001:db8::1"), lookup)
+    assert utilities.ip_in_network(ipa.ip_address("2001:db8::2"), lookup)

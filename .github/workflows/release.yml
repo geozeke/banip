@@ -60,7 +60,7 @@ jobs:
           "$GITHUB_REF_NAME"
           .release-notes.md
       - name: Store release artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: python-package-distributions
           path: |

@@ -4,6 +4,24 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.2] - 2026-08-05
+
+[Compare with 2.1.1](https://github.com/geozeke/banip/compare/v2.1.1...v2.1.2)
+
+### Added
+
+- Improve banip check behavior ([7f00bed](https://github.com/geozeke/banip/commit/7f00bed5f7c6744d0319c2435a46a5ac0c032523))
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group with 2 updates (#117) ([6090030](https://github.com/geozeke/banip/commit/609003007be45bce4378c29aee569910f88eefe7))
+
+- *(deps)* Bump actions/download-artifact from 6 to 8 ([4b45f71](https://github.com/geozeke/banip/commit/4b45f71765ec0d331cd26901c7661b850e6b7c51))
+
+- *(deps)* Bump actions/upload-artifact from 5 to 7 ([06485f1](https://github.com/geozeke/banip/commit/06485f1b98394fa396452a880f82e92b17d1be13))
+
+- *(deps)* Bump github/codeql-action from 4 to 4.37.4 ([ee1b2bc](https://github.com/geozeke/banip/commit/ee1b2bcdbe28c07f72d1ae205621ed774dc90b1c))
+
 ## [2.1.1] - 2026-08-02
 
 [Compare with 2.1.0](https://github.com/geozeke/banip/compare/v2.1.0...v2.1.1)

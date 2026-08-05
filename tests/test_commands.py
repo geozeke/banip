@@ -202,6 +202,37 @@ def test_stats_task_runner_reports_unknown_country(
     assert "ZZ not found" in capsys.readouterr().out
 
 
+def write_check_config(tmp_path: Path) -> Path:
+    """Write a configuration with permitting and blocking policies.
+
+    Parameters
+    ----------
+    tmp_path : Path
+        Temporary directory in which to write the configuration.
+
+    Returns
+    -------
+    Path
+        Path to the written configuration.
+    """
+    config_file = tmp_path / "banip.yaml"
+    config_file.write_text(
+        "version: 3\n"
+        "countries:\n"
+        "  default_policy: restricted\n"
+        "  policies:\n"
+        "    restricted:\n"
+        "      mode: allowlist\n"
+        "      codes: [CA, US]\n"
+        "    public:\n"
+        "      mode: blocklist\n"
+        "      codes: [CN]\n"
+        "allowlist: []\n"
+        "denylist: []\n"
+    )
+    return config_file
+
+
 def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> None:
     """Check command loads generated data and handles one interactive lookup."""
     country_data = tmp_path / "haproxy_geo_ip.txt"
@@ -210,32 +241,142 @@ def test_check_task_runner_handles_one_lookup(tmp_path, monkeypatch, capsys) -> 
     rendered.write_text("192.0.2.0/28\n198.51.100.1\n")
     ipsum = tmp_path / "ipsum.txt"
     ipsum.write_text("192.0.2.3 7\n")
-    inputs = iter(["invalid", "192.0.2.3", "n"])
+    monkeypatch.setattr(check, "CONFIG", write_check_config(tmp_path))
+    inputs = iter(["invalid", "192.0.2.3", ""])
     monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(check, "IPSUM", ipsum)
     monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
     monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
     monkeypatch.setattr(utility_data, "IPSUM", ipsum)
-    monkeypatch.setattr(check, "clear", lambda: None)
     monkeypatch.setattr("builtins.input", lambda _prompt: next(inputs))
 
-    check.task_runner(argparse.Namespace())
+    check.task_runner(argparse.Namespace(ip_addresses=[]))
 
     output = capsys.readouterr().out
-    assert utilities.format_status("ipsum_load_data") in output
-    assert utilities.format_status("blocklist_rendered_load") in output
-    assert utilities.format_status("geolite_load") in output
     assert "invalid is not a valid IP address." in output
-    assert "Stats for 192.0.2.3" in output
-    assert "found in subnet" in output
+    assert "IP Check: 192.0.2.3" in output
+    assert "BLOCKED" in output
+    assert "192.0.2.0/28" in output
+    assert "7/10" in output
+
+
+def test_check_task_runner_handles_batch_lookup(tmp_path, monkeypatch, capsys) -> None:
+    """Check command renders multiple argument addresses in one table."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("192.0.2.0/24 US\n198.51.100.0/24 CA\n")
+    rendered = tmp_path / "ip_blocklist.txt"
+    rendered.write_text("192.0.2.0/28\n")
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_text("192.0.2.3 7\n198.51.100.8 4\n")
+    monkeypatch.setattr(check, "CONFIG", write_check_config(tmp_path))
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(check, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+
+    check.task_runner(
+        argparse.Namespace(
+            ip_addresses=[
+                ipa.ip_address("192.0.2.3"),
+                ipa.ip_address("198.51.100.8"),
+            ]
+        )
+    )
+
+    output = capsys.readouterr().out
+    assert "Blocklist Check" in output
+    assert "192.0.2.3" in output
+    assert "BLOCKED" in output
+    assert "198.51.100.8" in output
+    assert "NOT BLOCKED" in output
+    assert "CA" in output
+
+
+def test_check_reports_country_policy_block(tmp_path, monkeypatch, capsys) -> None:
+    """A country policy can block an address absent from the IP list."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("203.0.113.0/24 CN\n")
+    rendered = tmp_path / "ip_blocklist.txt"
+    rendered.write_text("")
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_text("")
+    monkeypatch.setattr(check, "CONFIG", write_check_config(tmp_path))
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(check, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+
+    check.task_runner(argparse.Namespace(ip_addresses=[ipa.ip_address("203.0.113.8")]))
+
+    output = capsys.readouterr().out
+    assert "BLOCKED" in output
+    assert "CN" in output
+    assert "blocked: public, restricted" in output
+    assert "Blocklist match" in output
+
+
+def test_check_reports_policy_dependent_result(tmp_path) -> None:
+    """A country permitted by one policy and blocked by another is explicit."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("203.0.113.0/24 RU\n")
+    data = check.CheckData(
+        country_data_path=country_data,
+        rendered_ips=frozenset(),
+        rendered_lookup=utilities.build_network_lookup([]),
+        ipsum={},
+        country_policies={
+            "public": config.CountryPolicy(
+                mode=config.CountryPolicyMode.BLOCKLIST,
+                codes={"CN"},
+            ),
+            "restricted": config.CountryPolicy(
+                mode=config.CountryPolicyMode.ALLOWLIST,
+                codes={"CA", "US"},
+            ),
+        },
+    )
+
+    result = check.check_address(ipa.ip_address("203.0.113.8"), data)
+
+    assert result.verdict is check.CheckVerdict.POLICY_DEPENDENT
+    assert result.blocked_policies == ("restricted",)
+    assert result.permitted_policies == ("public",)
+
+
+@pytest.mark.parametrize("error", [EOFError, KeyboardInterrupt])
+def test_interactive_check_exits_on_terminal_signal(
+    tmp_path, monkeypatch, error
+) -> None:
+    """Interactive checks handle terminal exit signals without a traceback."""
+    data = check.CheckData(
+        country_data_path=tmp_path / "haproxy_geo_ip.txt",
+        rendered_ips=frozenset(),
+        rendered_lookup=utilities.build_network_lookup([]),
+        ipsum={},
+        country_policies={},
+    )
+    monkeypatch.setattr("builtins.input", lambda _prompt: (_ for _ in ()).throw(error))
+
+    check.interactive_check(check.Console(), data)
 
 
 def test_check_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
     """Check command prompts users to build data first."""
+    monkeypatch.setattr(check, "CONFIG", tmp_path / "banip.yaml")
     monkeypatch.setattr(check, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", tmp_path / "blocklist.txt")
+    monkeypatch.setattr(check, "IPSUM", tmp_path / "ipsum.txt")
 
-    check.task_runner(argparse.Namespace())
+    check.task_runner(argparse.Namespace(ip_addresses=[]))
 
-    assert "Run the 'build' command" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "Required build data is missing" in output
+    assert "Run banip build" in output
 
 
 def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
@@ -1004,8 +1145,8 @@ def test_build_task_runner_generates_blocklist_outputs(
     paths["GEOLITE_4"].write_text(
         "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,"
         "is_anonymous_proxy,is_satellite_provider,postal_code\n"
-        "192.0.2.0/24,1,1,,0,0,\n"
         "198.51.100.0/24,2,2,,0,0,\n"
+        "192.0.2.0/24,1,1,,0,0,\n"
     )
     paths["GEOLITE_6"].write_text(
         "network,geoname_id,registered_country_geoname_id,represented_country_geoname_id,"

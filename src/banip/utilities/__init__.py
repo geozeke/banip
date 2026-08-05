@@ -3,6 +3,7 @@
 from banip.utilities.data import load_country_networks
 from banip.utilities.data import load_ipsum
 from banip.utilities.data import load_rendered_blocklist
+from banip.utilities.data import lookup_country
 from banip.utilities.data import tag_networks
 from banip.utilities.display import STATUS_MESSAGES
 from banip.utilities.display import StatusMessages
@@ -35,6 +36,7 @@ __all__ = [
     "load_country_networks",
     "load_ipsum",
     "load_rendered_blocklist",
+    "lookup_country",
     "print_docstring",
     "render_lines",
     "split_hybrid",

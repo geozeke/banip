@@ -2,6 +2,8 @@
 
 import csv
 import ipaddress as ipa
+import mmap
+from pathlib import Path
 
 from rich.console import Console
 
@@ -63,13 +65,74 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = status_label("build_products")
     with console.status(msg):
-        _, keys = split_hybrid(networks.keys())
+        keys = sorted(
+            networks,
+            key=lambda network: (network.version, int(network.network_address)),
+        )
         COUNTRY_NETS_TXT.write_text(
             render_lines(f"{format(key)} {networks[key]}" for key in keys)
         )
     print(format_status("build_products"))
 
     return networks
+
+
+def lookup_country(ip: AddressType, path: Path) -> str | None:
+    """Find an address country in a sorted network map.
+
+    The map must be sorted by IP version and numeric network address,
+    matching the output produced by :func:`tag_networks`.
+
+    Parameters
+    ----------
+    ip : AddressType
+        Address whose country code should be located.
+    path : Path
+        Path to the generated country network map.
+
+    Returns
+    -------
+    str | None
+        Matching country code, or ``None`` when the address is not
+        represented in the map.
+    """
+    if not path.stat().st_size:
+        return None
+
+    target_key = ip.version, int(ip)
+    candidate: tuple[NetworkType, str] | None = None
+
+    with path.open("rb") as country_file:
+        with mmap.mmap(country_file.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            first = 0
+            last = len(data)
+
+            while first < last:
+                midpoint = (first + last) // 2
+                data.seek(midpoint)
+                if midpoint:
+                    data.readline()
+                line_start = data.tell()
+
+                if line_start >= last:
+                    last = midpoint
+                    continue
+
+                line = data.readline()
+                next_line = data.tell()
+                network_text, country_code = line.decode().split(maxsplit=1)
+                network = ipa.ip_network(network_text)
+                network_key = network.version, int(network.network_address)
+
+                if network_key <= target_key:
+                    candidate = network, country_code.strip()
+                    first = next_line
+                else:
+                    last = midpoint
+
+    if candidate and ip in candidate[0]:
+        return candidate[1]
+    return None
 
 
 def load_country_networks() -> dict[NetworkType, str]:

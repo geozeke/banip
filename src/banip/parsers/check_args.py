@@ -1,5 +1,6 @@
 """Argument parser for check command."""
 
+import ipaddress as ipa
 from argparse import _SubParsersAction
 
 COMMAND_NAME = "check"
@@ -13,6 +14,16 @@ def load_command_args(sp: _SubParsersAction) -> None:
     is permitted by at least one named policy in banip.yaml. Explicit
     denylist and managed bot entries are not limited by country policies.
     """
-    sp.add_parser(name=COMMAND_NAME, description=msg)
+    parser = sp.add_parser(name=COMMAND_NAME, description=msg)
+    parser.add_argument(
+        "ip_addresses",
+        metavar="IP",
+        nargs="*",
+        type=ipa.ip_address,
+        help=(
+            "IPv4 or IPv6 addresses to check. When omitted, addresses "
+            "are read interactively."
+        ),
+    )
 
     return

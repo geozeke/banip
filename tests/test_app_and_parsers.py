@@ -40,6 +40,34 @@ def test_build_outfile_is_parsed_as_a_path() -> None:
     assert args.outfile == Path("custom.txt")
 
 
+def test_check_parses_zero_or_more_ip_addresses() -> None:
+    """Check accepts interactive, single-address, and batch invocations."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    check_args.load_command_args(subparsers)
+
+    interactive = parser.parse_args(["check"])
+    batch = parser.parse_args(["check", "192.0.2.1", "2001:db8::1"])
+
+    assert interactive.ip_addresses == []
+    assert [str(address) for address in batch.ip_addresses] == [
+        "192.0.2.1",
+        "2001:db8::1",
+    ]
+
+
+def test_check_rejects_invalid_ip_address() -> None:
+    """Check delegates invalid command-line addresses to argparse."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    check_args.load_command_args(subparsers)
+
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args(["check", "invalid"])
+
+    assert exc_info.value.code == 2
+
+
 def test_collect_parsers_excludes_init(tmp_path: Path) -> None:
     """Parser collection skips package initializers."""
     (tmp_path / "__init__.py").write_text("")

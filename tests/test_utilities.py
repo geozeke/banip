@@ -3,6 +3,7 @@
 import ipaddress as ipa
 from types import SimpleNamespace
 
+import pytest
 from requests.exceptions import RequestException
 
 from banip import utilities
@@ -229,6 +230,40 @@ def test_load_country_networks_skips_malformed_lines(tmp_path, monkeypatch) -> N
         ipa.ip_network("192.0.2.0/24"): "US",
         ipa.ip_network("2001:db8::/126"): "EU",
     }
+
+
+@pytest.mark.parametrize(
+    ("address", "expected"),
+    [
+        ("1.0.0.0", "AU"),
+        ("1.0.0.255", "AU"),
+        ("1.0.1.0", None),
+        ("203.0.113.0", "US"),
+        ("203.0.113.3", "US"),
+        ("203.0.113.4", None),
+        ("2001:db8::", "EU"),
+        ("2001:db8::3", "EU"),
+        ("2001:db8::4", None),
+        ("2c0f:fff0::1", "ZA"),
+        ("ffff::1", None),
+    ],
+)
+def test_lookup_country_binary_searches_sorted_map(tmp_path, address, expected) -> None:
+    """Country lookups handle IPv4, IPv6, boundaries, and gaps."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text(
+        "1.0.0.0/24 AU\n203.0.113.0/30 US\n2001:db8::/126 EU\n2c0f:fff0::/32 ZA\n"
+    )
+
+    assert utilities.lookup_country(ipa.ip_address(address), country_data) == expected
+
+
+def test_lookup_country_handles_empty_map(tmp_path) -> None:
+    """An empty country map has no matches."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("")
+
+    assert utilities.lookup_country(ipa.ip_address("192.0.2.1"), country_data) is None
 
 
 def test_get_public_ip_handles_success_invalid_and_request_failure(monkeypatch) -> None:

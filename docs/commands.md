@@ -83,13 +83,28 @@ behavior.
 ## Check
 
 ```console
-banip check
+banip check 192.0.2.3
+banip check 192.0.2.3 198.51.100.8 2001:db8::1
 ```
 
-Enter an IP address to see its country, blocklist membership, and ipsum
-feed status. The command requires an existing build because it reads the
-rendered blocklist and country network map. After each lookup, choose
-whether to search again.
+The single-address form displays a detailed result card. Multiple
+addresses are summarized in one table. Each result combines the final
+rendered IP blocklist with every named country policy in `banip.yaml`.
+It identifies the country, policies that block or permit it, matching
+blocklist address or network, and exact ipsum confidence when
+available. A `POLICY DEPENDENT` verdict means named country policies
+disagree; their individual decisions are shown in the result.
+
+Omit the address to enter interactive mode:
+
+```console
+banip check
+IP address (blank to quit): 192.0.2.3
+```
+
+Interactive mode accepts addresses until a blank line, end-of-file, or
+interrupt. The command requires an existing build because it reads the
+rendered blocklist, country network map, and ipsum data.
 
 ## Database
 

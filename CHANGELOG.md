@@ -4,6 +4,14 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.3] - 2026-08-07
+
+[Compare with 2.1.2](https://github.com/geozeke/banip/compare/v2.1.2...v2.1.3)
+
+### Fixed
+
+- Fix country lookup bug ([4c24fcf](https://github.com/geozeke/banip/commit/4c24fcfa7d3ff69e2c4f1e74ea8c7e230d97faf2))
+
 ## [2.1.2] - 2026-08-05
 
 [Compare with 2.1.1](https://github.com/geozeke/banip/compare/v2.1.1...v2.1.2)

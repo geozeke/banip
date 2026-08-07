@@ -258,6 +258,14 @@ def test_lookup_country_binary_searches_sorted_map(tmp_path, address, expected) 
     assert utilities.lookup_country(ipa.ip_address(address), country_data) == expected
 
 
+def test_lookup_country_finds_final_record_in_two_line_map(tmp_path) -> None:
+    """Country lookup does not skip the record containing the midpoint."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("0.0.0.0/32 US\n0.0.1.0/24 IR\n")
+
+    assert utilities.lookup_country(ipa.ip_address("0.0.1.167"), country_data) == "IR"
+
+
 def test_lookup_country_handles_empty_map(tmp_path) -> None:
     """An empty country map has no matches."""
     country_data = tmp_path / "haproxy_geo_ip.txt"

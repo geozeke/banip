@@ -109,15 +109,10 @@ def lookup_country(ip: AddressType, path: Path) -> str | None:
 
             while first < last:
                 midpoint = (first + last) // 2
-                data.seek(midpoint)
-                if midpoint:
-                    data.readline()
-                line_start = data.tell()
+                separator = data.rfind(b"\n", first, midpoint)
+                line_start = separator + 1 if separator >= first else first
 
-                if line_start >= last:
-                    last = midpoint
-                    continue
-
+                data.seek(line_start)
                 line = data.readline()
                 next_line = data.tell()
                 network_text, country_code = line.decode().split(maxsplit=1)
@@ -128,7 +123,7 @@ def lookup_country(ip: AddressType, path: Path) -> str | None:
                     candidate = network, country_code.strip()
                     first = next_line
                 else:
-                    last = midpoint
+                    last = line_start
 
     if candidate and ip in candidate[0]:
         return candidate[1]

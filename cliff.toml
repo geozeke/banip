@@ -25,7 +25,7 @@ body = """
 {% if commit.breaking_description and commit.breaking_description != commit.message %}
   **Migration:** {{ commit.breaking_description }}
 {% endif %}
-{% endfor %}
+{%- endfor %}
 {% endif %}\
 {% set regular = commits | filter(attribute="breaking", value=false) %}\
 {% for group, commits in regular | group_by(attribute="group") %}
@@ -33,7 +33,7 @@ body = """
 ### {{ group | striptags | trim | upper_first }}
 {% for commit in commits %}
 - {% if commit.scope %}*({{ commit.scope }})* {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/geozeke/banip/commit/{{ commit.id }}))
-{% endfor %}
+{%- endfor %}
 {% endif %}
 {% endfor %}
 """

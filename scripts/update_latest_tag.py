@@ -32,6 +32,7 @@ def update_latest_tag(
     -------
     bool
         ``True`` when the mutable tag was pushed, otherwise ``False``.
+
     """
     if not candidate_tag.startswith("v"):
         raise ValueError("Candidate release tag must start with v")

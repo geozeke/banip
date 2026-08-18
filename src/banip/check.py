@@ -49,6 +49,7 @@ class CheckData:
         Ipsum confidence values keyed by address.
     country_policies : dict[str, CountryPolicy]
         Configured country policies keyed by name.
+
     """
 
     country_data_path: Path
@@ -85,6 +86,7 @@ class CheckResult:
         Country policies that block the address country.
     permitted_policies : tuple[str, ...]
         Country policies that permit the address country.
+
     """
 
     address: AddressType
@@ -102,6 +104,7 @@ class CheckResult:
         -------
         CheckVerdict
             Effective result or an indication that named policies differ.
+
         """
         if self.blocklist_match or (
             self.blocked_policies and not self.permitted_policies
@@ -126,6 +129,7 @@ def load_check_data(console: Console) -> CheckData:
     -------
     CheckData
         Prepared data for repeated address checks.
+
     """
     progress = Progress(
         TextColumn("{task.description}"),
@@ -170,6 +174,7 @@ def check_address(address: AddressType, data: CheckData) -> CheckResult:
     -------
     CheckResult
         Structured result for the address.
+
     """
     country_code = lookup_country(address, data.country_data_path)
 
@@ -214,6 +219,7 @@ def verdict_text(result: CheckResult) -> Text:
     -------
     Text
         Styled blocked or not-blocked verdict.
+
     """
     if result.verdict is CheckVerdict.BLOCKED:
         return Text("BLOCKED", style="bold red")
@@ -234,6 +240,7 @@ def policy_text(result: CheckResult) -> Text:
     -------
     Text
         Named blocked and permitted policies.
+
     """
     if not result.country_code:
         return Text("unavailable", style="yellow")
@@ -259,6 +266,7 @@ def display_result(console: Console, result: CheckResult) -> None:
         Rich console used for output.
     result : CheckResult
         Result to display.
+
     """
     details = Table.grid(padding=(0, 1))
     details.add_column(style="bold", justify="right")
@@ -301,6 +309,7 @@ def display_results(console: Console, results: list[CheckResult]) -> None:
         Rich console used for output.
     results : list[CheckResult]
         Results to display.
+
     """
     table = Table(
         title="Blocklist Check",
@@ -340,6 +349,7 @@ def interactive_check(console: Console, data: CheckData) -> None:
         Rich console used for output.
     data : CheckData
         Prepared lookup data.
+
     """
     while True:
         try:
@@ -372,6 +382,7 @@ def display_missing_data(console: Console) -> bool:
     -------
     bool
         True when at least one required file is missing.
+
     """
     missing = [
         path
@@ -401,6 +412,7 @@ def task_runner(args: argparse.Namespace) -> None:
     ----------
     args : argparse.Namespace
         Parsed command-line arguments.
+
     """
     console = Console()
     if display_missing_data(console):

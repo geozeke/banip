@@ -36,6 +36,7 @@ def validate_release(tag: str, project_root: Path = PROJECT_ROOT) -> Version:
     ------
     ValueError
         If the tag or synchronized release metadata is invalid.
+
     """
     if not tag.startswith("v"):
         raise ValueError("Release tag must start with v")
@@ -63,6 +64,7 @@ def write_github_outputs(path: Path, version: Version) -> None:
         Path provided by the ``GITHUB_OUTPUT`` environment variable.
     version
         Validated release version.
+
     """
     prerelease = str(bool(version.prerelease)).lower()
     with path.open("a", encoding="utf-8") as handle:

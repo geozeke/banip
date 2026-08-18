@@ -33,6 +33,7 @@ def tag_networks() -> dict[NetworkType, str]:
     dict[NetworkType, str]
         The generated database as a dictionary for reuse by other
         commands.
+
     """
     countries: dict[int, str] = {}
     networks: dict[NetworkType, str] = {}
@@ -95,6 +96,7 @@ def lookup_country(ip: AddressType, path: Path) -> str | None:
     str | None
         Matching country code, or ``None`` when the address is not
         represented in the map.
+
     """
     if not path.stat().st_size:
         return None
@@ -137,6 +139,7 @@ def load_country_networks() -> dict[NetworkType, str]:
     -------
     dict[NetworkType, str]
         The country network map keyed by IP network.
+
     """
     networks: dict[NetworkType, str] = {}
     with COUNTRY_NETS_TXT.open("r") as f:
@@ -158,6 +161,7 @@ def load_ipsum() -> dict[AddressType, int]:
     -------
     dict[AddressType, int]
         The contents of ipsum.txt as a dictionary.
+
     """
     with IPSUM.open("r") as f:
         ipsum: dict[AddressType, int] = {}
@@ -182,6 +186,7 @@ def load_rendered_blocklist() -> tuple[list[AddressType], list[NetworkType]]:
     -------
     tuple[list[AddressType], list[NetworkType]]
         The rendered blocklist split into IP addresses and networks.
+
     """
     with RENDERED_BLOCKLIST.open("r") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]

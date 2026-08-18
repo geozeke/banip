@@ -59,6 +59,7 @@ def output_table(title: str, *, caption: str | None = None) -> Table:
     -------
     Table
         Styled Rich table.
+
     """
     return Table(
         title=title,
@@ -86,6 +87,7 @@ def format_timestamp(value: object) -> str:
     str
         Local date and time, the original text when it cannot be parsed,
         or an em dash when no timestamp is available.
+
     """
     if not isinstance(value, str) or not value:
         return "—"
@@ -108,6 +110,7 @@ def sort_networks(networks: Iterable[NetworkType]) -> list[NetworkType]:
     -------
     list[NetworkType]
         Sorted network objects.
+
     """
     return sorted(networks, key=lambda net: (net.version, int(net.network_address)))
 
@@ -124,6 +127,7 @@ def normalize_ranges(payloads: Iterable[dict[str, Any]]) -> list[str]:
     -------
     list[str]
         Deduplicated CIDR strings sorted deterministically.
+
     """
     networks: set[NetworkType] = set()
     for payload in payloads:
@@ -152,6 +156,7 @@ def parse_irr_ranges(text: str) -> list[str]:
     -------
     list[str]
         Deduplicated CIDR strings sorted deterministically.
+
     """
     networks: set[NetworkType] = set()
     for line in text.splitlines():
@@ -178,6 +183,7 @@ def collect_upstream_timestamp(payloads: Iterable[dict[str, Any]]) -> str | None
     -------
     str | None
         The newest upstream timestamp if one exists; otherwise None.
+
     """
     timestamps: list[str] = []
     for payload in payloads:
@@ -206,6 +212,7 @@ def query_whois(host: str, query: str, timeout: int = 30) -> str:
     -------
     str
         Decoded WHOIS response text.
+
     """
     chunks: list[bytes] = []
     with socket.create_connection((host, 43), timeout=timeout) as connection:
@@ -227,6 +234,7 @@ def fetch_provider(provider: str) -> dict[str, object]:
     -------
     dict[str, object]
         Normalized provider data ready for storage.
+
     """
     if provider == "meta":
         return {
@@ -260,6 +268,7 @@ def load_botdata() -> dict[str, Any]:
     -------
     dict[str, Any]
         Bot data grouped by provider.
+
     """
     if not BOTDATA.exists():
         return {"providers": {}}
@@ -273,6 +282,7 @@ def write_botdata(data: dict[str, Any]) -> None:
     ----------
     data : dict[str, Any]
         Bot data grouped by provider.
+
     """
     providers = data.get("providers", {})
     ordered: dict[str, object] = {}
@@ -306,6 +316,7 @@ def load_managed_bot_networks(
     -------
     dict[str, list[NetworkType]]
         Managed bot networks grouped by provider.
+
     """
     data = load_botdata()
     stored_providers = data.get("providers", {})
@@ -334,6 +345,7 @@ def refresh(provider: str) -> None:
     ----------
     provider : str
         Provider key, or ``all`` for every known provider.
+
     """
     data = load_botdata()
     stored_providers = data.setdefault("providers", {})
@@ -413,6 +425,7 @@ def check_ip(ip: AddressType) -> None:
     ----------
     ip : AddressType
         IP address to check.
+
     """
     matches = []
     for provider, networks in load_managed_bot_networks().items():
@@ -448,6 +461,7 @@ def task_runner(args: Namespace) -> None:
     ----------
     args : Namespace
         Command-line arguments.
+
     """
     if args.action == "refresh":
         refresh(args.provider)

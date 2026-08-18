@@ -21,6 +21,7 @@ def task_runner(args: argparse.Namespace) -> None:
     ----------
     args : argparse.Namespace
         Parsed command-line arguments.
+
     """
     if not COUNTRY_NETS_TXT.exists():
         msg = """

@@ -24,6 +24,7 @@ def split_hybrid(
     tuple[list[AddressType], list[NetworkType]]
         A tuple of sorted lists. The first list contains IP addresses,
         and the second list contains networks.
+
     """
     ips = sorted(
         [ip for ip in hybrid_list if isinstance(ip, AddressTypes)],
@@ -49,6 +50,7 @@ def render_lines(items: Iterable[object]) -> str:
     str
         One newline-terminated line per item, or an empty string for an
         empty iterable.
+
     """
     return "".join(f"{item}\n" for item in items)
 
@@ -65,6 +67,7 @@ def extract_ip(from_str: str) -> AddressType | NetworkType | None:
     -------
     AddressType | NetworkType | None
         The parsed IP address or network, or None if parsing fails.
+
     """
     to_ip: AddressType | NetworkType | None = None
 

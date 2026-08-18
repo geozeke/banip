@@ -64,6 +64,7 @@ class CountryPolicy:
         Whether configured country codes are allowed or blocked.
     codes : set[str]
         Normalized two-letter country codes.
+
     """
 
     mode: CountryPolicyMode
@@ -80,6 +81,7 @@ class CountryConfig:
         Policy used for the compatibility country allowlist.
     policies : dict[str, CountryPolicy]
         Policies keyed by their validated names.
+
     """
 
     default_policy: str
@@ -96,6 +98,7 @@ class BotConfig:
         Whether managed bot ranges are enabled for builds.
     providers : list[str]
         Provider keys to include.
+
     """
 
     enabled: bool
@@ -114,6 +117,7 @@ class DatabaseConfig:
         Optional dotenv-style credential file.
     ipsum_url : str | None
         Optional ipsum feed URL override.
+
     """
 
     maxmind_edition: str
@@ -137,6 +141,7 @@ class BanipConfig:
         Managed bot range settings.
     database : DatabaseConfig
         External database update settings.
+
     """
 
     countries: CountryConfig
@@ -166,6 +171,7 @@ def reject_unknown_keys(
     ------
     ValueError
         If the mapping contains an unsupported key.
+
     """
     if unknown := sorted(str(key) for key in values if key not in allowed):
         raise ValueError(f"Unsupported config key in '{section}': {', '.join(unknown)}")
@@ -178,6 +184,7 @@ def yaml() -> YAML:
     -------
     YAML
         A round-trip YAML parser.
+
     """
     parser = YAML()
     parser.default_flow_style = False
@@ -206,6 +213,7 @@ def parse_country_codes(
     -------
     set[str]
         Uppercase two-letter country codes.
+
     """
     if not isinstance(values, list):
         raise ValueError(f"Config section '{section}' must be a list.")
@@ -237,6 +245,7 @@ def parse_country_config(values: object) -> CountryConfig:
     -------
     CountryConfig
         Validated country policy configuration.
+
     """
     if not isinstance(values, dict):
         raise ValueError("Config section 'countries' must be a mapping.")
@@ -306,6 +315,7 @@ def parse_ip_entries(
     -------
     set[AddressType | NetworkType]
         Parsed IP addresses and networks.
+
     """
     if values is None:
         return set()
@@ -335,6 +345,7 @@ def parse_bot_config(values: object) -> BotConfig:
     -------
     BotConfig
         Normalized bot settings.
+
     """
     if values is None:
         return BotConfig(enabled=True, providers=list(DEFAULT_BOT_PROVIDERS))
@@ -373,6 +384,7 @@ def parse_database_config(values: object) -> DatabaseConfig:
     -------
     DatabaseConfig
         Normalized database settings.
+
     """
     if values is None:
         return DatabaseConfig(
@@ -431,6 +443,7 @@ def load_raw_config(path: Path = CONFIG) -> CommentedMap:
     -------
     CommentedMap
         Parsed YAML mapping.
+
     """
     if not path.exists():
         msg = (
@@ -461,6 +474,7 @@ def parse_current_config(data: CommentedMap) -> BanipConfig:
     -------
     BanipConfig
         Validated runtime configuration.
+
     """
     version = data.get("version")
     if type(version) is not int or version != CONFIG_VERSION:
@@ -490,6 +504,7 @@ def write_config(data: CommentedMap, path: Path) -> None:
         Validated current-schema mapping.
     path : Path
         Destination configuration file.
+
     """
     parse_current_config(data)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -523,6 +538,7 @@ def load_config(path: Path = CONFIG) -> BanipConfig:
     -------
     BanipConfig
         Validated configuration.
+
     """
     data = upgrade_config(load_raw_config(path), path)
     return parse_current_config(data)
@@ -548,6 +564,7 @@ def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
     ValueError
         If the configuration schema is missing, unsupported, or mixes
         schema-version list keys.
+
     """
     version = data.get("version")
     if type(version) is not int or version not in {1, 2, CONFIG_VERSION}:
@@ -608,6 +625,7 @@ def read_migration_entries(path: Path) -> list[str]:
     -------
     list[str]
         Non-empty, non-comment entries.
+
     """
     if not path.exists():
         return []
@@ -631,6 +649,7 @@ def read_migration_country_codes(path: Path) -> list[str]:
     list[str]
         Sorted, deduplicated country codes. Invalid legacy entries are
         ignored to preserve flat-file behavior.
+
     """
     codes = {
         normalized
@@ -655,6 +674,7 @@ def read_migration_ip_entries(path: Path) -> list[str]:
     list[str]
         Sorted, deduplicated canonical entries. Invalid legacy entries
         are ignored to preserve flat-file behavior.
+
     """
     entries = {
         str(entry)
@@ -685,6 +705,7 @@ def config_template(
     -------
     CommentedMap
         Starter config mapping.
+
     """
     data = CommentedMap()
     data["version"] = CONFIG_VERSION
@@ -779,6 +800,7 @@ def initialize_config(overwrite: bool = False, path: Path = CONFIG) -> None:
         Whether to replace an existing config file. Defaults to False.
     path : Path, optional
         Destination path. Defaults to ``CONFIG``.
+
     """
     if path.exists() and not overwrite:
         raise FileExistsError(f"Config file already exists: {path}")
@@ -812,6 +834,7 @@ def update_denylist(
         Parsed denylist entries to write.
     path : Path, optional
         Config file path. Defaults to ``CONFIG``.
+
     """
     data = copy.deepcopy(load_raw_config(path))
     data["denylist"] = CommentedSeq(str(item) for item in entries)
@@ -830,6 +853,7 @@ def raw_config_dict(path: Path = CONFIG) -> dict[str, Any]:
     -------
     dict[str, Any]
         Raw config data, or an empty mapping when config is absent.
+
     """
     if not path.exists():
         return {}

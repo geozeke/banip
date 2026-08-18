@@ -23,6 +23,7 @@ def print_docstring(msg: str) -> None:
     ----------
     msg : str
         The docstring to be printed.
+
     """
     lines = msg.split("\n")[1:]
     spaces = 0
@@ -61,6 +62,7 @@ class StatusMessages:
         -------
         str
             The formatted status label.
+
         """
         return self.labels[key].format(**kwargs)
 
@@ -80,6 +82,7 @@ class StatusMessages:
         -------
         str
             The formatted status line.
+
         """
         label = self.label(key, **kwargs)
         target_length = max(self.max_label_length, len(label))
@@ -124,6 +127,7 @@ def status_label(key: str, **kwargs: object) -> str:
     -------
     str
         The formatted status label.
+
     """
     return STATUS_MESSAGES.label(key, **kwargs)
 
@@ -144,6 +148,7 @@ def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
     -------
     str
         The formatted status line.
+
     """
     return STATUS_MESSAGES.format(key, status, **kwargs)
 

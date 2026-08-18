@@ -21,6 +21,7 @@ class NetworkBounds:
         The last address in the network as an integer.
     network : NetworkType
         The original network object.
+
     """
 
     first: int
@@ -38,6 +39,7 @@ class NetworkLookup:
         IPv4 network bounds sorted by starting address.
     ipv6 : tuple[NetworkBounds, ...]
         IPv6 network bounds sorted by starting address.
+
     """
 
     ipv4: tuple[NetworkBounds, ...]
@@ -57,6 +59,7 @@ def build_network_lookup(networks: Iterable[NetworkType]) -> NetworkLookup:
     NetworkLookup
         Network bounds split by address family and sorted by starting
         address.
+
     """
     ipv4: list[NetworkBounds] = []
     ipv6: list[NetworkBounds] = []
@@ -101,6 +104,7 @@ def compact(
     -------
     tuple[list[AddressType], list[NetworkType]]
         Separate lists of IP addresses and /24 subnets.
+
     """
     compacted: list[AddressType | NetworkType] = []
     leftovers: list[AddressType | NetworkType] = []
@@ -151,6 +155,7 @@ def ip_in_network(ip: AddressType, lookup: NetworkLookup) -> NetworkType | None:
     NetworkType | None
         The network containing the IP address, or None if no network
         contains it.
+
     """
     networks = lookup.ipv4 if ip.version == 4 else lookup.ipv6
     first = 0

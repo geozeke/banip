@@ -44,6 +44,7 @@ def init_database(overwrite: bool = False) -> None:
     ----------
     overwrite : bool, optional
         Whether to replace an existing config file. Defaults to False.
+
     """
     (DATA / "geolite").mkdir(parents=True, exist_ok=True)
     CUSTOM_CODE.mkdir(parents=True, exist_ok=True)
@@ -78,6 +79,7 @@ def load_secrets(path: Path) -> None:
     ----------
     path : Path
         Secrets file path.
+
     """
     if not path.exists():
         return
@@ -99,6 +101,7 @@ def maxmind_settings() -> tuple[str, str, str]:
     -------
     tuple[str, str, str]
         Edition, account ID, and license key.
+
     """
     settings = load_config(CONFIG).database
     if settings.secrets_file:
@@ -121,6 +124,7 @@ def validate_geolite(path: Path) -> None:
     ----------
     path : Path
         Directory containing extracted files.
+
     """
     missing = [
         name
@@ -138,6 +142,7 @@ def replace_geolite(extracted: Path) -> None:
     ----------
     extracted : Path
         Validated extracted GeoLite directory.
+
     """
     target = DATA / "geolite"
     replacement = DATA / "geolite.new"
@@ -238,6 +243,7 @@ def task_runner(args: Namespace) -> None:
     ----------
     args : Namespace
         Command-line arguments.
+
     """
     try:
         if args.action == "init":

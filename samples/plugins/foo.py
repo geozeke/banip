@@ -32,6 +32,7 @@ def task_runner(args: argparse.Namespace) -> None:
     ----------
     args : argparse.Namespace
         Arguments passed on the command line.
+
     """
     total = args.first + args.second
     print(f"The sum of {args.first} and {args.second} is {total}.")

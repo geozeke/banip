@@ -58,6 +58,7 @@ def resolve_country_policies(
     -------
     dict[str, set[str]]
         Permitted country codes keyed by policy name.
+
     """
     available_codes = set(geolite.values())
     resolved: dict[str, set[str]] = {}
@@ -81,6 +82,7 @@ def write_country_policy_files(
         Validated named country policies.
     resolved : dict[str, set[str]]
         Permitted country codes keyed by policy name.
+
     """
     current_paths = {
         COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
@@ -115,6 +117,7 @@ def exclude_network(
     -------
     list[NetworkType]
         Remaining blocked fragments.
+
     """
     if isinstance(network, ipa.IPv4Network):
         if not isinstance(exemption, ipa.IPv4Network):
@@ -154,6 +157,7 @@ def apply_allowlist(
     -------
     tuple[list[AddressType], list[NetworkType]]
         Blocked addresses and networks with all allowlisted space removed.
+
     """
     allow_ips, allow_nets = split_hybrid(allowlist)
     allow_lookup = build_network_lookup(allow_nets)
@@ -195,6 +199,7 @@ def task_runner(args: Namespace) -> None:
     ----------
     args : Namespace
         Command-line arguments.
+
     """
     # ------------------------------------------------------------------
 
@@ -271,8 +276,9 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune ipsum.txt to keep only IP addresses that (1) are from target
-    # countries, (2) are not already covered by a custom subnet, (3)
+    # Prune ipsum.txt to keep only IP addresses that (1) are from
+    # countries permitted by at least one policy, (2) are not already
+    # covered by a custom subnet, (3)
     # meet the minimum threshold for number of hits, and (4) are not in
     # the custom allowlist.
     msg = status_label("ipsum_prune")

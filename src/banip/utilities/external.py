@@ -23,6 +23,7 @@ def get_public_ip() -> AddressType | None:
     ------
     RequestException
         If the connection to the AWS server fails.
+
     """
     try:
         response = requests.get("https://checkip.amazonaws.com")

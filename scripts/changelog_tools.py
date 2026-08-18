@@ -82,6 +82,7 @@ class Version:
         Patch version component.
     prerelease
         Parsed prerelease identifiers.
+
     """
 
     text: str
@@ -110,6 +111,7 @@ class Section:
         ``Unreleased`` or a canonical PEP 440 release version.
     text
         Complete Markdown for the section, including its heading.
+
     """
 
     label: str
@@ -154,6 +156,7 @@ def parse_version(text: str) -> Version:
     ------
     ValueError
         If the value is not a canonical supported release version.
+
     """
     match = VERSION_RE.fullmatch(text)
     if not match:
@@ -181,6 +184,7 @@ def split_changelog(text: str) -> tuple[str, list[Section]]:
     -------
     tuple[str, list[Section]]
         Preamble and ordered second-level sections.
+
     """
     lines = text.splitlines()
     headings = [index for index, line in enumerate(lines) if HEADING_RE.fullmatch(line)]

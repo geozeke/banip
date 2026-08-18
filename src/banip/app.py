@@ -34,6 +34,7 @@ def check_setup() -> bool:
     -------
     bool
         True if the required directories exist; otherwise False.
+
     """
     proper_setup = (DATA / "geolite").exists()
     if not proper_setup:
@@ -64,6 +65,7 @@ def requires_setup(args: argparse.Namespace) -> bool:
     -------
     bool
         True when setup should be checked before dispatch.
+
     """
     return not (args.cmd == "database" and args.action == "init")
 
@@ -85,6 +87,7 @@ def load_custom_module(mod_name: str, location: Path) -> ModuleType:
     -------
     ModuleType
         The loaded module.
+
     """
     mod_path = f"{location}/{mod_name}.py"
     if spec := importlib.util.spec_from_file_location(mod_name, mod_path):
@@ -108,6 +111,7 @@ def collect_parsers(start: Path) -> list[str]:
     -------
     list[str]
         Argument parser module names.
+
     """
     parser_names: list[str] = []
     if not start.exists():
@@ -132,6 +136,7 @@ def legacy_plugins_present() -> bool:
     -------
     bool
         True when a legacy parser or command implementation is present.
+
     """
     return any(
         path.is_file() and path.suffix == ".py" and path.name != "__init__.py"

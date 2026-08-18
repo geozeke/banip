@@ -4,6 +4,23 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.4] - 2026-08-18
+
+[Compare with 2.1.3](https://github.com/geozeke/banip/compare/v2.1.3...v2.1.4)
+
+### Documentation
+
+- Remove extra spaces in changelogs ([aff808a](https://github.com/geozeke/banip/commit/aff808a6f57aff72211d595b32651bd734b167d3))
+- Perform documentation audit ([6b37578](https://github.com/geozeke/banip/commit/6b3757813e65178cb384b1365ea7f59580d30f00))
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group with 2 updates (#125) ([b0f9979](https://github.com/geozeke/banip/commit/b0f99795aba8ac0ab564192ff9662bf9bd2011dc))
+- *(deps)* Bump github/codeql-action from 4.37.4 to 4.37.6 ([7b39887](https://github.com/geozeke/banip/commit/7b39887877ee30fea8f77dcfc53b899bef360f17))
+- *(deps-dev)* Bump the python-dependencies group with 2 updates (#127) ([c46347e](https://github.com/geozeke/banip/commit/c46347ebab4ca268aa752d89cfb8beb9c72666d2))
+- *(deps)* Bump astral-sh/setup-uv from 9.0.0 to 10.0.1 ([e299118](https://github.com/geozeke/banip/commit/e299118705239c9712fa9743b6248986921dfef3))
+- *(deps)* Bump github/codeql-action from 4.37.6 to 4.37.7 ([e291d3b](https://github.com/geozeke/banip/commit/e291d3bc0e1e9012a71c37cbb9b763d6148bcb26))
+
 ## [2.1.3] - 2026-08-07
 
 [Compare with 2.1.2](https://github.com/geozeke/banip/compare/v2.1.2...v2.1.3)

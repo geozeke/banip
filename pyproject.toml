@@ -1,6 +1,6 @@
 [project]
 name = "banip"
-version = "2.1.3"
+version = "2.1.4"
 description = "Create country-focused IP blocklists"
 keywords = ["blocklist", "firewall", "geolocation", "ip-address", "security"]
 license = "MIT"

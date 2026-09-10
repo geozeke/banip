@@ -4,6 +4,18 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [2.1.5] - 2026-09-10
+
+[Compare with 2.1.4](https://github.com/geozeke/banip/compare/v2.1.4...v2.1.5)
+
+### Dependencies
+
+- *(deps)* Bump github/codeql-action from 4.37.7 to 4.37.8 ([7910246](https://github.com/geozeke/banip/commit/79102467aaf41937f6a9e25f0a48ddc60c9366b6))
+- *(deps-dev)* Bump the python-dependencies group across 1 directory with 3 updates (#132) ([1ae91e2](https://github.com/geozeke/banip/commit/1ae91e2c65798a6b90c9758007fb5b1f4f8b599d))
+- *(deps-dev)* Bump ruff in the python-dependencies group (#135) ([880fb77](https://github.com/geozeke/banip/commit/880fb77b868401fa55134b2b1d55de6d9dad1573))
+- *(deps)* Bump github/codeql-action from 4.37.8 to 4.37.9 ([3a21b2e](https://github.com/geozeke/banip/commit/3a21b2efa0c72bca8a7ffd62027a543b3df85920))
+- *(deps-dev)* Bump the python-dependencies group with 2 updates (#137) ([e9cca69](https://github.com/geozeke/banip/commit/e9cca692d5093fc97ab178d088356128e19fc15a))
+
 ## [2.1.4] - 2026-08-18
 
 [Compare with 2.1.3](https://github.com/geozeke/banip/compare/v2.1.3...v2.1.4)

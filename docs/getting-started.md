@@ -150,6 +150,19 @@ accepted; generated lists use LF for portability to proxy and firewall
 systems. banip generates files rather than configuring the Windows
 firewall.
 
+For UTF-8 logs or pipelines on Windows, set Python's output encoding
+for the current PowerShell session:
+
+```powershell
+$env:PYTHONIOENCODING = 'utf-8'
+```
+
+The receiving program must decode that output as UTF-8 too. Without
+this setting, redirected Python output can use the Windows code page,
+which can display replacement characters in a UTF-8 log viewer.
+Rich may use ASCII table borders in Windows CI or legacy terminals;
+this is an intentional rendering fallback.
+
 Running `banip database init --overwrite` replaces an existing YAML
 file with the documented starter configuration. It does not reimport
 retained legacy files.

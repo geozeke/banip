@@ -23,6 +23,7 @@ def main() -> None:
         home.mkdir()
         environment = os.environ.copy()
         environment.update(HOME=str(home), USERPROFILE=str(home))
+        environment["PYTHONIOENCODING"] = "utf-8"
         environment.pop("HOMEDRIVE", None)
         environment.pop("HOMEPATH", None)
 
@@ -32,6 +33,7 @@ def main() -> None:
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         assert version_result.stdout.strip() == f"banip {package_version}"
 
@@ -41,15 +43,27 @@ def main() -> None:
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
         )
         assert "usage: banip" in help_result.stdout
 
         for arguments in (
             ("database", "init"),
             ("database", "init", "--overwrite"),
-            ("database", "status"),
         ):
             subprocess.run(("banip", *arguments), env=environment, check=True)
+
+        status_result = subprocess.run(
+            ("banip", "database", "status"),
+            env=environment,
+            check=True,
+            capture_output=True,
+            encoding="utf-8",
+        )
+        assert "café" in status_result.stdout
+        assert "—" in status_result.stdout
+        assert "\ufffd" not in status_result.stdout
+        print(status_result.stdout, end="")
 
         data = home / ".banip"
         assert (data / "banip.yaml").is_file()
@@ -72,11 +86,17 @@ def main() -> None:
             (data / "geolite" / name).write_bytes(content.encode("utf-8"))
         (data / "ipsum.txt").write_bytes(b"192.0.2.9 8\r\n2001:db8::9 8\r\n")
         output = home / "alternate blocklist.txt"
-        subprocess.run(
+        build_result = subprocess.run(
             ("banip", "build", "--outfile", str(output)),
             env=environment,
             check=True,
+            capture_output=True,
+            encoding="utf-8",
         )
+        assert "✅" in build_result.stdout
+        assert "—" in build_result.stdout
+        assert "\ufffd" not in build_result.stdout
+        print(build_result.stdout, end="")
         # Exercise redirected output with a legacy Windows encoding too.
         environment["PYTHONIOENCODING"] = "cp1252"
         result = subprocess.run(
@@ -85,7 +105,10 @@ def main() -> None:
             check=True,
             capture_output=True,
         )
-        assert b"Generating build products" in result.stdout
+        legacy_output = result.stdout.decode("cp1252")
+        assert "Generating build products.........OK" in legacy_output
+        assert "—" in legacy_output
+        assert "\ufffd" not in legacy_output
         assert b"192.0.2.9\n2001:db8::9\n" in output.read_bytes()
         assert output.read_bytes() == (data / "ip_blocklist.txt").read_bytes()
         for name in (

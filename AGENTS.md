@@ -4,6 +4,12 @@
 blocklists and allowlists from MaxMind GeoLite2 country data, the ipsum
 threat-intelligence feed, and user-managed configuration.
 
+Runtime support includes macOS, Linux, and native Windows. Use explicit
+UTF-8 for application text files and LF for generated lists. The full
+development workflow requires Bash and Unix utilities; WSL is the
+recommended Windows development environment. Native Windows focused
+checks and CI coverage are documented in `docs/development.md`.
+
 ## Project Layout
 
 - `src/banip/` contains the application package.

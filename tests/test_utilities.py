@@ -54,6 +54,15 @@ def test_format_status_preserves_custom_status() -> None:
     assert status_line.index("47.26%") == utilities.format_status("repack").index("✅")
 
 
+def test_format_status_handles_legacy_stdout_encoding(monkeypatch) -> None:
+    """Redirected legacy output uses an encodable success marker."""
+    with monkeypatch.context() as patch:
+        patch.setattr(utility_display.sys, "stdout", SimpleNamespace(encoding="cp1252"))
+        status = utilities.format_status("repack")
+    assert status == "Repackaging custom IP addresses...OK"
+    assert status.encode("cp1252")
+
+
 def test_status_label_raises_for_unknown_key() -> None:
     """Unknown status message keys fail clearly."""
     try:

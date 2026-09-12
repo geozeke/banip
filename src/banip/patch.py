@@ -44,7 +44,7 @@ def task_runner(args: Namespace) -> None:
     msg = status_label("ipsum_load")
     with console.status(msg):
         ipsum = load_ipsum()
-    print(format_status("ipsum_load"))
+    console.print(format_status("ipsum_load"))
 
     original_ipsum_size = len(ipsum)
     new_ips_considered = 0
@@ -62,11 +62,15 @@ def task_runner(args: Namespace) -> None:
                 new_ips_considered += 1
                 if (ip not in ipsum) or (ipsum[ip] < args.confidence):
                     ipsum[ip] = args.confidence
-    print(format_status("ipsum_patch"))
+    console.print(format_status("ipsum_patch"))
     new_ips_added = len(ipsum) - original_ipsum_size
 
     # Update the file on disk.
-    IPSUM.write_text(render_lines(f"{ip} {hits}" for ip, hits in ipsum.items()))
+    IPSUM.write_text(
+        render_lines(f"{ip} {hits}" for ip, hits in ipsum.items()),
+        encoding="utf-8",
+        newline="\n",
+    )
 
     # Generate a table to display metrics.
     table = Table(title="Final Augmentation Stats", box=box.SQUARE, show_header=False)

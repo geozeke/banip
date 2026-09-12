@@ -41,19 +41,19 @@ def tag_networks() -> dict[NetworkType, str]:
 
     msg = status_label("geo_pull")
     with console.status(msg):
-        with GEOLITE_LOC.open("r") as f:
+        with GEOLITE_LOC.open("r", encoding="utf-8", newline="") as f:
             reader = csv.reader(f)
             next(reader)
             for country in reader:
                 if not (cic := country[4]):
                     cic = country[2]
                 countries[int(country[0])] = cic
-    print(format_status("geo_pull"))
+    console.print(format_status("geo_pull"))
 
     msg = status_label("geo_tag")
     with console.status(msg):
         for geolite_file in [GEOLITE_4, GEOLITE_6]:
-            with geolite_file.open("r") as f:
+            with geolite_file.open("r", encoding="utf-8", newline="") as f:
                 reader = csv.reader(f)
                 next(reader)
                 for net in reader:
@@ -62,7 +62,7 @@ def tag_networks() -> dict[NetworkType, str]:
                     except ValueError:
                         country_id = countries[int(net[2])]
                     networks[ipa.ip_network(net[0])] = country_id
-    print(format_status("geo_tag"))
+    console.print(format_status("geo_tag"))
 
     msg = status_label("build_products")
     with console.status(msg):
@@ -71,9 +71,11 @@ def tag_networks() -> dict[NetworkType, str]:
             key=lambda network: (network.version, int(network.network_address)),
         )
         COUNTRY_NETS_TXT.write_text(
-            render_lines(f"{format(key)} {networks[key]}" for key in keys)
+            render_lines(f"{format(key)} {networks[key]}" for key in keys),
+            encoding="utf-8",
+            newline="\n",
         )
-    print(format_status("build_products"))
+    console.print(format_status("build_products"))
 
     return networks
 
@@ -142,7 +144,7 @@ def load_country_networks() -> dict[NetworkType, str]:
 
     """
     networks: dict[NetworkType, str] = {}
-    with COUNTRY_NETS_TXT.open("r") as f:
+    with COUNTRY_NETS_TXT.open("r", encoding="utf-8", newline="") as f:
         for line in f:
             try:
                 network_text, country_code = line.strip().split(maxsplit=1)
@@ -163,7 +165,7 @@ def load_ipsum() -> dict[AddressType, int]:
         The contents of ipsum.txt as a dictionary.
 
     """
-    with IPSUM.open("r") as f:
+    with IPSUM.open("r", encoding="utf-8", newline="") as f:
         ipsum: dict[AddressType, int] = {}
         for line in f:
             parts = line.strip().split()
@@ -188,6 +190,6 @@ def load_rendered_blocklist() -> tuple[list[AddressType], list[NetworkType]]:
         The rendered blocklist split into IP addresses and networks.
 
     """
-    with RENDERED_BLOCKLIST.open("r") as f:
+    with RENDERED_BLOCKLIST.open("r", encoding="utf-8", newline="") as f:
         rendered = [token for line in f if (token := extract_ip(line.strip()))]
     return split_hybrid(rendered)

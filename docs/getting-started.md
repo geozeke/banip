@@ -2,8 +2,10 @@
 
 ## Requirements
 
-banip runs on macOS, Linux, and Windows Subsystem for Linux and requires
-Python 3.12 or newer. The recommended installer,
+banip supports macOS, Linux, and native Windows, including use from
+PowerShell. Windows Subsystem for Linux (WSL) is also an option; it is
+not required to install or run banip. Python 3.12 or newer is required.
+The recommended installer,
 [uv](https://docs.astral.sh/uv/), can download and manage a compatible
 Python version automatically. The pipx and pip installation methods
 require a compatible Python installation.
@@ -94,6 +96,27 @@ See the
 [Python Packaging User Guide](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/)
 for more information about pip and virtual environments.
 
+#### Windows PowerShell
+
+With Python 3.12 installed and available through the Python launcher,
+create an environment and invoke its Python directly:
+
+```powershell
+$banip_venv = Join-Path $env:LOCALAPPDATA 'banip-venv'
+py -3.12 -m venv $banip_venv
+& "$banip_venv\Scripts\python.exe" -m pip install --upgrade pip
+& "$banip_venv\Scripts\python.exe" -m pip install banip
+& "$banip_venv\Scripts\banip.exe" --version
+```
+
+Activation is optional. Continue invoking `Scripts\banip.exe` directly,
+or activate with `& "$banip_venv\Scripts\Activate.ps1"` when your
+PowerShell execution policy permits it. Upgrade with:
+
+```powershell
+& "$banip_venv\Scripts\python.exe" -m pip install --upgrade banip
+```
+
 ### Verify the installation
 
 For any installation method, confirm that the command is available:
@@ -120,6 +143,13 @@ entries retain the legacy behavior and are ignored. If an existing
 without writing `banip.yaml`; select at least one country or remove the
 legacy file to use the starter policies.
 
+On native Windows, `~/.banip` is the `.banip` directory under your user
+profile, normally `C:\Users\<username>\.banip`. Use UTF-8 for edited
+configuration and input files. LF and CRLF input line endings are
+accepted; generated lists use LF for portability to proxy and firewall
+systems. banip generates files rather than configuring the Windows
+firewall.
+
 Running `banip database init --overwrite` replaces an existing YAML
 file with the documented starter configuration. It does not reimport
 retained legacy files.
@@ -139,6 +169,18 @@ named by `database.secrets_file` in `banip.yaml`:
 MAXMIND_ACCOUNT_ID=123456
 MAXMIND_LICENSE_KEY=example
 ```
+
+To set credentials for the current PowerShell session instead:
+
+```powershell
+$env:MAXMIND_ACCOUNT_ID = '123456'
+$env:MAXMIND_LICENSE_KEY = 'example'
+```
+
+In YAML, use forward slashes or single quotes for Windows paths, such
+as `secrets_file: 'C:\Users\Example User\.secrets'`. Quote command-line
+paths containing spaces too, for example
+`banip build --outfile 'C:\Users\Example User\blocklist.txt'`.
 
 Then download the GeoLite2 Country CSV files:
 

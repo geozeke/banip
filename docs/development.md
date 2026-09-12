@@ -2,6 +2,12 @@
 
 ## Setup
 
+The complete development workflow requires Bash and Unix command-line
+utilities. On Windows, use WSL for the following just recipes,
+changelog preparation, and releases. Install all development tools
+inside WSL and use a separate checkout in its Linux filesystem. Keep
+native Windows and WSL virtual environments separate.
+
 Install Git, Python 3.12, uv, just, git-cliff, and ripgrep. Then run:
 
 ```console
@@ -11,6 +17,32 @@ just setup
 Use `just reset` followed by `just setup` to recreate the local runtime
 environment. `just clean` removes generated caches and build artifacts
 while keeping the environment.
+
+### Native Windows focused checks
+
+Native Windows runtime development and testing can use PowerShell
+without just or Bash. Install Git and uv, then run:
+
+```powershell
+uv sync --locked --all-groups
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src scripts
+uv run pytest --tb=short
+```
+
+These commands do not run the complete quality suite. Run `just check`
+in the separate WSL checkout before submitting a change. Git Bash may
+provide the shell and utilities used by just, but the complete native
+just workflow is not a supported development path. Keep tracked shell
+scripts in LF format so their shebangs work in WSL.
+
+Native Windows stores banip data under the Windows user profile; WSL
+uses its own Linux home directory. Do not assume they share local data.
+Use UTF-8 text files and quote paths containing spaces. Windows file
+permissions differ from Unix permissions, and open files can prevent
+replacement: close editors or other programs holding data files open
+before retrying a failed configuration or database update.
 
 ## Quality checks
 
@@ -32,6 +64,14 @@ just test
 just docs-build
 just licenses
 ```
+
+CI keeps the complete `Quality` suite on Ubuntu. The `Windows runtime`
+job runs the full pytest suite, builds distributions, tests installed
+wheels and source distributions with local fixtures, and checks a
+PowerShell virtual-environment installation. Windows coverage uses
+Python 3.12 on `windows-latest`; it does not certify every Windows
+version or architecture. Runtime fixture tests require no MaxMind
+credentials or live feed downloads.
 
 Run `just docs-serve` to preview documentation locally. The generated
 `site/` directory is not tracked. GitHub Pages builds the same strict
@@ -183,6 +223,7 @@ version. Document any temporary risk acceptance or mitigation in the
 security pull request.
 
 GitHub branch protection for `main` must require branches to be up to
-date and require the `Quality` and `Dependabot security gate` checks.
+date and require the `Quality`, `Windows runtime`, and
+`Dependabot security gate` checks.
 Repository administrators must also enable squash merging and
 auto-merge and allow GitHub Actions read and write workflow permissions.

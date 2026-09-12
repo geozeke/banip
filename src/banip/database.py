@@ -68,7 +68,7 @@ def update_ipsum() -> None:
     response = requests.get(url, timeout=60)
     response.raise_for_status()
     IPSUM.parent.mkdir(parents=True, exist_ok=True)
-    IPSUM.write_text(response.text)
+    IPSUM.write_text(response.text, encoding="utf-8", newline="\n")
     print(f"Updated {IPSUM}")
 
 
@@ -83,7 +83,7 @@ def load_secrets(path: Path) -> None:
     """
     if not path.exists():
         return
-    for line in path.read_text().splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#") or "=" not in stripped:
             continue

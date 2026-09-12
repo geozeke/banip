@@ -454,7 +454,8 @@ def load_raw_config(path: Path = CONFIG) -> CommentedMap:
         raise FileNotFoundError(msg)
 
     try:
-        data = yaml().load(path)
+        with path.open("r", encoding="utf-8") as handle:
+            data = yaml().load(handle)
     except YAMLError as exc:
         raise ValueError(f"Invalid YAML in config file {path}: {exc}") from exc
     if not isinstance(data, CommentedMap):
@@ -515,6 +516,8 @@ def write_config(data: CommentedMap, path: Path) -> None:
             dir=path.parent,
             prefix=f".{path.name}.",
             delete=False,
+            encoding="utf-8",
+            newline="\n",
         ) as handle:
             temporary_path = Path(handle.name)
             yaml().dump(data, handle)
@@ -631,7 +634,7 @@ def read_migration_entries(path: Path) -> list[str]:
         return []
     return [
         token
-        for line in path.read_text().splitlines()
+        for line in path.read_text(encoding="utf-8").splitlines()
         if (token := line.strip()) and not token.startswith("#")
     ]
 

@@ -42,7 +42,7 @@ def task_runner(args: argparse.Namespace) -> None:
     with console.status(msg):
         D: dict[NetworkType, str] = {}
         D = load_country_networks()
-    console.print(format_status("stats_load"))
+    console.print(format_status("stats_load"), highlight=False)
 
     msg = status_label("analyze")
     results = {"nets_4": 0, "ips_4": 0, "nets_6": 0, "ips_6": 0}
@@ -53,7 +53,7 @@ def task_runner(args: argparse.Namespace) -> None:
                 results[f"ips_{net.version}"] += (
                     1 if net.num_addresses == 1 else net.num_addresses - 2
                 )
-    console.print(format_status("analyze"))
+    console.print(format_status("analyze"), highlight=False)
     print()
 
     if all(value == 0 for value in results.values()):

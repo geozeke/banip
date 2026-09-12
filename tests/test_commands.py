@@ -9,6 +9,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from rich.console import Console
 
 from banip import app
 from banip import bots
@@ -203,6 +204,34 @@ def test_patch_stdin_is_not_closed(tmp_path, monkeypatch) -> None:
 
     assert not input_stream.closed
     assert ipsum.read_bytes() == b"192.0.2.1 9\n192.0.2.2 5\n"
+
+
+def test_patch_progress_has_no_automatic_terminal_colors(tmp_path, monkeypatch) -> None:
+    """Dot leaders retain the terminal's default color when color is enabled."""
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_bytes(b"192.0.2.1 9\n")
+    newips = tmp_path / "newips.txt"
+    newips.write_bytes(b"192.0.2.2\n")
+    output = StringIO()
+    console = Console(
+        file=output,
+        force_terminal=True,
+        force_interactive=False,
+        color_system="standard",
+        no_color=False,
+    )
+    monkeypatch.setattr(patch, "Console", lambda: console)
+    monkeypatch.setattr(patch, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+
+    patch.task_runner(argparse.Namespace(newips=newips, index=-1, confidence=5))
+
+    # Status spinners may hide/show the cursor even without animation.
+    rendered = output.getvalue().replace("\x1b[?25l", "").replace("\x1b[?25h", "")
+    assert rendered.splitlines()[:2] == [
+        utilities.format_status("ipsum_load"),
+        utilities.format_status("ipsum_patch"),
+    ]
 
 
 def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:

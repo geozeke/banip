@@ -48,7 +48,7 @@ def tag_networks() -> dict[NetworkType, str]:
                 if not (cic := country[4]):
                     cic = country[2]
                 countries[int(country[0])] = cic
-    console.print(format_status("geo_pull"))
+    console.print(format_status("geo_pull"), highlight=False)
 
     msg = status_label("geo_tag")
     with console.status(msg):
@@ -62,7 +62,7 @@ def tag_networks() -> dict[NetworkType, str]:
                     except ValueError:
                         country_id = countries[int(net[2])]
                     networks[ipa.ip_network(net[0])] = country_id
-    console.print(format_status("geo_tag"))
+    console.print(format_status("geo_tag"), highlight=False)
 
     msg = status_label("build_products")
     with console.status(msg):
@@ -75,7 +75,7 @@ def tag_networks() -> dict[NetworkType, str]:
             encoding="utf-8",
             newline="\n",
         )
-    console.print(format_status("build_products"))
+    console.print(format_status("build_products"), highlight=False)
 
     return networks
 

@@ -9,6 +9,10 @@
 banip creates country-focused IP blocklists from MaxMind GeoLite2 data,
 the ipsum threat-intelligence feed, and user-managed configuration.
 
+It supports macOS, Linux, and native Windows with Python 3.12 or newer.
+Windows Subsystem for Linux is optional for running banip and is the
+recommended Windows environment for the complete development workflow.
+
 ## Documentation
 
 Read the full documentation at <https://geozeke.github.io/banip/>.

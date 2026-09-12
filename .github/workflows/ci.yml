@@ -14,6 +14,50 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  windows-runtime:
+    name: Windows runtime
+    runs-on: windows-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          version: "0.11.29"
+      - name: Sync locked dependencies
+        run: uv sync --locked --all-groups
+      - name: Run tests
+        run: uv run pytest --tb=short
+      - name: Build distributions
+        run: |
+          uv build --sdist --no-sources
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          uv build --wheel --no-sources
+      - name: Smoke-test wheel
+        run: |
+          $wheel = (Get-Item dist/*.whl).FullName
+          uv run --isolated --no-project --no-cache --python 3.12 --with $wheel -- python tests/package_smoke.py
+      - name: Smoke-test source distribution
+        run: |
+          $sdist = (Get-Item dist/*.tar.gz).FullName
+          uv run --isolated --no-project --no-cache --python 3.12 --with $sdist -- python tests/package_smoke.py
+      - name: Verify PowerShell virtual-environment installation
+        run: |
+          $environment = Join-Path $env:RUNNER_TEMP 'banip-install'
+          py -3.12 -m venv $environment
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $python = Join-Path $environment 'Scripts/python.exe'
+          $wheel = (Get-Item dist/*.whl).FullName
+          & $python -m pip install $wheel
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & (Join-Path $environment 'Scripts/banip.exe') --version
+
   quality:
     name: Quality
     runs-on: ubuntu-latest

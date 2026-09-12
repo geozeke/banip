@@ -1,6 +1,7 @@
 """Display and terminal helpers."""
 
 import os
+import sys
 from dataclasses import dataclass
 
 
@@ -135,6 +136,8 @@ def status_label(key: str, **kwargs: object) -> str:
 def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
     """Format a status line with a minimum dot leader.
 
+    Use an ASCII success marker when stdout cannot encode a check mark.
+
     Parameters
     ----------
     key : str
@@ -150,6 +153,11 @@ def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
         The formatted status line.
 
     """
+    if status == "✅":
+        try:
+            status.encode(getattr(sys.stdout, "encoding", None) or "utf-8")
+        except UnicodeEncodeError:
+            status = "OK"
     return STATUS_MESSAGES.format(key, status, **kwargs)
 
 

@@ -272,7 +272,7 @@ def load_botdata() -> dict[str, Any]:
     """
     if not BOTDATA.exists():
         return {"providers": {}}
-    return cast(dict[str, Any], json.loads(BOTDATA.read_text()))
+    return cast(dict[str, Any], json.loads(BOTDATA.read_text(encoding="utf-8")))
 
 
 def write_botdata(data: dict[str, Any]) -> None:
@@ -299,7 +299,11 @@ def write_botdata(data: dict[str, Any]) -> None:
                 entry["ranges"] = [str(net) for net in sort_networks(networks)]
             ordered[provider] = entry
     BOTDATA.parent.mkdir(parents=True, exist_ok=True)
-    BOTDATA.write_text(json.dumps({"providers": ordered}, indent=2) + "\n")
+    BOTDATA.write_text(
+        json.dumps({"providers": ordered}, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def load_managed_bot_networks(

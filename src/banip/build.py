@@ -94,10 +94,14 @@ def write_country_policy_files(
 
     for name, codes in resolved.items():
         policy_path = COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
-        policy_path.write_text(render_lines(sorted(codes)))
+        policy_path.write_text(
+            render_lines(sorted(codes)), encoding="utf-8", newline="\n"
+        )
 
     default_codes = resolved[countries.default_policy]
-    COUNTRY_ALLOWLIST.write_text(render_lines(sorted(default_codes)))
+    COUNTRY_ALLOWLIST.write_text(
+        render_lines(sorted(default_codes)), encoding="utf-8", newline="\n"
+    )
 
 
 def exclude_network(
@@ -255,7 +259,7 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips
             if not ip_in_network(ip=ip, lookup=custom_nets_lookup)
         ]
-    print(format_status("custom_prune"))
+    console.print(format_status("custom_prune"))
 
     # ------------------------------------------------------------------
 
@@ -272,7 +276,7 @@ def task_runner(args: Namespace) -> None:
         )
         threat_geolite_lookup = build_network_lookup(threat_geolite)
         write_country_policy_files(config.countries, resolved_policies)
-    print(format_status("country_filter"))
+    console.print(format_status("country_filter"))
 
     # ------------------------------------------------------------------
 
@@ -296,7 +300,7 @@ def task_runner(args: Namespace) -> None:
                 and hits >= args.threshold
             )
         ]
-    print(format_status("ipsum_prune"))
+    console.print(format_status("ipsum_prune"))
 
     # ------------------------------------------------------------------
 
@@ -331,7 +335,7 @@ def task_runner(args: Namespace) -> None:
             and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
         ]
         custom_ips_size = len(custom_ips)
-    print(format_status("redundant_remove"))
+    console.print(format_status("redundant_remove"))
 
     # ------------------------------------------------------------------
 
@@ -372,9 +376,11 @@ def task_runner(args: Namespace) -> None:
             + "# ----------------------------------------\n\n"
             + render_lines([*custom_ips, *custom_nets])
         )
-        output_path.write_text(blocklist_text)
-        RENDERED_ALLOWLIST.write_text(render_lines([*allow_ips, *allow_nets]))
-    print(format_status("lists_render"))
+        output_path.write_text(blocklist_text, encoding="utf-8", newline="\n")
+        RENDERED_ALLOWLIST.write_text(
+            render_lines([*allow_ips, *allow_nets]), encoding="utf-8", newline="\n"
+        )
+    console.print(format_status("lists_render"))
 
     if output_path != RENDERED_BLOCKLIST:
         shutil.copy2(output_path, RENDERED_BLOCKLIST)

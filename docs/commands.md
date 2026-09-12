@@ -154,6 +154,9 @@ Add addresses from another text file to the local ipsum feed:
 banip patch new-addresses.txt
 ```
 
+Input files must use UTF-8; both LF and CRLF line endings are accepted.
+Use `banip patch -` to read addresses from standard input.
+
 Each input line is split on whitespace. The last element is treated as
 the address by default. Use `-i N` or `--index N` to select a different
 zero-based element, including negative indexes such as `-1`.

@@ -4,6 +4,8 @@
 
 import sys
 from argparse import Namespace
+from contextlib import nullcontext
+from pathlib import Path
 from typing import cast
 
 from rich import box
@@ -51,17 +53,26 @@ def task_runner(args: Namespace) -> None:
 
     # Start patching.
     msg = status_label("ipsum_patch")
-    with console.status(msg):
-        for line in args.newips:
-            parts = line.split()
-            try:
-                raw_ip = parts[args.index]
-            except IndexError:
-                continue
-            if ip := cast(AddressType, extract_ip(raw_ip)):
-                new_ips_considered += 1
-                if (ip not in ipsum) or (ipsum[ip] < args.confidence):
-                    ipsum[ip] = args.confidence
+    try:
+        input_source = (
+            nullcontext(sys.stdin)
+            if args.newips == Path("-")
+            else args.newips.open("r", encoding="utf-8")
+        )
+        with input_source as handle, console.status(msg):
+            for line in handle:
+                parts = line.split()
+                try:
+                    raw_ip = parts[args.index]
+                except IndexError:
+                    continue
+                if ip := cast(AddressType, extract_ip(raw_ip)):
+                    new_ips_considered += 1
+                    if (ip not in ipsum) or (ipsum[ip] < args.confidence):
+                        ipsum[ip] = args.confidence
+    except (OSError, UnicodeError) as exc:
+        print(f"Cannot read patch input {args.newips}: {exc}", file=sys.stderr)
+        sys.exit(1)
     console.print(format_status("ipsum_patch"))
     new_ips_added = len(ipsum) - original_ipsum_size
 
@@ -84,8 +95,6 @@ def task_runner(args: Namespace) -> None:
 
     print()
     console.print(table)
-    args.newips.close()
-
     return
 
 

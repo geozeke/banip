@@ -1,7 +1,7 @@
 """Argument parser for the patch command."""
 
-from argparse import FileType
 from argparse import _SubParsersAction
+from pathlib import Path
 
 from banip.argument_types import threshold_type
 
@@ -21,9 +21,10 @@ def load_command_args(sp: _SubParsersAction) -> None:
     parser = sp.add_parser(name=COMMAND_NAME, description=msg)
 
     msg = """
-    File containing additional IP addresses to augment ipsum.txt.
+    UTF-8 file containing additional IP addresses to augment ipsum.txt.
+    Use - to read from standard input.
     """
-    parser.add_argument("newips", type=FileType("r"), help=msg)
+    parser.add_argument("newips", type=Path, help=msg)
 
     msg = """
     Files of additional IP addresses must be text files with an IP

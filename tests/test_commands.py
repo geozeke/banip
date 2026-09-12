@@ -125,16 +125,16 @@ def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
     """Patch command adds new IPs and preserves higher confidence scores."""
     ipsum = tmp_path / "ipsum.txt"
     ipsum.write_text("192.0.2.1 9\n198.51.100.1 2\n")
-    newips = tmp_path / "newips.txt"
-    newips.write_text(
-        "ignored 192.0.2.2\nignored 192.0.2.1\nblank\n\nignored invalid\n"
+    newips = tmp_path / "newips café.txt"
+    newips.write_bytes(
+        "# café 日本語\r\nignored 192.0.2.2\r\nignored 192.0.2.1\r\n"
+        "blank\r\n\r\nignored invalid\r\n".encode("utf-8")
     )
     monkeypatch.setattr(patch, "IPSUM", ipsum)
     monkeypatch.setattr(utility_data, "IPSUM", ipsum)
 
-    with newips.open() as handle:
-        args = argparse.Namespace(newips=handle, index=1, confidence=5)
-        patch.task_runner(args)
+    args = argparse.Namespace(newips=newips, index=1, confidence=5)
+    patch.task_runner(args)
 
     output = capsys.readouterr().out
     assert utilities.format_status("ipsum_load") in output
@@ -145,7 +145,9 @@ def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
         "198.51.100.1 2",
         "192.0.2.2 5",
     ]
-    assert handle.closed
+    assert b"\r" not in ipsum.read_bytes()
+    # Renaming the input also verifies it is closed on Windows.
+    newips.rename(newips.with_suffix(".closed"))
 
 
 def test_patch_task_runner_exits_when_ipsum_missing(
@@ -160,6 +162,47 @@ def test_patch_task_runner_exits_when_ipsum_missing(
 
     assert exc_info.value.code == 1
     assert "Missing file" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("input_kind", ["missing", "directory", "invalid_utf8"])
+def test_patch_input_errors_leave_feed_unchanged(
+    tmp_path, monkeypatch, capsys, input_kind
+) -> None:
+    """Unreadable patch input reports an error without updating the feed."""
+    ipsum = tmp_path / "ipsum.txt"
+    original = b"192.0.2.1 9\n"
+    ipsum.write_bytes(original)
+    newips = tmp_path / "newips.txt"
+    if input_kind == "directory":
+        newips.mkdir()
+    elif input_kind == "invalid_utf8":
+        newips.write_bytes(b"192.0.2.2\n\xff\n")
+    monkeypatch.setattr(patch, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+
+    with pytest.raises(SystemExit) as exc_info:
+        patch.task_runner(argparse.Namespace(newips=newips, index=-1, confidence=5))
+
+    assert exc_info.value.code == 1
+    assert "Cannot read patch input" in capsys.readouterr().err
+    assert ipsum.read_bytes() == original
+    if input_kind == "invalid_utf8":
+        newips.rename(newips.with_suffix(".closed"))
+
+
+def test_patch_stdin_is_not_closed(tmp_path, monkeypatch) -> None:
+    """Stdin patching retains ownership of the caller's input stream."""
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_bytes(b"192.0.2.1 9\n")
+    input_stream = StringIO("192.0.2.2\r\n")
+    monkeypatch.setattr(patch, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+    monkeypatch.setattr(patch.sys, "stdin", input_stream)
+
+    patch.task_runner(argparse.Namespace(newips=Path("-"), index=-1, confidence=5))
+
+    assert not input_stream.closed
+    assert ipsum.read_bytes() == b"192.0.2.1 9\n192.0.2.2 5\n"
 
 
 def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:

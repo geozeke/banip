@@ -40,6 +40,16 @@ def test_build_outfile_is_parsed_as_a_path() -> None:
     assert args.outfile == Path("custom.txt")
 
 
+def test_patch_input_is_parsed_without_opening_a_file() -> None:
+    """Patch parsing accepts paths and stdin without opening resources."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    patch_args.load_command_args(subparsers)
+
+    assert parser.parse_args(["patch", "missing.txt"]).newips == Path("missing.txt")
+    assert parser.parse_args(["patch", "-"]).newips == Path("-")
+
+
 def test_check_parses_zero_or_more_ip_addresses() -> None:
     """Check accepts interactive, single-address, and batch invocations."""
     parser = argparse.ArgumentParser()

@@ -18,6 +18,9 @@ jobs:
     name: Windows runtime
     runs-on: windows-latest
     timeout-minutes: 20
+    env:
+      # Python's redirected output must match the UTF-8 Actions log.
+      PYTHONIOENCODING: utf-8
     defaults:
       run:
         shell: pwsh

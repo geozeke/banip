@@ -46,7 +46,7 @@ def task_runner(args: Namespace) -> None:
     msg = status_label("ipsum_load")
     with console.status(msg):
         ipsum = load_ipsum()
-    console.print(format_status("ipsum_load"))
+    console.print(format_status("ipsum_load"), highlight=False)
 
     original_ipsum_size = len(ipsum)
     new_ips_considered = 0
@@ -73,7 +73,7 @@ def task_runner(args: Namespace) -> None:
     except (OSError, UnicodeError) as exc:
         print(f"Cannot read patch input {args.newips}: {exc}", file=sys.stderr)
         sys.exit(1)
-    console.print(format_status("ipsum_patch"))
+    console.print(format_status("ipsum_patch"), highlight=False)
     new_ips_added = len(ipsum) - original_ipsum_size
 
     # Update the file on disk.

@@ -259,7 +259,7 @@ def task_runner(args: Namespace) -> None:
             for ip in custom_ips
             if not ip_in_network(ip=ip, lookup=custom_nets_lookup)
         ]
-    console.print(format_status("custom_prune"))
+    console.print(format_status("custom_prune"), highlight=False)
 
     # ------------------------------------------------------------------
 
@@ -276,7 +276,7 @@ def task_runner(args: Namespace) -> None:
         )
         threat_geolite_lookup = build_network_lookup(threat_geolite)
         write_country_policy_files(config.countries, resolved_policies)
-    console.print(format_status("country_filter"))
+    console.print(format_status("country_filter"), highlight=False)
 
     # ------------------------------------------------------------------
 
@@ -300,7 +300,7 @@ def task_runner(args: Namespace) -> None:
                 and hits >= args.threshold
             )
         ]
-    console.print(format_status("ipsum_prune"))
+    console.print(format_status("ipsum_prune"), highlight=False)
 
     # ------------------------------------------------------------------
 
@@ -335,7 +335,7 @@ def task_runner(args: Namespace) -> None:
             and not ip_in_network(ip=ip, lookup=ipsum_nets_lookup)
         ]
         custom_ips_size = len(custom_ips)
-    console.print(format_status("redundant_remove"))
+    console.print(format_status("redundant_remove"), highlight=False)
 
     # ------------------------------------------------------------------
 
@@ -380,7 +380,7 @@ def task_runner(args: Namespace) -> None:
         RENDERED_ALLOWLIST.write_text(
             render_lines([*allow_ips, *allow_nets]), encoding="utf-8", newline="\n"
         )
-    console.print(format_status("lists_render"))
+    console.print(format_status("lists_render"), highlight=False)
 
     if output_path != RENDERED_BLOCKLIST:
         shutil.copy2(output_path, RENDERED_BLOCKLIST)

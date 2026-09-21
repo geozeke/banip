@@ -489,7 +489,14 @@ def test_config_defaults_include_managed_bot_providers() -> None:
     """Managed bot defaults include every built-in provider."""
     loaded = config.parse_bot_config(None)
 
-    assert loaded.providers == ["google", "bing", "openai", "anthropic", "meta"]
+    assert loaded.providers == [
+        "google",
+        "bing",
+        "openai",
+        "anthropic",
+        "amazon",
+        "meta",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -794,6 +801,7 @@ def test_database_init_migrates_legacy_flat_files(
     loaded = config.load_config(data / "banip.yaml")
     assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"].codes == {"US"}
+    assert "amazon" in loaded.bots.providers
 
 
 def test_initialize_config_ignores_invalid_legacy_ip_entries(
@@ -970,6 +978,7 @@ def test_bots_normalize_ranges_deduplicates_and_sorts() -> None:
             "prefixes": [
                 {"ipv6Prefix": "2001:db8::/126"},
                 {"ipv4Prefix": "198.51.100.0/24"},
+                {"ip_prefix": "203.0.113.9/32"},
                 {"ipv4Prefix": "192.0.2.0/24"},
                 {"ipv4Prefix": "192.0.2.0/24"},
             ]
@@ -979,8 +988,38 @@ def test_bots_normalize_ranges_deduplicates_and_sorts() -> None:
     assert bots.normalize_ranges(payloads) == [
         "192.0.2.0/24",
         "198.51.100.0/24",
+        "203.0.113.9/32",
         "2001:db8::/126",
     ]
+
+
+def test_bots_parse_amazon_payload_extracts_json_code_block() -> None:
+    """Amazon crawler JSON is extracted from its documentation markup."""
+    html = """
+    <html><pre><code class="container other">{
+      "creationTime": "2026-09-08T05:24:10+00:00",
+      "prefixes": [{"ip_prefix": "192.0.2.1/32"}]
+    }</code></pre></html>
+    """
+
+    assert bots.parse_amazon_payload(html) == {
+        "creationTime": "2026-09-08T05:24:10+00:00",
+        "prefixes": [{"ip_prefix": "192.0.2.1/32"}],
+    }
+
+
+@pytest.mark.parametrize(
+    "html",
+    [
+        "<html></html>",
+        '<pre><code class="container">not json</code></pre>',
+        '<pre><code class="container">{"prefixes": null}</code></pre>',
+    ],
+)
+def test_bots_parse_amazon_payload_rejects_invalid_pages(html: str) -> None:
+    """Amazon pages without a JSON prefix list fail explicitly."""
+    with pytest.raises(ValueError, match="no valid IP range payload"):
+        bots.parse_amazon_payload(html)
 
 
 def test_bots_parse_irr_ranges_deduplicates_and_sorts() -> None:
@@ -1054,6 +1093,119 @@ def test_bots_fetch_provider_supports_anthropic_json(monkeypatch) -> None:
     assert entry["source"] == ["https://claude.com/crawling/bots.json"]
     assert entry["upstream_updated_at"] == "2026-05-01T20:46:04Z"
     assert entry["ranges"] == ["192.0.2.0/24", "198.51.100.0/24"]
+
+
+def test_bots_fetch_provider_aggregates_amazon_pages(monkeypatch) -> None:
+    """Amazon provider data combines all three official crawler pages."""
+
+    class Response:
+        """Fake Amazon documentation response."""
+
+        def __init__(self, text: str) -> None:
+            """Store response markup."""
+            self.text = text
+
+        def raise_for_status(self) -> None:
+            """No-op successful status check."""
+
+    payloads = {
+        bots.PROVIDER_URLS["amazon"][0]: (
+            '{"creationTime": "2026-04-30T00:00:00+00:00", '
+            '"prefixes": [{"ipv4Prefix": "198.51.100.9"}]}'
+        ),
+        bots.PROVIDER_URLS["amazon"][1]: (
+            '{"creationTime": "2026-09-08T05:24:10+00:00", '
+            '"prefixes": [{"ip_prefix": "192.0.2.1/32"}, '
+            '{"ip_prefix": "198.51.100.9/32"}]}'
+        ),
+        bots.PROVIDER_URLS["amazon"][2]: (
+            '{"creationTime": "2025-11-04T15:57:38+00:00", '
+            '"prefixes": [{"ipv6Prefix": "2001:db8::1"}]}'
+        ),
+    }
+    seen_urls = []
+
+    def get(url: str, timeout: int) -> Response:
+        seen_urls.append((url, timeout))
+        return Response(f'<pre><code class="container">{payloads[url]}</code></pre>')
+
+    monkeypatch.setattr(bots.requests, "get", get)
+
+    entry = bots.fetch_provider("amazon")
+
+    assert seen_urls == [(url, 30) for url in bots.PROVIDER_URLS["amazon"]]
+    assert entry["provider"] == "amazon"
+    assert entry["source"] == list(bots.PROVIDER_URLS["amazon"])
+    assert entry["upstream_updated_at"] == "2026-09-08T05:24:10+00:00"
+    assert entry["ranges"] == [
+        "192.0.2.1/32",
+        "198.51.100.9/32",
+        "2001:db8::1/128",
+    ]
+
+
+def test_bots_fetch_provider_rejects_empty_amazon_ranges(monkeypatch) -> None:
+    """Amazon refresh rejects pages that produce no usable ranges."""
+
+    class Response:
+        """Fake empty Amazon documentation response."""
+
+        text = '<pre><code class="container">{"prefixes": []}</code></pre>'
+
+        def raise_for_status(self) -> None:
+            """No-op successful status check."""
+
+    monkeypatch.setattr(bots.requests, "get", lambda _url, timeout: Response())
+
+    with pytest.raises(ValueError, match="no valid IP ranges"):
+        bots.fetch_provider("amazon")
+
+
+def test_bots_failed_amazon_refresh_preserves_stored_data(
+    tmp_path, monkeypatch
+) -> None:
+    """A partial Amazon fetch does not replace previously stored ranges."""
+    botdata = tmp_path / "botdata.json"
+    original = (
+        "{\n"
+        '  "providers": {\n'
+        '    "amazon": {\n'
+        '      "provider": "amazon",\n'
+        '      "ranges": ["192.0.2.1/32"]\n'
+        "    }\n"
+        "  }\n"
+        "}\n"
+    )
+    botdata.write_text(original, encoding="utf-8")
+    monkeypatch.setattr(bots, "BOTDATA", botdata)
+
+    class Response:
+        """Fake successful Amazon documentation response."""
+
+        text = (
+            '<pre><code class="container">'
+            '{"prefixes": [{"ipv4Prefix": "198.51.100.9"}]}'
+            "</code></pre>"
+        )
+
+        def raise_for_status(self) -> None:
+            """No-op successful status check."""
+
+    calls = 0
+
+    def get(_url: str, timeout: int) -> Response:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise bots.requests.ConnectionError("test failure")
+        return Response()
+
+    monkeypatch.setattr(bots.requests, "get", get)
+
+    with pytest.raises(bots.requests.ConnectionError, match="test failure"):
+        bots.refresh("amazon")
+
+    assert botdata.read_text(encoding="utf-8") == original
 
 
 def test_bots_refresh_replaces_only_selected_provider(

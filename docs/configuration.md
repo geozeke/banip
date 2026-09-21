@@ -35,6 +35,7 @@ bots:
     - bing
     - openai
     - anthropic
+    - amazon
     - meta
 # External database update settings.
 database:
@@ -102,9 +103,11 @@ ranges are stored separately in `botdata.json` rather than in
 
 `bots.enabled` controls whether builds include stored managed bot ranges
 and defaults to `true`. `bots.providers` selects from `google`, `bing`,
-`openai`, `anthropic`, and `meta`; all five are enabled by default. See
-[Managed bot ranges](managed-bots.md) for refresh and inspection
-commands. Unknown and duplicate provider names are rejected.
+`openai`, `anthropic`, `amazon`, and `meta`; all six are enabled by
+default. The `amazon` provider combines Amazonbot, Amzn-SearchBot, and
+Amzn-User ranges. See [Managed bot ranges](managed-bots.md) for refresh
+and inspection commands. Unknown and duplicate provider names are
+rejected.
 
 ## Automatic configuration upgrade
 

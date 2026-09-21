@@ -7,8 +7,10 @@ denylist. Refresh an individual provider with:
 banip bots refresh google
 ```
 
-Supported providers are `google`, `bing`, `openai`, `anthropic`, and
-`meta`. Refresh every provider with:
+Supported providers are `google`, `bing`, `openai`, `anthropic`,
+`amazon`, and `meta`. The `amazon` provider combines the published
+ranges for Amazonbot, Amzn-SearchBot, and Amzn-User. Refresh every
+provider with:
 
 ```console
 banip bots refresh all

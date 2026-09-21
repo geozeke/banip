@@ -63,8 +63,9 @@ banip bots refresh google
 ```
 
 The supported provider arguments are `google`, `bing`, `openai`,
-`anthropic`, `meta`, and `all`. The `all` value refreshes every
-provider.
+`anthropic`, `amazon`, `meta`, and `all`. The `amazon` provider combines
+Amazonbot, Amzn-SearchBot, and Amzn-User ranges. The `all` value
+refreshes every provider.
 
 Inspect or query the stored data with:
 

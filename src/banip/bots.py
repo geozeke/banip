@@ -7,6 +7,7 @@ from argparse import Namespace
 from collections.abc import Iterable
 from datetime import UTC
 from datetime import datetime as dt
+from html.parser import HTMLParser
 from typing import Any
 from typing import cast
 
@@ -37,12 +38,52 @@ PROVIDER_URLS = {
         "https://openai.com/chatgpt-user.json",
     ),
     "anthropic": ("https://claude.com/crawling/bots.json",),
+    "amazon": (
+        "https://developer.amazon.com/amazonbot/ip-addresses/",
+        "https://developer.amazon.com/amazonbot/searchbot-ip-addresses/",
+        "https://developer.amazon.com/amazonbot/live-ip-addresses/",
+    ),
     "meta": (),
 }
 PROVIDERS = tuple(PROVIDER_URLS)
 META_WHOIS_HOST = "whois.radb.net"
 META_WHOIS_QUERY = "-i origin AS32934"
 META_WHOIS_SOURCE = f"whois://{META_WHOIS_HOST}/{META_WHOIS_QUERY}"
+
+
+class _AmazonPayloadParser(HTMLParser):
+    """Collect JSON payloads from Amazon crawler documentation pages."""
+
+    def __init__(self) -> None:
+        """Initialize the parser state."""
+        super().__init__()
+        self.payloads: list[str] = []
+        self._chunks: list[str] = []
+        self._collecting = False
+
+    def handle_starttag(
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
+    ) -> None:
+        """Start collecting an Amazon JSON code block."""
+        attributes = dict(attrs)
+        classes = attributes.get("class", "") or ""
+        if tag == "code" and "container" in classes.split():
+            self._chunks = []
+            self._collecting = True
+
+    def handle_endtag(self, tag: str) -> None:
+        """Finish collecting an Amazon JSON code block."""
+        if tag == "code" and self._collecting:
+            self.payloads.append("".join(self._chunks))
+            self._chunks = []
+            self._collecting = False
+
+    def handle_data(self, data: str) -> None:
+        """Collect text contained in an Amazon JSON code block."""
+        if self._collecting:
+            self._chunks.append(data)
 
 
 def output_table(title: str, *, caption: str | None = None) -> Table:
@@ -137,11 +178,46 @@ def normalize_ranges(payloads: Iterable[dict[str, Any]]) -> list[str]:
         for item in prefixes:
             if not isinstance(item, dict):
                 continue
-            prefix = item.get("ipv4Prefix") or item.get("ipv6Prefix")
+            prefix = (
+                item.get("ipv4Prefix")
+                or item.get("ipv6Prefix")
+                or item.get("ip_prefix")
+            )
             if isinstance(prefix, str):
                 networks.add(ipa.ip_network(prefix))
 
     return [str(network) for network in sort_networks(networks)]
+
+
+def parse_amazon_payload(html: str) -> dict[str, Any]:
+    """Extract an IP range payload from an Amazon documentation page.
+
+    Parameters
+    ----------
+    html : str
+        Amazon crawler documentation page HTML.
+
+    Returns
+    -------
+    dict[str, Any]
+        Parsed JSON payload containing a prefix list.
+
+    Raises
+    ------
+    ValueError
+        Raised when the page does not contain a valid range payload.
+
+    """
+    parser = _AmazonPayloadParser()
+    parser.feed(html)
+    for candidate in parser.payloads:
+        try:
+            payload = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(payload, dict) and isinstance(payload.get("prefixes"), list):
+            return payload
+    raise ValueError("Amazon crawler page contains no valid IP range payload.")
 
 
 def parse_irr_ranges(text: str) -> list[str]:
@@ -248,13 +324,20 @@ def fetch_provider(provider: str) -> dict[str, object]:
     for url in PROVIDER_URLS[provider]:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
-        payloads.append(response.json())
+        if provider == "amazon":
+            payloads.append(parse_amazon_payload(response.text))
+        else:
+            payloads.append(response.json())
+
+    ranges = normalize_ranges(payloads)
+    if provider == "amazon" and not ranges:
+        raise ValueError("Amazon crawler pages contain no valid IP ranges.")
 
     entry: dict[str, object] = {
         "provider": provider,
         "source": list(PROVIDER_URLS[provider]),
         "refreshed_at": dt.now(UTC).isoformat(timespec="seconds"),
-        "ranges": normalize_ranges(payloads),
+        "ranges": ranges,
     }
     if upstream_timestamp := collect_upstream_timestamp(payloads):
         entry["upstream_updated_at"] = upstream_timestamp

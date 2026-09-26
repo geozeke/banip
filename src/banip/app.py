@@ -3,28 +3,44 @@
 """Entry point for banip."""
 
 import argparse
-import importlib
-import importlib.util
-import sys
 from importlib.metadata import version
-from pathlib import Path
 from types import ModuleType
 
+from banip import bots as bots_command
+from banip import build as build_command
+from banip import check as check_command
+from banip import database as database_command
+from banip import null as null_command
+from banip import patch as patch_command
+from banip import stats as stats_command
 from banip.constants import APP_NAME
-from banip.constants import ARG_PARSERS_BASE
-from banip.constants import CUSTOM_CODE
-from banip.constants import CUSTOM_PARSERS
 from banip.constants import DATA
+from banip.parsers import bots_args
+from banip.parsers import build_args
+from banip.parsers import check_args
+from banip.parsers import database_args
+from banip.parsers import patch_args
+from banip.parsers import stats_args
 from banip.utilities import print_docstring
 
 __version__ = version("banip")
 
-LEGACY_PLUGIN_WARNING = (
-    "Warning: banip plugins are deprecated and will be removed in banip 3.0. "
-    "Legacy plugins remain supported throughout banip 2.x."
+PARSER_MODULES: tuple[ModuleType, ...] = (
+    bots_args,
+    build_args,
+    check_args,
+    database_args,
+    patch_args,
+    stats_args,
 )
-
-# ======================================================================
+COMMAND_MODULES: dict[str, ModuleType] = {
+    bots_args.COMMAND_NAME: bots_command,
+    build_args.COMMAND_NAME: build_command,
+    check_args.COMMAND_NAME: check_command,
+    database_args.COMMAND_NAME: database_command,
+    patch_args.COMMAND_NAME: patch_command,
+    stats_args.COMMAND_NAME: stats_command,
+}
 
 
 def check_setup() -> bool:
@@ -50,9 +66,6 @@ def check_setup() -> bool:
     return True
 
 
-# ======================================================================
-
-
 def requires_setup(args: argparse.Namespace) -> bool:
     """Return whether a command requires initialized local data paths.
 
@@ -70,85 +83,6 @@ def requires_setup(args: argparse.Namespace) -> bool:
     return not (args.cmd == "database" and args.action == "init")
 
 
-# ======================================================================
-
-
-def load_custom_module(mod_name: str, location: Path) -> ModuleType:
-    """Load a custom module.
-
-    Parameters
-    ----------
-    mod_name : str
-        The name of the module to load.
-    location : Path
-        The absolute path to the Python code for the module.
-
-    Returns
-    -------
-    ModuleType
-        The loaded module.
-
-    """
-    mod_path = f"{location}/{mod_name}.py"
-    if spec := importlib.util.spec_from_file_location(mod_name, mod_path):
-        if (module := importlib.util.module_from_spec(spec)) and spec.loader:
-            spec.loader.exec_module(module)
-    return module
-
-
-# ======================================================================
-
-
-def collect_parsers(start: Path) -> list[str]:
-    """Collect the module names of all argument parsers to import.
-
-    Parameters
-    ----------
-    start : Path
-        The directory where parser collection starts.
-
-    Returns
-    -------
-    list[str]
-        Argument parser module names.
-
-    """
-    parser_names: list[str] = []
-    if not start.exists():
-        return parser_names
-    for p in start.iterdir():
-        if p.is_file() and p.name.endswith(".py") and p.name != "__init__.py":
-            if "plugins" in str(p):
-                prefix = "plugins.parsers"
-            else:
-                prefix = "parsers"
-            parser_names.append(f"{prefix}.{p.stem}")
-    return parser_names
-
-
-# ======================================================================
-
-
-def legacy_plugins_present() -> bool:
-    """Return whether either legacy plugin directory contains Python code.
-
-    Returns
-    -------
-    bool
-        True when a legacy parser or command implementation is present.
-
-    """
-    return any(
-        path.is_file() and path.suffix == ".py" and path.name != "__init__.py"
-        for directory in (CUSTOM_PARSERS, CUSTOM_CODE)
-        if directory.exists()
-        for path in directory.iterdir()
-    )
-
-
-# ======================================================================
-
-
 def main() -> int:
     """Parse user input and run the requested command."""
     msg = """
@@ -164,24 +98,8 @@ def main() -> int:
     msg = "For help on any command below, run: banip {command} -h."
     subparsers = parser.add_subparsers(title="commands", dest="cmd", description=msg)
 
-    # Dynamically load argument subparsers and process command line
-    # arguments.
-
-    parser_names: list[str] = []
-    mod: ModuleType | None = None
-    parser_names = collect_parsers(ARG_PARSERS_BASE)
-    parser_names += collect_parsers(CUSTOM_PARSERS)
-    if legacy_plugins_present():
-        print(LEGACY_PLUGIN_WARNING, file=sys.stderr)
-    parser_names = sorted(parser_names, key=lambda x: x.split(".")[-1])
-    for p_name in parser_names:
-        if "plugins" not in p_name:
-            parser_code = importlib.import_module(f"banip.{p_name}")
-        else:
-            parser_code = load_custom_module(
-                p_name.split(".")[-1], location=CUSTOM_PARSERS
-            )
-        parser_code.load_command_args(subparsers)
+    for parser_module in PARSER_MODULES:
+        parser_module.load_command_args(subparsers)
     args = parser.parse_args()
 
     # Make sure the local setup is complete after parsing so help and
@@ -189,31 +107,12 @@ def main() -> int:
     if args.cmd and requires_setup(args) and not check_setup():
         return 1
 
-    # Run the selected command. Python's argparse module guarantees that
-    # we'll get either: (1) a valid command (base or custom) or (2) no
-    # command at all. Given that, we can determine whether the entered
-    # command is built in or custom based on its companion in the list of
-    # argument parser names. We then adjust the prefix based on that.
-
     if args.cmd:
-        try:
-            if f"parsers.{args.cmd}_args" in parser_names:
-                mod_name = f"{APP_NAME}.{args.cmd}"
-                mod = importlib.import_module(mod_name)
-            else:
-                mod = load_custom_module(args.cmd, location=CUSTOM_CODE)
-        except (ModuleNotFoundError, FileNotFoundError):
-            msg = f"""
-            Code for a custom command must have the same filename as the
-            command itself. Make sure you have a Python file called
-            \"{args.cmd}.py\" in: {CUSTOM_CODE}
-            """
-            print("\n".join([line.strip() for line in msg.split("\n")]))
-            sys.exit(1)
+        command_module = COMMAND_MODULES[args.cmd]
     else:
-        mod = importlib.import_module(f"{APP_NAME}.null")
+        command_module = null_command
 
-    mod.task_runner(args)
+    command_module.task_runner(args)
 
     return 0
 

@@ -15,8 +15,6 @@ checks and CI coverage are documented in `docs/development.md`.
 - `src/banip/` contains the application package.
 - `src/banip/app.py` is the CLI entry point exposed as `banip`.
 - `src/banip/parsers/` contains built-in argparse subcommand parsers.
-- `samples/` contains deprecated plugin examples retained for 2.x
-  compatibility.
 - `CHANGELOG.md` contains the active minor release line; older minor
   lines are archived under `changelogs/`.
 - `scripts/` contains release, dependency, and repository-maintenance

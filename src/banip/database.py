@@ -18,8 +18,6 @@ from rich.text import Text
 from banip.config import initialize_config
 from banip.config import load_config
 from banip.constants import CONFIG
-from banip.constants import CUSTOM_CODE
-from banip.constants import CUSTOM_PARSERS
 from banip.constants import DATA
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
@@ -47,8 +45,6 @@ def init_database(overwrite: bool = False) -> None:
 
     """
     (DATA / "geolite").mkdir(parents=True, exist_ok=True)
-    CUSTOM_CODE.mkdir(parents=True, exist_ok=True)
-    CUSTOM_PARSERS.mkdir(parents=True, exist_ok=True)
 
     try:
         initialize_config(overwrite=overwrite, path=CONFIG)

@@ -24,22 +24,15 @@ optionally includes managed bot ranges, and writes:
 ```text
 ~/.banip/ip_blocklist.txt
 ~/.banip/ip_allowlist.txt
-~/.banip/country_allowlist.txt
 ~/.banip/country_allowlist_<policy>.txt
 ~/.banip/haproxy_geo_ip.txt
 ```
 
-The deprecated compatibility file `country_allowlist.txt` contains the
-default policy and remains supported throughout banip 2.x. It will be
-removed in banip 3.0 with the `countries.default_policy` setting. New
-integrations should use an explicitly named policy file. Each named
-policy file contains permitted country codes, including when the policy
-was configured as a blocklist. The IP blocklist considers ipsum threat
-addresses from countries permitted by any policy. Explicit denylist and
-managed bot entries are not limited by country policies. The allowlist
-has final precedence over every blocklist source. See
-[Deprecations](deprecations.md#legacy-country-allowlist-output) for
-migration guidance.
+Each named policy file contains permitted country codes, including when
+the policy was configured as a blocklist. The IP blocklist considers
+ipsum threat addresses from countries permitted by any policy. Explicit
+denylist and managed bot entries are not limited by country policies.
+The allowlist has final precedence over every blocklist source.
 
 The available options are:
 
@@ -116,11 +109,9 @@ banip database init
 ```
 
 Initialization creates the configuration and local data directories. It
-also creates deprecated plugin directories during the banip 2.x
-compatibility period. It imports existing flat configuration files when
-present without deleting them. Invalid legacy IP entries are ignored. An
-existing legacy targets file must contain at least one valid country
-code.
+imports existing flat configuration files when present without deleting
+them. Invalid legacy IP entries are ignored. An existing legacy targets
+file must contain at least one valid country code.
 
 Use `--overwrite` to replace an existing `~/.banip/banip.yaml` with the
 starter configuration. Overwrite does not reimport retained flat files.

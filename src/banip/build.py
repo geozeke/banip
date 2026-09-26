@@ -21,7 +21,7 @@ from banip.config import CountryPolicyMode
 from banip.config import load_config
 from banip.constants import BOTDATA
 from banip.constants import CONFIG
-from banip.constants import COUNTRY_ALLOWLIST
+from banip.constants import DATA
 from banip.constants import GEOLITE_4
 from banip.constants import GEOLITE_6
 from banip.constants import GEOLITE_LOC
@@ -71,37 +71,26 @@ def resolve_country_policies(
 
 
 def write_country_policy_files(
-    countries: CountryConfig,
     resolved: dict[str, set[str]],
 ) -> None:
-    """Write named and compatibility country allowlists.
+    """Write named country allowlists.
 
     Parameters
     ----------
-    countries : CountryConfig
-        Validated named country policies.
     resolved : dict[str, set[str]]
         Permitted country codes keyed by policy name.
 
     """
-    current_paths = {
-        COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
-        for name in resolved
-    }
-    for stale_path in COUNTRY_ALLOWLIST.parent.glob("country_allowlist_*.txt"):
+    current_paths = {DATA / f"country_allowlist_{name}.txt" for name in resolved}
+    for stale_path in DATA.glob("country_allowlist_*.txt"):
         if stale_path not in current_paths:
             stale_path.unlink()
 
     for name, codes in resolved.items():
-        policy_path = COUNTRY_ALLOWLIST.with_name(f"country_allowlist_{name}.txt")
+        policy_path = DATA / f"country_allowlist_{name}.txt"
         policy_path.write_text(
             render_lines(sorted(codes)), encoding="utf-8", newline="\n"
         )
-
-    default_codes = resolved[countries.default_policy]
-    COUNTRY_ALLOWLIST.write_text(
-        render_lines(sorted(default_codes)), encoding="utf-8", newline="\n"
-    )
 
 
 def exclude_network(
@@ -275,7 +264,7 @@ def task_runner(args: Namespace) -> None:
             [net for net, country in geolite.items() if country in threat_countries]
         )
         threat_geolite_lookup = build_network_lookup(threat_geolite)
-        write_country_policy_files(config.countries, resolved_policies)
+        write_country_policy_files(resolved_policies)
     console.print(format_status("country_filter"), highlight=False)
 
     # ------------------------------------------------------------------
@@ -420,13 +409,9 @@ def task_runner(args: Namespace) -> None:
     policy_table.add_column("Permitted", justify="right", style="cyan")
 
     for name, policy in sorted(config.countries.policies.items()):
-        policy_name = Text(name)
-        if name == config.countries.default_policy:
-            policy_name.stylize("green")
-            policy_name.append(" (default)", style="dim green")
         mode_style = "green" if policy.mode is CountryPolicyMode.ALLOWLIST else "red"
         policy_table.add_row(
-            policy_name,
+            Text(name),
             Text(policy.mode.value, style=mode_style),
             f"{len(policy.codes):,d}",
             f"{len(resolved_policies[name]):,d}",

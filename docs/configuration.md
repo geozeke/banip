@@ -8,10 +8,9 @@ sections have defaults when they are omitted.
 
 ```yaml
 # Config schema version. Required.
-version: 3
+version: 4
 # Named country policies used to generate country allowlists.
 countries:
-  default_policy: restricted  # Deprecated compatibility selector; removed in banip 3.0.
   policies:
     restricted:
       mode: allowlist
@@ -69,13 +68,7 @@ Each build writes a positive country allowlist for every policy:
 
 These products always contain permitted codes, regardless of the
 configured policy mode. This gives proxies and firewalls one consistent
-membership check. `countries.default_policy` selects the policy also
-written to `country_allowlist.txt` for compatibility with existing
-consumers. Both the setting and compatibility file are deprecated,
-remain supported throughout banip 2.x, and will be removed in banip
-3.0. New integrations should use an explicitly named policy file. See
-[Deprecations](deprecations.md#legacy-country-allowlist-output) for
-migration guidance and the removal checklist.
+membership check.
 
 The rendered IP blocklist includes qualifying threat addresses from the
 union of countries permitted by all policies. A shared blocklist can
@@ -111,11 +104,12 @@ rejected.
 
 ## Automatic configuration upgrade
 
-When banip reads a version-1 or version-2 configuration, it
-automatically writes schema version 3. Existing `targets` become the
+When banip reads a version-1, version-2, or version-3 configuration, it
+automatically writes schema version 4. Existing `targets` become the
 codes in a `restricted` allowlist policy, preserving the previous
 country filter and threat-selection behavior. Version-1 list keys are
-also renamed to their current forms. The complete converted
+also renamed to their current forms, and version-3
+`countries.default_policy` is removed. The complete converted
 configuration is validated before banip atomically replaces the prior
 file, so a failed upgrade leaves the original unchanged.
 

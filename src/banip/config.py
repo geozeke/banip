@@ -34,7 +34,7 @@ DEFAULT_BOT_PROVIDERS = (
 )
 STARTER_PUBLIC_BLOCKLIST = ("CN", "RU")
 STARTER_RESTRICTED_ALLOWLIST = ("CA", "US")
-CONFIG_VERSION = 3
+CONFIG_VERSION = 4
 COUNTRY_POLICY_NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
 DEFAULT_MAXMIND_EDITION = "GeoLite2-Country-CSV"
 DEFAULT_SECRETS_FILE = "~/.secrets"
@@ -84,14 +84,11 @@ class CountryConfig:
 
     Parameters
     ----------
-    default_policy : str
-        Policy used for the compatibility country allowlist.
     policies : dict[str, CountryPolicy]
         Policies keyed by their validated names.
 
     """
 
-    default_policy: str
     policies: dict[str, CountryPolicy]
 
 
@@ -256,11 +253,7 @@ def parse_country_config(values: object) -> CountryConfig:
     """
     if not isinstance(values, dict):
         raise ValueError("Config section 'countries' must be a mapping.")
-    reject_unknown_keys("countries", values, {"default_policy", "policies"})
-
-    default_policy = values.get("default_policy")
-    if not isinstance(default_policy, str):
-        raise ValueError("Config entry 'countries.default_policy' must be a name.")
+    reject_unknown_keys("countries", values, {"policies"})
 
     raw_policies = values.get("policies")
     if not isinstance(raw_policies, dict) or not raw_policies:
@@ -300,9 +293,7 @@ def parse_country_config(values: object) -> CountryConfig:
         )
         policies[name] = CountryPolicy(mode=mode, codes=codes)
 
-    if default_policy not in policies:
-        raise ValueError(f"Default country policy {default_policy!r} is not defined.")
-    return CountryConfig(default_policy=default_policy, policies=policies)
+    return CountryConfig(policies=policies)
 
 
 def parse_ip_entries(
@@ -577,7 +568,7 @@ def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
 
     """
     version = data.get("version")
-    if type(version) is not int or version not in {1, 2, CONFIG_VERSION}:
+    if type(version) is not int or version not in {1, 2, 3, CONFIG_VERSION}:
         raise ValueError(
             f"Unsupported config version: {version!r}. Expected version {CONFIG_VERSION}."
         )
@@ -585,6 +576,16 @@ def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
         return data
 
     upgraded = copy.deepcopy(data)
+
+    if version == 3:
+        countries = upgraded.get("countries")
+        if not isinstance(countries, dict):
+            raise ValueError("Config section 'countries' must be a mapping.")
+        reject_unknown_keys("countries", countries, {"default_policy", "policies"})
+        countries.pop("default_policy", None)
+        upgraded["version"] = CONFIG_VERSION
+        write_config(upgraded, path)
+        return upgraded
 
     if version == 1:
         if "allowlist" in upgraded or "denylist" in upgraded:
@@ -607,12 +608,7 @@ def upgrade_config(data: CommentedMap, path: Path) -> CommentedMap:
             "codes": targets,
         }
     )
-    countries = CommentedMap(
-        {
-            "default_policy": "restricted",
-            "policies": CommentedMap({"restricted": policy}),
-        }
-    )
+    countries = CommentedMap({"policies": CommentedMap({"restricted": policy})})
     upgraded["countries"] = countries
     upgraded["version"] = CONFIG_VERSION
     upgraded.yaml_set_comment_before_after_key(
@@ -720,7 +716,6 @@ def config_template(
     data = CommentedMap()
     data["version"] = CONFIG_VERSION
     if targets is None:
-        default_policy = "restricted"
         policies = CommentedMap(
             {
                 "restricted": CommentedMap(
@@ -738,7 +733,6 @@ def config_template(
             }
         )
     else:
-        default_policy = "restricted"
         policies = CommentedMap(
             {
                 "restricted": CommentedMap(
@@ -751,16 +745,7 @@ def config_template(
                 )
             }
         )
-    country_config = CommentedMap(
-        {
-            "default_policy": default_policy,
-            "policies": policies,
-        }
-    )
-    country_config.yaml_add_eol_comment(
-        "Deprecated compatibility selector; removed in banip 3.0.",
-        "default_policy",
-    )
+    country_config = CommentedMap({"policies": policies})
     data["countries"] = country_config
     data["allowlist"] = CommentedSeq(sorted(set(allowlist or [])))
     data["denylist"] = CommentedSeq(sorted(set(denylist or [])))

@@ -74,7 +74,6 @@ build-backend = "uv_build"
 source-include = [
     "changelogs/**",
     "global-gitignore.txt",
-    "samples/**",
 ]
 source-exclude = [
     ".uv-cache/**",

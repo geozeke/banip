@@ -114,7 +114,6 @@ def main() -> None:
         for name in (
             "ip_blocklist.txt",
             "ip_allowlist.txt",
-            "country_allowlist.txt",
             "country_allowlist_restricted.txt",
             "country_allowlist_public.txt",
             "haproxy_geo_ip.txt",

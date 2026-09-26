@@ -29,6 +29,13 @@ def test_parser_modules_register_commands(parser_module) -> None:
     assert parser_module.COMMAND_NAME in subparsers.choices
 
 
+def test_command_registry_matches_parser_modules() -> None:
+    """Every registered parser has one built-in command implementation."""
+    parser_commands = {module.COMMAND_NAME for module in app.PARSER_MODULES}
+
+    assert set(app.COMMAND_MODULES) == parser_commands
+
+
 def test_build_outfile_is_parsed_as_a_path() -> None:
     """The build parser does not open or truncate its output path."""
     parser = argparse.ArgumentParser()
@@ -78,47 +85,12 @@ def test_check_rejects_invalid_ip_address() -> None:
     assert exc_info.value.code == 2
 
 
-def test_collect_parsers_excludes_init(tmp_path: Path) -> None:
-    """Parser collection skips package initializers."""
-    (tmp_path / "__init__.py").write_text("")
-    (tmp_path / "foo.py").write_text("")
-    (tmp_path / "bar.py").write_text("")
-
-    assert sorted(app.collect_parsers(tmp_path)) == ["parsers.bar", "parsers.foo"]
-
-
-def test_collect_parsers_returns_empty_list_for_missing_directory(
-    tmp_path: Path,
-) -> None:
-    """Missing parser directories do not block base help output."""
-    assert app.collect_parsers(tmp_path / "missing") == []
-
-
-def test_legacy_plugins_present_checks_parser_and_code_directories(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Either legacy plugin directory triggers deprecation detection."""
-    parser_dir = tmp_path / "plugins" / "parsers"
-    code_dir = tmp_path / "plugins" / "code"
-    parser_dir.mkdir(parents=True)
-    code_dir.mkdir(parents=True)
-    monkeypatch.setattr(app, "CUSTOM_PARSERS", parser_dir)
-    monkeypatch.setattr(app, "CUSTOM_CODE", code_dir)
-
-    assert not app.legacy_plugins_present()
-
-    (code_dir / "custom.py").write_text("")
-
-    assert app.legacy_plugins_present()
-
-
-def test_main_warns_once_and_dispatches_legacy_plugin(
+def test_main_ignores_and_preserves_legacy_plugin_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """A legacy plugin warns once and remains operational."""
+    """Legacy plugin files are untouched and no longer become commands."""
     parser_dir = tmp_path / "plugins" / "parsers"
     code_dir = tmp_path / "plugins" / "code"
     parser_dir.mkdir(parents=True)
@@ -129,17 +101,17 @@ def test_main_warns_once_and_dispatches_legacy_plugin(
     (code_dir / "custom.py").write_text(
         "def task_runner(args):\n    print('legacy plugin ran')\n"
     )
-    monkeypatch.setattr(app, "ARG_PARSERS_BASE", tmp_path / "missing")
-    monkeypatch.setattr(app, "CUSTOM_PARSERS", parser_dir)
-    monkeypatch.setattr(app, "CUSTOM_CODE", code_dir)
-    monkeypatch.setattr(app, "check_setup", lambda: True)
     monkeypatch.setattr("sys.argv", ["banip", "custom"])
 
-    assert app.main() == 0
+    with pytest.raises(SystemExit) as exc_info:
+        app.main()
 
     captured = capsys.readouterr()
-    assert captured.err.count(app.LEGACY_PLUGIN_WARNING) == 1
-    assert "legacy plugin ran" in captured.out
+    assert exc_info.value.code == 2
+    assert "invalid choice" in captured.err
+    assert "legacy plugin ran" not in captured.out
+    assert (parser_dir / "custom_args.py").is_file()
+    assert (code_dir / "custom.py").is_file()
 
 
 def test_module_entry_point_delegates_to_app_main(monkeypatch) -> None:

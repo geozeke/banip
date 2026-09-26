@@ -84,42 +84,11 @@ def test_main_dispatches_to_null_command(monkeypatch) -> None:
         nonlocal called
         called = True
 
-    monkeypatch.setattr(
-        app,
-        "importlib",
-        SimpleNamespace(
-            import_module=lambda _name: SimpleNamespace(task_runner=fake_task_runner)
-        ),
-    )
-    monkeypatch.setattr(app, "collect_parsers", lambda _start: [])
+    monkeypatch.setattr(app.null_command, "task_runner", fake_task_runner)
     monkeypatch.setattr("sys.argv", ["banip"])
 
     assert app.main() == 0
     assert called is True
-
-
-def test_main_reports_missing_custom_command_code(
-    tmp_path, monkeypatch, capsys
-) -> None:
-    """Custom commands require matching code modules."""
-    parser_dir = tmp_path / ".banip" / "plugins" / "parsers"
-    parser_dir.mkdir(parents=True)
-    (parser_dir / "custom_args.py").write_text(
-        "COMMAND_NAME = 'custom'\n"
-        "def load_command_args(sp):\n"
-        "    sp.add_parser(name=COMMAND_NAME)\n"
-    )
-    monkeypatch.setattr(app, "ARG_PARSERS_BASE", tmp_path / "missing")
-    monkeypatch.setattr(app, "CUSTOM_PARSERS", parser_dir)
-    monkeypatch.setattr(app, "CUSTOM_CODE", tmp_path / "code")
-    monkeypatch.setattr(app, "check_setup", lambda: True)
-    monkeypatch.setattr("sys.argv", ["banip", "custom"])
-
-    with pytest.raises(SystemExit) as exc_info:
-        app.main()
-
-    assert exc_info.value.code == 1
-    assert "Code for a custom command" in capsys.readouterr().out
 
 
 def test_patch_task_runner_updates_ipsum(tmp_path, monkeypatch, capsys) -> None:
@@ -289,9 +258,8 @@ def write_check_config(tmp_path: Path) -> Path:
     """
     config_file = tmp_path / "banip.yaml"
     config_file.write_text(
-        "version: 3\n"
+        "version: 4\n"
         "countries:\n"
-        "  default_policy: restricted\n"
         "  policies:\n"
         "    restricted:\n"
         "      mode: allowlist\n"
@@ -471,7 +439,6 @@ def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
 
     loaded = config.load_config(path)
 
-    assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"] == config.CountryPolicy(
         mode=config.CountryPolicyMode.ALLOWLIST,
         codes={"US"},
@@ -567,7 +534,6 @@ def test_initialize_config_uses_starter_policies_without_legacy_targets(
     config.initialize_config(path=path)
     loaded = config.load_config(path)
 
-    assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"].codes == {"CA", "US"}
     assert loaded.countries.policies["public"] == config.CountryPolicy(
         mode=config.CountryPolicyMode.BLOCKLIST,
@@ -579,7 +545,6 @@ def test_config_parses_named_country_policies() -> None:
     """Named allowlist and blocklist policies are normalized."""
     loaded = config.parse_country_config(
         {
-            "default_policy": "restricted",
             "policies": {
                 "restricted": {
                     "mode": "allowlist",
@@ -593,7 +558,6 @@ def test_config_parses_named_country_policies() -> None:
         }
     )
 
-    assert loaded.default_policy == "restricted"
     assert loaded.policies["restricted"].codes == {"CA", "US"}
     assert loaded.policies["public"] == config.CountryPolicy(
         mode=config.CountryPolicyMode.BLOCKLIST,
@@ -614,51 +578,40 @@ def test_country_code_reference_matches_config_validation() -> None:
     [
         (None, "countries.*mapping"),
         (
-            {"default_policy": "default", "policies": {}},
+            {"policies": {}},
             "countries.policies.*non-empty mapping",
         ),
         (
             {
-                "default_policy": "default",
                 "policies": {"../default": {"mode": "allowlist", "codes": ["US"]}},
             },
             "Invalid country policy name",
         ),
         (
             {
-                "default_policy": "default",
                 "policies": {"default": {"mode": "permit", "codes": ["US"]}},
             },
             "Invalid country policy mode",
         ),
         (
             {
-                "default_policy": "default",
                 "policies": {"default": {"mode": "allowlist", "codes": []}},
             },
             "must be a non-empty list",
         ),
         (
             {
-                "default_policy": "default",
                 "policies": {"default": {"mode": "allowlist", "codes": ["USA"]}},
             },
             "Invalid countries.policies.default.codes entry",
         ),
         (
             {
-                "default_policy": "default",
                 "policies": {"default": {"mode": "allowlist", "codes": ["ZZ"]}},
             },
             "Unknown countries.policies.default.codes country code",
         ),
-        (
-            {
-                "default_policy": "missing",
-                "policies": {"default": {"mode": "allowlist", "codes": ["US"]}},
-            },
-            "Default country policy.*not defined",
-        ),
+        ({"default_policy": "default", "policies": {}}, "Unsupported config key"),
     ],
 )
 def test_config_rejects_invalid_country_policies(countries, message: str) -> None:
@@ -697,7 +650,7 @@ def test_config_upgrades_version_one_lists(tmp_path) -> None:
     assert loaded.denylist == {ipa.ip_network("192.0.2.0/30")}
     assert loaded.countries.policies["restricted"].codes == {"US"}
     upgraded = path.read_text()
-    assert "version: 3" in upgraded
+    assert "version: 4" in upgraded
     assert "allowlist:" in upgraded
     assert "denylist:" in upgraded
     assert "countries:" in upgraded
@@ -720,13 +673,67 @@ def test_config_upgrades_version_two_country_targets(tmp_path) -> None:
     first_upgrade = path.read_text()
     loaded_again = config.load_config(path)
 
-    assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"].codes == {"CA", "US"}
     assert loaded_again == loaded
     assert path.read_text() == first_upgrade
     assert first_upgrade.startswith("# Keep this deployment note.\n")
-    assert "version: 3" in first_upgrade
+    assert "version: 4" in first_upgrade
     assert "targets:" not in first_upgrade
+
+
+def test_config_upgrades_version_three_without_default_policy(tmp_path) -> None:
+    """Version-three configurations drop the compatibility selector."""
+    path = tmp_path / "banip.yaml"
+    path.write_text(
+        "# Keep this deployment note.\n"
+        "version: 3\n"
+        "countries:\n"
+        "  default_policy: restricted\n"
+        "  policies:\n"
+        "    restricted:\n"
+        "      mode: allowlist\n"
+        "      codes:\n"
+        "        - US\n"
+        "    public:\n"
+        "      mode: blocklist\n"
+        "      codes:\n"
+        "        - RU\n"
+        "allowlist:\n"
+        "  - 203.0.113.10\n"
+        "denylist: []\n"
+    )
+
+    loaded = config.load_config(path)
+    upgraded = path.read_text()
+
+    assert loaded.countries.policies["restricted"].codes == {"US"}
+    assert loaded.countries.policies["public"].codes == {"RU"}
+    assert loaded.allowlist == {ipa.ip_address("203.0.113.10")}
+    assert upgraded.startswith("# Keep this deployment note.\n")
+    assert "version: 4" in upgraded
+    assert "default_policy" not in upgraded
+
+
+def test_invalid_version_three_upgrade_leaves_original_unchanged(tmp_path) -> None:
+    """A failed version-three conversion does not rewrite the source file."""
+    path = tmp_path / "banip.yaml"
+    path.write_text(
+        "version: 3\n"
+        "countries:\n"
+        "  default_policy: restricted\n"
+        "  policies:\n"
+        "    restricted:\n"
+        "      mode: allowlist\n"
+        "      codes: []\n"
+        "allowlist: []\n"
+        "denylist: []\n"
+    )
+    original = path.read_text()
+
+    with pytest.raises(ValueError, match="must be a non-empty list"):
+        config.load_config(path)
+
+    assert path.read_text() == original
 
 
 def test_config_rejects_mixed_schema_list_keys(tmp_path) -> None:
@@ -775,8 +782,6 @@ def test_database_init_migrates_legacy_flat_files(
     """Database init creates directories and migrates flat config files."""
     data = tmp_path / ".banip"
     monkeypatch.setattr(database, "DATA", data)
-    monkeypatch.setattr(database, "CUSTOM_CODE", data / "plugins" / "code")
-    monkeypatch.setattr(database, "CUSTOM_PARSERS", data / "plugins" / "parsers")
     monkeypatch.setattr(database, "CONFIG", data / "banip.yaml")
     monkeypatch.setattr(config, "CONFIG", data / "banip.yaml")
     monkeypatch.setattr(config, "TARGETS", data / "targets.txt")
@@ -784,7 +789,9 @@ def test_database_init_migrates_legacy_flat_files(
         config, "LEGACY_CUSTOM_ALLOWLIST", data / "custom_whitelist.txt"
     )
     monkeypatch.setattr(config, "LEGACY_CUSTOM_DENYLIST", data / "custom_blacklist.txt")
-    data.mkdir()
+    plugin = data / "plugins" / "code" / "custom.py"
+    plugin.parent.mkdir(parents=True)
+    plugin.write_text("# Retained user code.\n")
     (data / "targets.txt").write_text("# comment\nus\n")
     (data / "custom_whitelist.txt").write_text("203.0.113.10\n")
     (data / "custom_blacklist.txt").write_text("192.0.2.0/30\n")
@@ -794,12 +801,12 @@ def test_database_init_migrates_legacy_flat_files(
     output = capsys.readouterr().out
     assert "Initialized" in output
     assert (data / "geolite").exists()
-    assert (data / "plugins" / "code").exists()
+    assert plugin.read_text() == "# Retained user code.\n"
+    assert not (data / "plugins" / "parsers").exists()
     assert "US" in (data / "banip.yaml").read_text()
     assert "203.0.113.10" in (data / "banip.yaml").read_text()
     assert "192.0.2.0/30" in (data / "banip.yaml").read_text()
     loaded = config.load_config(data / "banip.yaml")
-    assert loaded.countries.default_policy == "restricted"
     assert loaded.countries.policies["restricted"].codes == {"US"}
     assert "amazon" in loaded.bots.providers
 
@@ -1336,7 +1343,7 @@ def test_build_task_runner_generates_blocklist_outputs(
     geolite = data / "geolite"
     geolite.mkdir(parents=True)
     paths = {
-        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
+        "DATA": data,
         "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
         "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
         "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
@@ -1402,7 +1409,7 @@ def test_build_task_runner_generates_blocklist_outputs(
     assert "Compacting ipsum (0)" in output
     assert "0.00%" in output
     assert "Final Build Summary" in output
-    assert paths["COUNTRY_ALLOWLIST"].read_text() == "US\n"
+    assert not (data / "country_allowlist.txt").exists()
     assert (data / "country_allowlist_restricted.txt").read_text() == "US\n"
     assert "192.0.2.5" in paths["CONFIG"].read_text()
     assert "192.0.2.0/30" in paths["CONFIG"].read_text()
@@ -1434,7 +1441,7 @@ def test_build_task_runner_generates_named_country_policies(
     geolite = data / "geolite"
     geolite.mkdir(parents=True)
     paths = {
-        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
+        "DATA": data,
         "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
         "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
         "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
@@ -1484,6 +1491,8 @@ def test_build_task_runner_generates_named_country_policies(
         "192.0.2.9 8\n198.51.100.9 8\n203.0.113.9 8\n2001:db8::1 8\n"
     )
     paths["RENDERED_BLOCKLIST"].touch()
+    legacy_policy = data / "country_allowlist.txt"
+    legacy_policy.write_text("DO NOT CHANGE\n")
     stale_policy = data / "country_allowlist_removed.txt"
     stale_policy.write_text("GB\n")
     unrelated_file = data / "country_allowlist_notes"
@@ -1501,7 +1510,7 @@ def test_build_task_runner_generates_named_country_policies(
     build.task_runner(argparse.Namespace(threshold=3, compact=0, no_bots=False))
 
     output = capsys.readouterr().out
-    assert paths["COUNTRY_ALLOWLIST"].read_text() == "US\n"
+    assert legacy_policy.read_text() == "DO NOT CHANGE\n"
     assert (data / "country_allowlist_restricted.txt").read_text() == "US\n"
     assert (data / "country_allowlist_public.txt").read_text() == "CA\nUS\n"
     assert not stale_policy.exists()
@@ -1513,7 +1522,8 @@ def test_build_task_runner_generates_named_country_policies(
     assert "203.0.113.9" not in blocklist
     assert "Country Policies" in output
     assert "public" in output
-    assert "restricted (default)" in output
+    assert "restricted" in output
+    assert "(default)" not in output
     assert "Threat scope" in output
 
 
@@ -1525,7 +1535,7 @@ def test_build_task_runner_renders_managed_bot_ranges(
     geolite = data / "geolite"
     geolite.mkdir(parents=True)
     paths = {
-        "COUNTRY_ALLOWLIST": data / "country_allowlist.txt",
+        "DATA": data,
         "GEOLITE_4": geolite / "GeoLite2-Country-Blocks-IPv4.csv",
         "GEOLITE_6": geolite / "GeoLite2-Country-Blocks-IPv6.csv",
         "GEOLITE_LOC": geolite / "GeoLite2-Country-Locations-en.csv",
@@ -1538,9 +1548,8 @@ def test_build_task_runner_renders_managed_bot_ranges(
         "CONFIG": data / "banip.yaml",
     }
     config_text = (
-        "version: 3\n"
+        "version: 4\n"
         "countries:\n"
-        "  default_policy: blocked\n"
         "  policies:\n"
         "    blocked:\n"
         "      mode: blocklist\n"

@@ -134,14 +134,13 @@ banip database init
 ```
 
 This writes `~/.banip/banip.yaml` and creates the local data
-directories. During the banip 2.x compatibility period it also creates
-the deprecated plugin directories. If the prior flat configuration
-files exist, initialization imports their non-comment entries into the
-new YAML configuration without deleting the source files. Invalid IP
-entries retain the legacy behavior and are ignored. If an existing
-`targets.txt` contains no valid country codes, initialization stops
-without writing `banip.yaml`; select at least one country or remove the
-legacy file to use the starter policies.
+directories. If the prior flat configuration files exist,
+initialization imports their non-comment entries into the new YAML
+configuration without deleting the source files. Invalid IP entries
+retain the legacy behavior and are ignored. If an existing `targets.txt`
+contains no valid country codes, initialization stops without writing
+`banip.yaml`; select at least one country or remove the legacy file to
+use the starter policies.
 
 On native Windows, `~/.banip` is the `.banip` directory under your user
 profile, normally `C:\Users\<username>\.banip`. Use UTF-8 for edited
@@ -217,18 +216,14 @@ The build writes:
 ```text
 ~/.banip/ip_blocklist.txt
 ~/.banip/ip_allowlist.txt
-~/.banip/country_allowlist.txt
 ~/.banip/country_allowlist_restricted.txt
 ~/.banip/country_allowlist_public.txt
 ~/.banip/haproxy_geo_ip.txt
 ```
 
 Additional named country policies produce corresponding
-`country_allowlist_<policy>.txt` files. Use these named products for new
-integrations. The unqualified `country_allowlist.txt` product is
-deprecated and will be removed in banip 3.0.
+`country_allowlist_<policy>.txt` files.
 
 See [Configuration](configuration.md) for the available settings and
-[Commands](commands.md) for build options. Review
-[Deprecations](deprecations.md) before planning a major-version
-upgrade.
+[Commands](commands.md) for build options. Existing 2.x installations
+should review [Upgrading to 3.0](upgrading-to-3.md).

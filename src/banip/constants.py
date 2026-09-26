@@ -12,13 +12,9 @@ BASE = Path(__file__).parents[0]
 DATA = HOME / ".banip"
 
 APP_NAME = "banip"
-ARG_PARSERS_BASE = BASE / "parsers"
-CUSTOM_CODE = DATA / "plugins" / "code"
-CUSTOM_PARSERS = DATA / "plugins" / "parsers"
 BOTDATA = DATA / "botdata.json"
 CONFIG = DATA / "banip.yaml"
 COUNTRY_NETS_TXT = DATA / "haproxy_geo_ip.txt"
-COUNTRY_ALLOWLIST = DATA / "country_allowlist.txt"
 LEGACY_CUSTOM_ALLOWLIST = DATA / "custom_whitelist.txt"
 LEGACY_CUSTOM_DENYLIST = DATA / "custom_blacklist.txt"
 RENDERED_ALLOWLIST = DATA / "ip_allowlist.txt"

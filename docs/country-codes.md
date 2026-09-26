@@ -1,8 +1,11 @@
 # Country codes
 
 Use these two-letter country codes in named policies under the
-`countries` section of `banip.yaml`. Source data:
-<https://www.geonames.org/countries/>.
+`countries` section of `banip.yaml`. The list follows active entries in
+the GeoNames
+[`countryInfo.txt`](https://download.geonames.org/export/dump/countryInfo.txt)
+dataset. It excludes the retained obsolete codes AN and CS and includes
+GeoNames' temporary `XK` code for Kosovo.
 
 | Country/Code | Country/Code | Country/Code |
 | --- | --- | --- |

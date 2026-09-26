@@ -38,6 +38,9 @@ CONFIG_VERSION = 4
 COUNTRY_POLICY_NAME = re.compile(r"^[a-z][a-z0-9_-]*$")
 DEFAULT_MAXMIND_EDITION = "GeoLite2-Country-CSV"
 DEFAULT_SECRETS_FILE = "~/.secrets"
+# Active two-letter entries from the GeoNames countryInfo dataset. GeoNames
+# retains AN and CS as obsolete rows, so they are intentionally excluded. XK
+# is GeoNames' temporary code for Kosovo and remains intentionally supported.
 COUNTRY_CODES = frozenset(
     """
     AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ

@@ -48,6 +48,12 @@ changelog:
 
 # --------------------------------------------
 
+# Compare supported country codes with the current GeoNames dataset
+country-codes:
+    uv run python -m scripts.check_country_codes
+
+# --------------------------------------------
+
 # Clean python runtime and build artifacts
 clean:
     echo "Cleaning python runtime and build artifacts"

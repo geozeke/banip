@@ -77,6 +77,21 @@ Run `just docs-serve` to preview documentation locally. The generated
 `site/` directory is not tracked. GitHub Pages builds the same strict
 site after documentation changes reach `main`.
 
+### Country-code maintenance
+
+Compare the supported country codes with the current GeoNames
+`countryInfo.txt` dataset:
+
+```console
+just country-codes
+```
+
+This network-dependent maintenance check is intentionally separate from
+`just check`. It ignores the obsolete `AN` and `CS` rows retained by
+GeoNames and verifies every other upstream code against runtime
+validation. The offline test suite keeps the country-code reference
+synchronized with the runtime set.
+
 ## Changelog and releases
 
 Pull-request titles use Conventional Commits because squash merges make

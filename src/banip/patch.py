@@ -89,7 +89,7 @@ def task_runner(args: Namespace) -> None:
     table.add_column(justify="right")
 
     table.add_row("Original ipsum.txt size", f"{(original_ipsum_size):,d}")
-    table.add_row("New IP addresses analyzed", f"{(new_ips_considered):,d}")
+    table.add_row("Valid input addresses", f"{(new_ips_considered):,d}")
     table.add_row("New IP addresses added", f"{(new_ips_added):,d}")
     table.add_row("New ipsum.txt size", f"{(len(ipsum)):,d}")
 

@@ -19,11 +19,6 @@ def get_public_ip() -> AddressType | None:
         the request fails or the response cannot be parsed as an IP
         address.
 
-    Raises
-    ------
-    RequestException
-        If the connection to the AWS server fails.
-
     """
     try:
         response = requests.get("https://checkip.amazonaws.com")

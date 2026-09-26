@@ -218,7 +218,7 @@ def verdict_text(result: CheckResult) -> Text:
     Returns
     -------
     Text
-        Styled blocked or not-blocked verdict.
+        Styled combined verdict.
 
     """
     if result.verdict is CheckVerdict.BLOCKED:
@@ -371,7 +371,7 @@ def interactive_check(console: Console, data: CheckData) -> None:
 
 
 def display_missing_data(console: Console) -> bool:
-    """Display missing generated data and return whether any is absent.
+    """Display missing required local data and report whether any is absent.
 
     Parameters
     ----------
@@ -396,7 +396,8 @@ def display_missing_data(console: Console) -> bool:
     console.print(
         Panel(
             f"Required build data is missing:\n{paths}\n\n"
-            "Run [bold]banip build[/bold] before checking addresses.",
+            "Initialize or refresh local data as needed, then run "
+            "[bold]banip build[/bold] before checking addresses.",
             title="Cannot check addresses",
             border_style="red",
             box=box.ROUNDED,
@@ -406,7 +407,7 @@ def display_missing_data(console: Console) -> bool:
 
 
 def task_runner(args: argparse.Namespace) -> None:
-    """Display available data for one or more IP addresses.
+    """Check one or more IP addresses against generated data.
 
     Parameters
     ----------

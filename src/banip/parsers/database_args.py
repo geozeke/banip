@@ -8,7 +8,7 @@ COMMAND_NAME = "database"
 def load_command_args(sp: _SubParsersAction) -> None:
     """Assemble the argument parser."""
     msg = """
-    Initialize and update external banip data files.
+    Initialize, update, and inspect banip data files.
     """
     parser = sp.add_parser(name=COMMAND_NAME, description=msg)
     subparsers = parser.add_subparsers(dest="action", required=True)

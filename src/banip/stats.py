@@ -15,7 +15,7 @@ from banip.utilities import status_label
 
 
 def task_runner(args: argparse.Namespace) -> None:
-    """Display statistics for a given country.
+    """Display GeoLite network statistics for a given country label.
 
     Parameters
     ----------
@@ -24,14 +24,11 @@ def task_runner(args: argparse.Namespace) -> None:
 
     """
     if not COUNTRY_NETS_TXT.exists():
-        msg = """
-        Some required files are missing. Run the \'build\'
-        command before generating statistics for a given country. Run
-        this command for more information:
-        
-        \'banip build -h\'
-        """
-        print("\n".join([line.strip() for line in msg.split("\n")]))
+        print(
+            "Required country network data is missing. Run 'banip build' "
+            "before generating statistics. Run 'banip build -h' for more "
+            "information."
+        )
         return
 
     target_country = args.country_code.upper()

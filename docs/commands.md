@@ -32,7 +32,9 @@ Each named policy file contains permitted country codes, including when
 the policy was configured as a blocklist. The IP blocklist considers
 ipsum threat addresses from countries permitted by any policy. Explicit
 denylist and managed bot entries are not limited by country policies.
-The allowlist has final precedence over every blocklist source.
+The allowlist has final precedence over every blocklist source. A build
+also removes named country-policy files whose policies no longer exist
+in the configuration.
 
 The available options are:
 
@@ -167,8 +169,10 @@ banip stats US
 ```
 
 Stats accepts one two-letter country code, case-insensitively, and
-reports IPv4 and IPv6 network and address totals. It requires an
-existing build because it reads the generated country network map.
+reports IPv4 and IPv6 network and address-coverage totals. The coverage
+calculation excludes the first and last addresses from every
+multi-address network. Stats requires an existing build because it reads
+the generated country network map.
 
 ## Keep data current
 

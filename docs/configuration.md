@@ -68,12 +68,15 @@ Each build writes a positive country allowlist for every policy:
 
 These products always contain permitted codes, regardless of the
 configured policy mode. This gives proxies and firewalls one consistent
-membership check.
+membership check. A build removes a named policy file when its policy no
+longer exists in `banip.yaml`.
 
 The rendered IP blocklist includes qualifying threat addresses from the
 union of countries permitted by all policies. A shared blocklist can
-therefore protect services using different country policies. Addresses
-without a GeoLite2 mapping are not included in a country policy.
+therefore protect services using different country policies. Threat
+addresses are included only when their GeoLite-derived label is
+permitted by at least one policy. GeoLite may provide a continent code
+when no country code is available.
 
 Country geolocation is approximate. Use country policies as a
 supplemental control rather than as authentication or authorization.
@@ -118,11 +121,13 @@ reports the ambiguity instead of choosing a precedence.
 
 ## Database settings
 
-`database.maxmind_edition` selects the MaxMind CSV edition and
+`database.maxmind_edition` is passed to MaxMind's download endpoint. The
+downloaded archive must contain the standard GeoLite2 Country IPv4,
+IPv6, and English-language locations CSV filenames, so the default
+`GeoLite2-Country-CSV` should normally remain unchanged.
 `database.secrets_file` identifies an optional dotenv-style credential
-file. The default values are `GeoLite2-Country-CSV` and `~/.secrets`.
-Set `database.secrets_file` to `null` to disable credential-file loading
-and use environment variables only.
+file and defaults to `~/.secrets`. Set it to `null` to disable
+credential-file loading and use environment variables only.
 
 The ipsum download URL can be overridden for mirrors or compatible
 feeds:

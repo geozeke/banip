@@ -97,7 +97,7 @@ STATUS_MESSAGES = StatusMessages(
         "blocklist_rendered_load": "Loading rendered blocklist",
         "build_products": "Generating build products",
         "country_filter": "Filtering networks",
-        "custom_prune": "Pruning custom denylist",
+        "custom_prune": "Pruning configured denylist",
         "geolite_load": "Loading geolocation data",
         "geo_pull": "Pulling country IDs",
         "geo_tag": "Geotagging networks",
@@ -108,7 +108,7 @@ STATUS_MESSAGES = StatusMessages(
         "ipsum_prune": "Pruning ipsum.txt",
         "lists_render": "Rendering lists",
         "redundant_remove": "Removing redundant IP addresses",
-        "repack": "Repackaging custom IP addresses",
+        "repack": "Repacking patched IP addresses",
         "stats_load": "Loading data",
     }
 )
@@ -164,7 +164,8 @@ def format_status(key: str, status: str = "✅", **kwargs: object) -> str:
 def clear() -> None:
     """Clear the screen.
 
-    This is an OS-agnostic version, which works with both Windows
-    and Linux.
+    This OS-agnostic implementation works with macOS, Linux, and
+    Windows.
+
     """
     os.system("clear" if os.name == "posix" else "cls")

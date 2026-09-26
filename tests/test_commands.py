@@ -209,7 +209,7 @@ def test_stats_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -
 
     stats.task_runner(argparse.Namespace(country_code="us"))
 
-    assert "Run the 'build'" in capsys.readouterr().out
+    assert "Run 'banip build'" in capsys.readouterr().out
 
 
 def test_stats_task_runner_reports_country_stats(tmp_path, monkeypatch, capsys) -> None:
@@ -406,7 +406,7 @@ def test_interactive_check_exits_on_terminal_signal(
 
 
 def test_check_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -> None:
-    """Check command prompts users to build data first."""
+    """Check command explains how to prepare missing local data."""
     monkeypatch.setattr(check, "CONFIG", tmp_path / "banip.yaml")
     monkeypatch.setattr(check, "COUNTRY_NETS_TXT", tmp_path / "missing.txt")
     monkeypatch.setattr(check, "RENDERED_BLOCKLIST", tmp_path / "blocklist.txt")
@@ -416,7 +416,7 @@ def test_check_task_runner_reports_missing_data(tmp_path, monkeypatch, capsys) -
 
     output = capsys.readouterr().out
     assert "Required build data is missing" in output
-    assert "Run banip build" in output
+    assert "banip build" in output
 
 
 def test_config_loads_and_validates_yaml(tmp_path, monkeypatch) -> None:
@@ -1421,7 +1421,7 @@ def test_build_task_runner_generates_blocklist_outputs(
     blocklist_lines = paths["RENDERED_BLOCKLIST"].read_text().splitlines()
     assert blocklist_lines[0] == "192.0.2.9"
     assert blocklist_lines[1] == ""
-    assert blocklist_lines[2] == "# ------------custom entries -------------"
+    assert blocklist_lines[2] == "# -----------denylist entries -------------"
     assert blocklist_lines[3].startswith("# Added on: ")
     assert blocklist_lines[4:] == [
         "# ----------------------------------------",

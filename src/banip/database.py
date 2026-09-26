@@ -1,4 +1,4 @@
-"""Initialize and update external banip database files."""
+"""Manage local configuration and external banip data files."""
 
 import os
 import shutil
@@ -36,7 +36,7 @@ REQUIRED_GEOLITE_FILES = (
 
 
 def init_database(overwrite: bool = False) -> None:
-    """Create the local data structure and starter config.
+    """Create the local data directory and starter configuration.
 
     Parameters
     ----------

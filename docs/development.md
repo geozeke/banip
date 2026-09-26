@@ -131,10 +131,10 @@ Prepare a release from a clean release-preparation branch with an
 explicit canonical PEP 440 version:
 
 ```console
-just bump 2.1.1
+just bump X.Y.Z
 just check
 git add CHANGELOG.md changelogs pyproject.toml uv.lock
-git commit -m "chore(release): prepare for 2.1.1"
+git commit -m "chore(release): prepare for X.Y.Z"
 ```
 
 The bump command updates synchronized project versions and the lockfile,
@@ -160,8 +160,8 @@ workflow validates the release candidate, builds and smoke-tests the
 wheel and source distribution, publishes the distributions to a package
 index, and then publishes the GitHub Release.
 
-Prerelease tags such as `v2.1.1rc1` publish to TestPyPI and create a
-GitHub prerelease. Stable tags such as `v2.1.1` publish automatically to
+Prerelease tags such as `vX.Y.Zrc1` publish to TestPyPI and create a
+GitHub prerelease. Stable tags such as `vX.Y.Z` publish automatically to
 PyPI and create a stable GitHub Release. The GitHub release is not
 created if the corresponding package-index publication fails.
 
@@ -174,27 +174,24 @@ immutable or protected tag. The release workflow requires permission to
 force-update this one mutable installation ref.
 
 Promote a prerelease by preparing and tagging the matching stable
-version, such as `2.1.1`. If the promotion has no additional
+version, such as `X.Y.Z`. If the promotion has no additional
 changelog-visible commits, the release notes record the promotion from
 the prerelease.
 
 ### Trusted publishing setup
 
 The release workflow uses PyPI Trusted Publishing and does not use
-long-lived API tokens. Before the first publication:
+long-lived API tokens. It requires the following repository and package
+index configuration:
 
 1. Create GitHub environments named `testpypi` and `pypi`. Do not add a
    deployment approval rule when releases should remain fully
    automatic.
-2. Register a pending publisher for the `banip` project on TestPyPI and
-   PyPI. Use owner `geozeke`, repository `banip`, workflow
+2. Configure a trusted publisher for the `banip` project on TestPyPI
+   and PyPI. Use owner `geozeke`, repository `banip`, workflow
    `release.yml`, and the matching GitHub environment name.
 3. Allow GitHub Actions read and write workflow permissions so the
    stable release job can update the `latest` tag.
-
-Recheck that the project name is available immediately before
-registering the pending PyPI publisher. The first successful trusted
-publication claims a pending project.
 
 ## Dependency updates and security
 

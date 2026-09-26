@@ -7,9 +7,9 @@
 />
 
 banip builds focused IP blocklists from the ipsum threat-intelligence
-feed and MaxMind GeoLite2 country data. Select the countries whose
-traffic you allow, then block known malicious addresses within that
-scope.
+feed and MaxMind GeoLite2 country data. Define named country allowlist
+or blocklist policies, then block known malicious addresses within the
+combined permitted scope.
 
 The generated blocklist is smaller and easier to review than a global
 feed, while retaining the option to add specific addresses to a denylist

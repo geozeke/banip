@@ -28,13 +28,13 @@ def test_format_status_uses_checkmark_and_aligned_leader() -> None:
     """Status lines use a check mark and align with registered labels."""
     assert (
         utilities.format_status("custom_prune")
-        == "Pruning custom denylist...........✅"
+        == "Pruning configured denylist.......✅"
     )
 
 
 def test_format_status_uses_minimum_three_dot_leader() -> None:
     """Long status labels still receive at least three leader dots."""
-    assert utilities.format_status("repack") == "Repackaging custom IP addresses...✅"
+    assert utilities.format_status("repack") == "Repacking patched IP addresses....✅"
 
 
 def test_format_status_aligns_all_registered_statuses() -> None:
@@ -59,7 +59,7 @@ def test_format_status_handles_legacy_stdout_encoding(monkeypatch) -> None:
     with monkeypatch.context() as patch:
         patch.setattr(utility_display.sys, "stdout", SimpleNamespace(encoding="cp1252"))
         status = utilities.format_status("repack")
-    assert status == "Repackaging custom IP addresses...OK"
+    assert status == "Repacking patched IP addresses....OK"
     assert status.encode("cp1252")
 
 

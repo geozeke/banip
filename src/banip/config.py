@@ -450,7 +450,7 @@ def load_raw_config(path: Path = CONFIG) -> CommentedMap:
         msg = (
             f"Missing config file: {path}\n"
             "Run 'banip database init' to create one, then review the "
-            "documentation migration instructions."
+            "generated configuration."
         )
         raise FileNotFoundError(msg)
 
@@ -790,12 +790,14 @@ def config_template(
 
 
 def initialize_config(overwrite: bool = False, path: Path = CONFIG) -> None:
-    """Create ``banip.yaml`` from prior flat configuration files.
+    """Create ``banip.yaml``, importing prior flat files when available.
 
     Parameters
     ----------
     overwrite : bool, optional
-        Whether to replace an existing config file. Defaults to False.
+        Whether to replace an existing configuration with the starter
+        configuration without importing prior flat files. Defaults to
+        False.
     path : Path, optional
         Destination path. Defaults to ``CONFIG``.
 

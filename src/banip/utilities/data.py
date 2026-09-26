@@ -26,12 +26,14 @@ def tag_networks() -> dict[NetworkType, str]:
     """Generate the haproxy_geo_ip.txt database.
 
     This will create a HAProxy-friendly file of global subnets and their
-    associated two-letter country codes.
+    associated two-letter country or continent labels. GeoLite country
+    codes are preferred; continent codes are used when no country code
+    is available.
 
     Returns
     -------
     dict[NetworkType, str]
-        The generated database as a dictionary for reuse by other
+        The generated network-to-label database for reuse by other
         commands.
 
     """
@@ -81,7 +83,7 @@ def tag_networks() -> dict[NetworkType, str]:
 
 
 def lookup_country(ip: AddressType, path: Path) -> str | None:
-    """Find an address country in a sorted network map.
+    """Find an address label in a sorted GeoLite network map.
 
     The map must be sorted by IP version and numeric network address,
     matching the output produced by :func:`tag_networks`.
@@ -89,15 +91,15 @@ def lookup_country(ip: AddressType, path: Path) -> str | None:
     Parameters
     ----------
     ip : AddressType
-        Address whose country code should be located.
+        Address whose country or continent label should be located.
     path : Path
         Path to the generated country network map.
 
     Returns
     -------
     str | None
-        Matching country code, or ``None`` when the address is not
-        represented in the map.
+        Matching country or continent label, or ``None`` when the
+        address is not represented in the map.
 
     """
     if not path.stat().st_size:
@@ -135,12 +137,12 @@ def lookup_country(ip: AddressType, path: Path) -> str | None:
 
 
 def load_country_networks() -> dict[NetworkType, str]:
-    """Load the HAProxy country network map.
+    """Load the HAProxy GeoLite network map.
 
     Returns
     -------
     dict[NetworkType, str]
-        The country network map keyed by IP network.
+        The country or continent label keyed by IP network.
 
     """
     networks: dict[NetworkType, str] = {}

@@ -86,9 +86,9 @@ def requires_setup(args: argparse.Namespace) -> bool:
 def main() -> int:
     """Parse user input and run the requested command."""
     msg = """
-    Generate and query IP blocklists for use with proxy servers such as
-    HAProxy. See https://geozeke.github.io/banip/ for
-    setup instructions.
+    Generate and query IP blocklists for use with proxies and firewalls,
+    such as HAProxy. See https://geozeke.github.io/banip/ for setup
+    instructions.
     """
     epi = f"Version: {__version__}"
     parser = argparse.ArgumentParser(prog=APP_NAME, description=msg, epilog=epi)

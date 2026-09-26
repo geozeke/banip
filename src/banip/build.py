@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""Build a custom IP blocklist."""
+"""Build a configured IP blocklist."""
 
 import ipaddress as ipa
 import shutil
@@ -73,7 +73,7 @@ def resolve_country_policies(
 def write_country_policy_files(
     resolved: dict[str, set[str]],
 ) -> None:
-    """Write named country allowlists.
+    """Write named country allowlists and remove stale policy files.
 
     Parameters
     ----------
@@ -186,7 +186,7 @@ def apply_allowlist(
 
 
 def task_runner(args: Namespace) -> None:
-    """Generate a custom IP blocklist.
+    """Generate the configured IP blocklist.
 
     Parameters
     ----------
@@ -241,8 +241,7 @@ def task_runner(args: Namespace) -> None:
         )
         custom_nets_size = len(custom_nets)
         custom_nets_lookup = build_network_lookup(custom_nets)
-        # Remove any custom IP addresses that are covered by existing
-        # custom subnets.
+        # Remove denylist IP addresses covered by denylist networks.
         custom_ips = [
             ip
             for ip in custom_ips
@@ -252,7 +251,7 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Geotag all global networks, resolve each named country policy into
+    # Geotag all GeoLite networks, resolve each named country policy into
     # permitted codes, and build one lookup covering countries allowed by
     # any policy.
     geolite = tag_networks()
@@ -269,11 +268,10 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune ipsum.txt to keep only IP addresses that (1) are from
-    # countries permitted by at least one policy, (2) are not already
-    # covered by a custom subnet, (3)
-    # meet the minimum threshold for number of hits, and (4) are not in
-    # the custom allowlist.
+    # Prune ipsum.txt to keep only IP addresses that (1) have a label
+    # permitted by at least one policy, (2) are not already covered by a
+    # denylist network, (3) meet the minimum confidence threshold, and
+    # (4) are not in the configured allowlist.
     msg = status_label("ipsum_prune")
     with console.status(msg):
         allow_nets_lookup = build_network_lookup(allow_nets)
@@ -313,8 +311,8 @@ def task_runner(args: Namespace) -> None:
 
     # ------------------------------------------------------------------
 
-    # Prune the list of custom IP addresses again so that remaining
-    # entries are not already covered by ipsum.txt.
+    # Prune the denylist IP addresses again so remaining entries are not
+    # already covered by ipsum.txt.
     msg = status_label("redundant_remove")
     with console.status(msg):
         custom_ips = [
@@ -360,7 +358,7 @@ def task_runner(args: Namespace) -> None:
                 blocklist_text += f"# {provider}\n"
                 blocklist_text += render_lines(managed_bot_networks[provider])
         blocklist_text += (
-            "\n# ------------custom entries -------------\n"
+            "\n# -----------denylist entries -------------\n"
             + f"# Added on: {now}\n"
             + "# ----------------------------------------\n\n"
             + render_lines([*custom_ips, *custom_nets])
@@ -375,8 +373,7 @@ def task_runner(args: Namespace) -> None:
         shutil.copy2(output_path, RENDERED_BLOCKLIST)
 
     # Generate tables to display country policy and build metrics. Do
-    # not include network and broadcast addresses when calculating total
-    # IP addresses.
+    # not count the first or last address of a multi-address network.
     total_entries = ipsum_size + bot_nets_size + custom_nets_size + custom_ips_size
     total_ipv4s = 0
     total_ipv6s = 0
@@ -449,7 +446,7 @@ def task_runner(args: Namespace) -> None:
         f"{bot_nets_size:,d}",
     )
     summary_table.add_row(
-        "Custom entries",
+        "Denylist entries",
         f"{custom_ips_size:,d}",
         f"{custom_nets_size:,d}",
         f"{custom_ips_size + custom_nets_size:,d}",

@@ -44,11 +44,17 @@ security = [
     "pip-audit>=2.9,<3",
 ]
 dev = [
-    "mypy>=2.0.0,<3",
+    "pyrefly==1.3.2",
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0.0,<8",
     "ruff>=0.16,<1",
 ]
+
+[tool.pyrefly]
+preset = "strict"
+project-includes = ["src", "scripts"]
+required-version = "==1.3.2"
+search-path = ["src", "."]
 
 [tool.uv]
 cache-dir = ".uv-cache"

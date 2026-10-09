@@ -10,6 +10,7 @@ from datetime import datetime as dt
 from html.parser import HTMLParser
 from typing import Any
 from typing import cast
+from typing import override
 
 import requests
 from rich import box
@@ -61,6 +62,7 @@ class _AmazonPayloadParser(HTMLParser):
         self._chunks: list[str] = []
         self._collecting = False
 
+    @override
     def handle_starttag(
         self,
         tag: str,
@@ -73,6 +75,7 @@ class _AmazonPayloadParser(HTMLParser):
             self._chunks = []
             self._collecting = True
 
+    @override
     def handle_endtag(self, tag: str) -> None:
         """Finish collecting an Amazon JSON code block."""
         if tag == "code" and self._collecting:
@@ -80,6 +83,7 @@ class _AmazonPayloadParser(HTMLParser):
             self._chunks = []
             self._collecting = False
 
+    @override
     def handle_data(self, data: str) -> None:
         """Collect text contained in an Amazon JSON code block."""
         if self._collecting:
@@ -435,7 +439,7 @@ def refresh(provider: str) -> None:
 
     """
     data = load_botdata()
-    stored_providers = data.setdefault("providers", {})
+    stored_providers: dict[str, Any] = data.setdefault("providers", {})
     if not isinstance(stored_providers, dict):
         stored_providers = {}
         data["providers"] = stored_providers

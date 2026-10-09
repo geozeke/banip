@@ -1,5 +1,8 @@
 """Argument parser for build command."""
 
+from __future__ import annotations
+
+from argparse import ArgumentParser
 from argparse import _SubParsersAction
 from pathlib import Path
 
@@ -12,7 +15,7 @@ COMMAND_NAME = "build"
 # ======================================================================
 
 
-def load_command_args(sp: _SubParsersAction) -> None:
+def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
     """Assemble the argument parser."""
     msg = """
     Create a list of blocked client IP addresses and networks for use

@@ -1,13 +1,16 @@
 """Argument parser for the bots command."""
 
+from __future__ import annotations
+
 import ipaddress as ipa
+from argparse import ArgumentParser
 from argparse import _SubParsersAction
 
 COMMAND_NAME = "bots"
 PROVIDERS = ("google", "bing", "openai", "anthropic", "amazon", "meta", "all")
 
 
-def load_command_args(sp: _SubParsersAction) -> None:
+def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
     """Assemble the argument parser."""
     msg = """
     Refresh, inspect, and check managed crawler and bot provider IP

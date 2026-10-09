@@ -1,5 +1,8 @@
 """Argument parser for the stats command."""
 
+from __future__ import annotations
+
+from argparse import ArgumentParser
 from argparse import _SubParsersAction
 
 COMMAND_NAME = "stats"
@@ -8,7 +11,7 @@ COMMAND_NAME = "stats"
 # ======================================================================
 
 
-def load_command_args(sp: _SubParsersAction) -> None:
+def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
     """Assemble the argument parser."""
     msg = """
     Produce statistics for a country code.

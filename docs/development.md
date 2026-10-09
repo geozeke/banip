@@ -27,7 +27,7 @@ without just or Bash. Install Git and uv, then run:
 uv sync --locked --all-groups
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy src scripts
+uv run pyrefly check
 uv run pytest --tb=short
 ```
 

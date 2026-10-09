@@ -319,10 +319,14 @@ def test_get_public_ip_handles_success_invalid_and_request_failure(monkeypatch) 
 
 def test_clear_uses_platform_command(monkeypatch) -> None:
     """Screen clearing dispatches to the platform command."""
-    commands: list[str] = []
-    monkeypatch.setattr(utility_display.os, "system", commands.append)
+    commands: list[tuple[list[str], bool]] = []
+    monkeypatch.setattr(
+        utility_display.subprocess,
+        "run",
+        lambda command, *, check: commands.append((command, check)),
+    )
     monkeypatch.setattr(utility_display.os, "name", "nt")
 
     utilities.clear()
 
-    assert commands == ["cls"]
+    assert commands == [(["cmd", "/c", "cls"], False)]

@@ -28,7 +28,7 @@ checks and CI coverage are documented in `docs/development.md`.
 
 - Do not traverse, modify, or rely on `.venv/`.
 - Do not traverse cache or generated-state directories such as
-  `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `__pycache__/`, or
+  `.pytest_cache/`, `.ruff_cache/`, `__pycache__/`, or
   `.cache/` unless the task explicitly requires it.
 - Prefer reading `README.md`, `pyproject.toml`, and files under `src/`
   first.
@@ -64,4 +64,6 @@ checks and CI coverage are documented in `docs/development.md`.
 - Use `just check` for the complete local quality suite.
 - Use `just lint` after Python code changes.
 - Use `just typecheck` when behavior or types change.
+- After Python changes, run `just typecheck`, fix every diagnostic, and
+  rerun it until clean before handoff.
 - Use `just test` when adding or changing behavior.

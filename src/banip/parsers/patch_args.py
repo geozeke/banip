@@ -1,5 +1,8 @@
 """Argument parser for the patch command."""
 
+from __future__ import annotations
+
+from argparse import ArgumentParser
 from argparse import _SubParsersAction
 from pathlib import Path
 
@@ -11,7 +14,7 @@ COMMAND_NAME = "patch"
 # ======================================================================
 
 
-def load_command_args(sp: _SubParsersAction) -> None:
+def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
     """Assemble the argument parser."""
     msg = """
     Patch the ipsum.txt file with the contents of another list of IP

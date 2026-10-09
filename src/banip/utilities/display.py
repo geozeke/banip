@@ -1,6 +1,7 @@
 """Display and terminal helpers."""
 
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
 
@@ -168,4 +169,5 @@ def clear() -> None:
     Windows.
 
     """
-    os.system("clear" if os.name == "posix" else "cls")
+    command = ["clear"] if os.name == "posix" else ["cmd", "/c", "cls"]
+    subprocess.run(command, check=False)

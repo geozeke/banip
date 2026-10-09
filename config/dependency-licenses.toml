@@ -1,6 +1,6 @@
 [python]
-mypy = "MIT"
 pip-audit = "Apache-2.0"
+pyrefly = "MIT"
 pytest = "MIT"
 pytest-cov = "MIT"
 requests = "Apache-2.0"

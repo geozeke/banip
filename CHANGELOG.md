@@ -4,6 +4,28 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [3.0.2] - 2026-10-20
+
+[Compare with 3.0.1](https://github.com/geozeke/banip/compare/v3.0.1...v3.0.2)
+
+### Added
+
+- Add "--audit" option to banip check ([ca9081b](https://github.com/geozeke/banip/commit/ca9081bac1971e505cb27fa0252856cfae6745c5))
+
+### Deployment & Operations
+
+- Migrate type checking from mypy to pyrefly ([d2c54a5](https://github.com/geozeke/banip/commit/d2c54a573c7ed559985de7c7e879ba5e315fe662))
+- Remove strict version from pyrefly tooling ([63129bd](https://github.com/geozeke/banip/commit/63129bd842b099e1b9585b1e72712fd94c95407d))
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group with 2 updates (#160) ([2a03979](https://github.com/geozeke/banip/commit/2a03979e5af4ece72a0f3cf4fcc33c4949ff6c42))
+- *(deps-dev)* Update uv-build requirement (#161) ([630dc33](https://github.com/geozeke/banip/commit/630dc3369118e9af6d75469d6297969bc6e46b26))
+- *(deps)* Bump github/codeql-action from 4.38.2 to 4.38.3 ([63bbe02](https://github.com/geozeke/banip/commit/63bbe024bec99cdb4169a7457fc2530c1918756c))
+- *(deps)* Bump astral-sh/setup-uv from 10.2.0 to 10.3.0 ([570d33e](https://github.com/geozeke/banip/commit/570d33eb73d815ad02bfa5e9f0308e3b501b3a72))
+- *(deps-dev)* Bump the python-dependencies group across 1 directory with 3 updates (#164) ([a7779a1](https://github.com/geozeke/banip/commit/a7779a17f2bce880968e047faf46b5a47c2c82cf))
+- *(deps)* Bump github/codeql-action from 4.38.3 to 4.39.0 ([4290bd9](https://github.com/geozeke/banip/commit/4290bd978ab1e7d669704b711c04caeafef1838e))
+
 ## [3.0.1] - 2026-10-07
 
 [Compare with 3.0.0](https://github.com/geozeke/banip/compare/v3.0.0...v3.0.1)

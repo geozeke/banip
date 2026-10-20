@@ -79,7 +79,7 @@ jobs:
       - name: Audit Python dependencies
         id: python_audit
         continue-on-error: true
-        run: uv run --locked --all-groups pip-audit
+        run: uv run --locked --all-groups pip-audit --skip-editable
       - name: Summarize Python audit
         if: always()
         env:

@@ -73,6 +73,37 @@ def test_check_parses_zero_or_more_ip_addresses() -> None:
     ]
 
 
+def test_check_parses_audit_mode() -> None:
+    """Check accepts audit mode without positional IP addresses."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    check_args.load_command_args(subparsers)
+
+    args = parser.parse_args(["check", "--audit"])
+
+    assert args.audit is True
+    assert args.ip_addresses == []
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["check", "--audit", "192.0.2.1"],
+        ["check", "192.0.2.1", "--audit"],
+    ],
+)
+def test_check_rejects_audit_mode_with_ip_addresses(arguments: list[str]) -> None:
+    """Check keeps audit input separate from positional addresses."""
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="cmd")
+    check_args.load_command_args(subparsers)
+
+    with pytest.raises(SystemExit) as exc_info:
+        parser.parse_args(arguments)
+
+    assert exc_info.value.code == 2
+
+
 def test_check_rejects_invalid_ip_address() -> None:
     """Check delegates invalid command-line addresses to argparse."""
     parser = argparse.ArgumentParser()

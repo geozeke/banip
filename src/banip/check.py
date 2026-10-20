@@ -24,6 +24,7 @@ from banip.constants import COUNTRY_NETS_TXT
 from banip.constants import IPSUM
 from banip.constants import RENDERED_BLOCKLIST
 from banip.constants import AddressType
+from banip.constants import AddressTypes
 from banip.constants import NetworkType
 from banip.utilities import NetworkLookup
 from banip.utilities import build_network_lookup
@@ -49,6 +50,8 @@ class CheckData:
         Ipsum confidence values keyed by address.
     country_policies : dict[str, CountryPolicy]
         Configured country policies keyed by name.
+    denylist : frozenset[AddressType | NetworkType]
+        Configured entries available for audit mode.
 
     """
 
@@ -57,6 +60,7 @@ class CheckData:
     rendered_lookup: NetworkLookup
     ipsum: dict[AddressType, int]
     country_policies: dict[str, CountryPolicy]
+    denylist: frozenset[AddressType | NetworkType]
 
 
 class CheckVerdict(StrEnum):
@@ -157,6 +161,7 @@ def load_check_data(console: Console) -> CheckData:
             rendered_lookup=build_network_lookup(rendered_networks),
             ipsum=ipsum,
             country_policies=config.countries.policies,
+            denylist=frozenset(config.denylist),
         )
 
 
@@ -420,7 +425,16 @@ def task_runner(args: argparse.Namespace) -> None:
         return
 
     data = load_check_data(console)
-    addresses: list[AddressType] = args.ip_addresses
+    if getattr(args, "audit", False):
+        addresses = sorted(
+            (entry for entry in data.denylist if isinstance(entry, AddressTypes)),
+            key=str,
+        )
+        if not addresses:
+            console.print("No individual IP addresses are configured in denylist.")
+            return
+    else:
+        addresses: list[AddressType] = args.ip_addresses
 
     if not addresses:
         interactive_check(console, data)

@@ -3,10 +3,43 @@
 from __future__ import annotations
 
 import ipaddress as ipa
+from argparse import Action
 from argparse import ArgumentParser
 from argparse import _SubParsersAction
 
 COMMAND_NAME = "check"
+
+
+class AuditAction(Action):
+    """Reject audit mode when positional IP addresses are present."""
+
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: object,
+        values: object,
+        option_string: str | None = None,
+    ) -> None:
+        """Store audit mode after checking for positional addresses."""
+        if getattr(namespace, "ip_addresses", []):
+            parser.error("--audit cannot be used with IP addresses")
+        setattr(namespace, self.dest, True)
+
+
+class IPAddressesAction(Action):
+    """Reject positional IP addresses when audit mode is active."""
+
+    def __call__(
+        self,
+        parser: ArgumentParser,
+        namespace: object,
+        values: list[ipa.IPv4Address | ipa.IPv6Address],
+        option_string: str | None = None,
+    ) -> None:
+        """Store addresses after checking whether audit mode is active."""
+        if values and getattr(namespace, "audit", False):
+            parser.error("IP addresses cannot be used with --audit")
+        setattr(namespace, self.dest, values)
 
 
 def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
@@ -23,9 +56,20 @@ def load_command_args(sp: _SubParsersAction[ArgumentParser]) -> None:
         metavar="IP",
         nargs="*",
         type=ipa.ip_address,
+        action=IPAddressesAction,
         help=(
             "IPv4 or IPv6 addresses to check. When omitted, addresses "
             "are read interactively."
+        ),
+    )
+    parser.add_argument(
+        "--audit",
+        action=AuditAction,
+        nargs=0,
+        default=False,
+        help=(
+            "Check individual IP addresses in the denylist section of "
+            "banip.yaml. CIDR network entries are skipped."
         ),
     )
 

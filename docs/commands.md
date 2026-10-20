@@ -81,6 +81,7 @@ behavior.
 ```console
 banip check 192.0.2.3
 banip check 192.0.2.3 198.51.100.8 2001:db8::1
+banip check --audit
 ```
 
 The single-address form displays a detailed result card. Multiple
@@ -101,6 +102,10 @@ IP address (blank to quit): 192.0.2.3
 Interactive mode accepts addresses until a blank line, end-of-file, or
 interrupt. The command requires an existing build because it reads the
 rendered blocklist, country network map, and ipsum data.
+
+Use `--audit` to check every individual IP address configured in the
+`denylist` section of `banip.yaml`. Audit mode cannot be combined with
+command-line addresses and skips CIDR network entries.
 
 ## Database
 

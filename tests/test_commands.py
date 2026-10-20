@@ -335,6 +335,72 @@ def test_check_task_runner_handles_batch_lookup(tmp_path, monkeypatch, capsys) -
     assert "CA" in output
 
 
+def test_check_task_runner_audits_configured_denylist(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    """Audit mode checks configured IP addresses and skips CIDR entries."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("192.0.2.0/24 US\n198.51.100.0/24 CA\n")
+    rendered = tmp_path / "ip_blocklist.txt"
+    rendered.write_text("192.0.2.0/28\n")
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_text("192.0.2.3 7\n198.51.100.8 4\n")
+    config_file = write_check_config(tmp_path)
+    config_file.write_text(
+        config_file.read_text().replace(
+            "denylist: []",
+            "denylist:\n  - 192.0.2.3\n  - 192.0.2.0/28\n  - 198.51.100.8",
+        )
+    )
+    monkeypatch.setattr(check, "CONFIG", config_file)
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(check, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+
+    check.task_runner(argparse.Namespace(ip_addresses=[], audit=True))
+
+    output = capsys.readouterr().out
+    assert "Blocklist Check" in output
+    assert "192.0.2.3" in output
+    assert "198.51.100.8" in output
+    assert "192.0.2.0/28" not in output
+
+
+def test_check_task_runner_reports_empty_audit(tmp_path, monkeypatch, capsys) -> None:
+    """Audit mode exits without prompting when no individual IPs exist."""
+    country_data = tmp_path / "haproxy_geo_ip.txt"
+    country_data.write_text("")
+    rendered = tmp_path / "ip_blocklist.txt"
+    rendered.write_text("")
+    ipsum = tmp_path / "ipsum.txt"
+    ipsum.write_text("")
+    config_file = write_check_config(tmp_path)
+    config_file.write_text(
+        config_file.read_text().replace("denylist: []", "denylist:\n  - 192.0.2.0/28")
+    )
+    monkeypatch.setattr(check, "CONFIG", config_file)
+    monkeypatch.setattr(check, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(check, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(check, "IPSUM", ipsum)
+    monkeypatch.setattr(utility_data, "COUNTRY_NETS_TXT", country_data)
+    monkeypatch.setattr(utility_data, "RENDERED_BLOCKLIST", rendered)
+    monkeypatch.setattr(utility_data, "IPSUM", ipsum)
+    monkeypatch.setattr(
+        "builtins.input",
+        lambda _prompt: pytest.fail("audit mode must not prompt for input"),
+    )
+
+    check.task_runner(argparse.Namespace(ip_addresses=[], audit=True))
+
+    assert (
+        "No individual IP addresses are configured in denylist."
+        in capsys.readouterr().out
+    )
+
+
 def test_check_reports_country_policy_block(tmp_path, monkeypatch, capsys) -> None:
     """A country policy can block an address absent from the IP list."""
     country_data = tmp_path / "haproxy_geo_ip.txt"
@@ -379,6 +445,7 @@ def test_check_reports_policy_dependent_result(tmp_path) -> None:
                 codes={"CA", "US"},
             ),
         },
+        denylist=frozenset(),
     )
 
     result = check.check_address(ipa.ip_address("203.0.113.8"), data)
@@ -399,6 +466,7 @@ def test_interactive_check_exits_on_terminal_signal(
         rendered_lookup=utilities.build_network_lookup([]),
         ipsum={},
         country_policies={},
+        denylist=frozenset(),
     )
     monkeypatch.setattr("builtins.input", lambda _prompt: (_ for _ in ()).throw(error))
 

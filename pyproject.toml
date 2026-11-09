@@ -40,13 +40,13 @@ Changelog = "https://github.com/geozeke/banip/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 docs = [
-    "zensical>=0.0.51,<0.1",
+    "zensical>=0.0.51,<0.2",
 ]
 security = [
     "pip-audit>=2.9,<3",
 ]
 dev = [
-    "pyrefly==1.4.0",
+    "pyrefly==1.4.1",
     "pytest>=9.0.2,<10",
     "pytest-cov>=7.0.0,<8",
     "ruff>=0.16,<1",

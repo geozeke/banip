@@ -4,6 +4,21 @@ All notable changes to banip are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project versions follow [PEP 440](https://peps.python.org/pep-0440/).
 
+## [3.0.3] - 2026-11-13
+
+[Compare with 3.0.2](https://github.com/geozeke/banip/compare/v3.0.2...v3.0.3)
+
+### Dependencies
+
+- *(deps-dev)* Bump the python-dependencies group across 1 directory with 2 updates (#171) ([8360ed0](https://github.com/geozeke/banip/commit/8360ed0b051c9e079420c967377b2a655c413af3))
+- *(deps)* Bump astral-sh/setup-uv from 10.3.0 to 10.3.2 ([55dc150](https://github.com/geozeke/banip/commit/55dc1507f5f990f8629df70b3375b4ae81ccbddc))
+- *(deps)* Bump github/codeql-action from 4.39.0 to 4.39.1 ([8765974](https://github.com/geozeke/banip/commit/8765974a78eb12d3a27276b4ee3c3ae295a8f744))
+- *(deps)* Bump msgpack from 1.2.1 to 1.2.3 (#176) ([087c12f](https://github.com/geozeke/banip/commit/087c12fd36e02c0be60a9818c467e5d708e96e10))
+- *(deps-dev)* Bump the python-dependencies group with 3 updates (#177) ([4ac1fb3](https://github.com/geozeke/banip/commit/4ac1fb3eb3de228c05e21a11f765167d712acda3))
+- *(deps)* Bump astral-sh/setup-uv from 10.3.2 to 10.3.3 ([41db504](https://github.com/geozeke/banip/commit/41db50494a7e9ed3d0c4c0adfeb22ab8567e0af3))
+- *(deps-dev)* Bump the python-dependencies group with 3 updates (#179) ([77862db](https://github.com/geozeke/banip/commit/77862db849b70d888a65057a8fe4814cf0577224))
+- *(deps)* Bump github/codeql-action from 4.39.1 to 4.39.3 ([9692f76](https://github.com/geozeke/banip/commit/9692f76bfb8717d8c5b4c44f47d636709fdcfec6))
+
 ## [3.0.2] - 2026-10-20
 
 [Compare with 3.0.1](https://github.com/geozeke/banip/compare/v3.0.1...v3.0.2)
